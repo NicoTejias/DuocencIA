@@ -3,7 +3,19 @@ import { useQuery } from "convex/react"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
-import { BookOpen, Target, Trophy, Gift, User, LogOut, Menu, X, BarChart3, Brain, Coins, ChevronRight, Flame, Clock, Star, Loader2 } from 'lucide-react'
+import { BookOpen, Target, Trophy, Gift, User, LogOut, Menu, X, BarChart3, Brain, Coins, ChevronRight, Flame, Clock, Star, Loader2, Sparkles } from 'lucide-react'
+
+function getGreeting(): string {
+    const h = new Date().getHours()
+    if (h < 12) return 'Buenos días'
+    if (h < 20) return 'Buenas tardes'
+    return 'Buenas noches'
+}
+
+function getFirstName(fullName?: string): string {
+    if (!fullName) return ''
+    return fullName.split(' ')[0]
+}
 
 // Datos demo para cuando el alumno no tiene enrollments aún
 const DEMO_MISSIONS = [
@@ -35,6 +47,7 @@ export default function StudentDashboard() {
 
     // Calculamos datos reales del usuario
     const userName = user?.name || 'Cargando...'
+    const firstName = getFirstName(user?.name)
     const userEmail = user?.email || ''
     const belbinRole = user?.belbin_profile?.role_dominant || 'Sin determinar'
     const belbinCategory = user?.belbin_profile?.category || ''
@@ -148,7 +161,7 @@ export default function StudentDashboard() {
                 </header>
 
                 <div className="p-6">
-                    {activeTab === 'inicio' && <DashboardHome courses={courses || []} totalPoints={totalPoints} coursesCount={coursesCount} />}
+                    {activeTab === 'inicio' && <DashboardHome courses={courses || []} totalPoints={totalPoints} coursesCount={coursesCount} firstName={firstName} />}
                     {activeTab === 'misiones' && <MisionesPanel />}
                     {activeTab === 'ranking' && <RankingPanel />}
                     {activeTab === 'tienda' && <TiendaPanel />}
@@ -161,9 +174,26 @@ export default function StudentDashboard() {
 
 // ======== Sub-componentes ========
 
-function DashboardHome({ courses, totalPoints, coursesCount }: { courses: any[], totalPoints: number, coursesCount: number }) {
+function DashboardHome({ courses, totalPoints, coursesCount, firstName }: { courses: any[], totalPoints: number, coursesCount: number, firstName: string }) {
     return (
         <div className="space-y-8">
+            {/* Saludo Personalizado */}
+            <div className="bg-gradient-to-r from-primary/10 via-accent/5 to-surface-light border border-primary/20 rounded-3xl p-8">
+                <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-primary-light" />
+                    <span className="text-primary-light text-sm font-medium">{getGreeting()}</span>
+                </div>
+                <h2 className="text-3xl font-black text-white mb-2">
+                    Hola {firstName} 👋
+                </h2>
+                <p className="text-slate-400 text-lg">
+                    {coursesCount === 0
+                        ? 'Tu docente aún no te ha inscrito en un ramo. ¡Pronto comenzará la aventura!'
+                        : `Tienes ${totalPoints.toLocaleString()} puntos en ${coursesCount} ${coursesCount === 1 ? 'ramo' : 'ramos'}. ¡Sigue así!`
+                    }
+                </p>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: 'Puntos Totales', value: totalPoints.toLocaleString(), icon: <Coins className="w-6 h-6" />, color: 'text-gold', bg: 'bg-gold/10' },
