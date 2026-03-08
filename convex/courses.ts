@@ -258,8 +258,9 @@ export const getCourseStudents = query({
                         name: userDoc.name || item.student_name || "Sin nombre",
                         email: userDoc.email,
                         student_id: userDoc.student_id,
-                        total_points: enDoc.spendable_points || enDoc.total_points || 0,
+                        spendable_points: enDoc.spendable_points || enDoc.total_points || 0,
                         ranking_points: enDoc.ranking_points || enDoc.total_points || 0,
+                        total_points: enDoc.spendable_points || enDoc.total_points || 0, // Aliased for legacy
                         belbin: userDoc.belbin_profile?.role_dominant || "Sin determinar",
                         status: "registered"
                     };

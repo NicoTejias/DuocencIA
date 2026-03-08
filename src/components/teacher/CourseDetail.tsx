@@ -301,10 +301,10 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                             </span>
                                             <div className="flex gap-4 mt-1">
                                                 <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
-                                                    <Trophy className="w-3 h-3 text-gold" /> Rnk: {s.ranking_points || 0}
+                                                    <Trophy className="w-3 h-3 text-gold" /> Ranking: {s.ranking_points || 0}
                                                 </span>
                                                 <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
-                                                    <Coins className="w-3 h-3 text-gold/60" /> Cnj: {s.total_points || 0}
+                                                    <Coins className="w-3 h-3 text-gold/60" /> Canjeable: {s.spendable_points || 0}
                                                 </span>
                                             </div>
                                         </div>
