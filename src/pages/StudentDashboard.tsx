@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQuery } from "convex/react"
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation } from "convex/react"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
@@ -44,6 +44,20 @@ export default function StudentDashboard() {
         await signOut()
         navigate('/')
     }
+
+    // Auto-enrollment: cruza el RUT del alumno con las whitelists
+    const autoEnroll = useMutation(api.users.autoEnroll)
+    const [autoEnrolled, setAutoEnrolled] = useState(false)
+    useEffect(() => {
+        if (user && user.role === 'student' && !autoEnrolled) {
+            autoEnroll().then((result) => {
+                setAutoEnrolled(true)
+                if (result.enrolled > 0) {
+                    console.log(`Auto-enrolled en ${result.enrolled} ramo(s)`)
+                }
+            }).catch(() => { })
+        }
+    }, [user])
 
     // Calculamos datos reales del usuario
     const userName = user?.name || 'Cargando...'

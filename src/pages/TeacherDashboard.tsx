@@ -687,70 +687,228 @@ function WhitelistPanel({ courses }: { courses: any[] }) {
 // ======== Sub-componentes con datos demo (se conectarán cuando haya datos) ========
 
 function GruposPanel() {
-    const demoGroups = [
-        {
-            id: 1, members: [
-                { name: 'María F.', role: 'Cerebro', category: 'Mental', emoji: '🧠' },
-                { name: 'Carlos R.', role: 'Impulsor', category: 'Acción', emoji: '⚡' },
-                { name: 'Ana L.', role: 'Cohesionador', category: 'Social', emoji: '🤝' },
-            ]
-        },
-        {
-            id: 2, members: [
-                { name: 'Pedro S.', role: 'Monitor', category: 'Mental', emoji: '🔍' },
-                { name: 'Lucía M.', role: 'Implementador', category: 'Acción', emoji: '⚙️' },
-                { name: 'Diego V.', role: 'Coordinador', category: 'Social', emoji: '👑' },
-            ]
-        },
-    ]
+    const courses = useQuery(api.courses.getMyCourses)
+    const generateGroups = useMutation(api.groups.generateGroups)
+    const [selectedCourse, setSelectedCourse] = useState('')
+    const [groupSize, setGroupSize] = useState(3)
+    const [generating, setGenerating] = useState(false)
+    const [result, setResult] = useState<any>(null)
+    const [error, setError] = useState('')
+
+    // Obtener grupos existentes del ramo seleccionado
+    const existingGroups = useQuery(
+        api.groups.getGroups,
+        selectedCourse ? { course_id: selectedCourse as any } : "skip"
+    )
+
+    const handleGenerate = async () => {
+        if (!selectedCourse) {
+            setError('Selecciona un ramo primero.')
+            return
+        }
+        setGenerating(true)
+        setError('')
+        setResult(null)
+        try {
+            const res = await generateGroups({
+                course_id: selectedCourse as any,
+                group_size: groupSize,
+            })
+            setResult(res)
+        } catch (err: any) {
+            setError(err.message || 'Error al generar grupos')
+        } finally {
+            setGenerating(false)
+        }
+    }
+
+    const rolEmoji: Record<string, string> = {
+        'Cerebro': '🧠', 'Monitor': '🔍', 'Coordinador': '👑',
+        'Investigador': '🌐', 'Cohesionador': '🤝', 'Impulsor': '⚡',
+        'Implementador': '⚙️', 'Finalizador': '🎯', 'Sin determinar': '❓',
+    }
+
+    const categoryColor: Record<string, string> = {
+        'Mental': 'text-blue-400', 'Social': 'text-green-400',
+        'Acción': 'text-orange-400', 'Sin categoría': 'text-slate-500',
+    }
+
+    // Determinar qué grupos mostrar: resultado fresco o existentes
+    const displayGroups = result ? result.groups : (existingGroups || []).filter((g: any) => g.name !== 'Sin grupo')
 
     return (
         <div>
             <p className="text-slate-400 mb-6">Genera grupos equilibrados automáticamente basándose en los perfiles Belbin de tus alumnos.</p>
-            <div className="flex flex-wrap gap-4 mb-8">
-                <select className="bg-surface-light border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary">
-                    <option>Selecciona un ramo</option>
-                </select>
-                <input type="number" placeholder="Alumnos por grupo" defaultValue={3} className="bg-surface-light border border-white/10 rounded-xl px-4 py-3 text-white w-48 focus:outline-none focus:border-primary" />
-                <button className="bg-gradient-to-r from-primary to-accent text-white font-bold px-6 py-3 rounded-xl transition-all active:scale-95 flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Generar Grupos
+
+            {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+                    <span className="text-red-400 shrink-0">⚠️</span>
+                    <p className="text-red-400 text-sm">{error}</p>
+                </div>
+            )}
+
+            <div className="bg-surface-light border border-white/5 rounded-2xl p-6 mb-6 space-y-4">
+                <div className="flex flex-wrap gap-4">
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Ramo</label>
+                        <select
+                            value={selectedCourse}
+                            onChange={e => { setSelectedCourse(e.target.value); setResult(null) }}
+                            className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                            aria-label="Selecciona un ramo para generar grupos"
+                        >
+                            <option value="">Selecciona un ramo</option>
+                            {(courses || []).map((c: any) => (
+                                <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="w-48">
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Alumnos por grupo</label>
+                        <input
+                            type="number"
+                            value={groupSize}
+                            onChange={e => setGroupSize(Number(e.target.value))}
+                            min={2} max={8}
+                            className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                            aria-label="Cantidad de alumnos por grupo"
+                        />
+                    </div>
+                </div>
+                <button
+                    onClick={handleGenerate}
+                    disabled={generating || !selectedCourse}
+                    className="bg-gradient-to-r from-primary to-accent text-white font-bold px-6 py-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+                    {generating ? 'Generando...' : 'Generar Grupos Inteligentes'}
                 </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {demoGroups.map(group => (
-                    <div key={group.id} className="bg-surface-light border border-white/5 rounded-2xl p-6">
-                        <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-accent-light" /> Grupo {group.id}</h3>
-                        <div className="space-y-3">
-                            {group.members.map((m, i) => (
-                                <div key={i} className="flex items-center justify-between bg-surface rounded-xl px-4 py-3">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xl">{m.emoji}</span>
-                                        <span className="text-white font-medium">{m.name}</span>
+
+            {result && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <p className="text-green-400 text-sm font-medium">
+                        ✅ {result.total_groups} grupos generados con {result.total_students} alumnos
+                    </p>
+                </div>
+            )}
+
+            {displayGroups.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {displayGroups.map((group: any, idx: number) => (
+                        <div key={idx} className="bg-surface-light border border-white/5 rounded-2xl p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-white font-bold flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-accent-light" />
+                                    {group.name}
+                                </h3>
+                                <span className="text-xs text-slate-500">{group.members.length} miembros</span>
+                            </div>
+                            {/* Balance bar */}
+                            <div className="flex gap-1 mb-4 h-2 rounded-full overflow-hidden bg-surface">
+                                {group.stats?.mental > 0 && <div className="bg-blue-400" style={{ flex: group.stats.mental }} />}
+                                {group.stats?.social > 0 && <div className="bg-green-400" style={{ flex: group.stats.social }} />}
+                                {(group.stats?.accion > 0 || group.stats?.acción > 0) && <div className="bg-orange-400" style={{ flex: group.stats.accion || group.stats.acción }} />}
+                            </div>
+                            <div className="flex gap-3 mb-4 text-xs">
+                                <span className="text-blue-400">🧠 {group.stats?.mental || 0}</span>
+                                <span className="text-green-400">🤝 {group.stats?.social || 0}</span>
+                                <span className="text-orange-400">⚡ {group.stats?.accion || group.stats?.acción || 0}</span>
+                            </div>
+                            <div className="space-y-2">
+                                {group.members.map((m: any, i: number) => (
+                                    <div key={i} className="flex items-center justify-between bg-surface rounded-xl px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xl">{rolEmoji[m.belbinRole] || '❓'}</span>
+                                            <span className="text-white font-medium text-sm">{m.name}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-primary-light text-xs font-semibold block">{m.belbinRole}</span>
+                                            <span className={`text-xs ${categoryColor[m.belbinCategory] || 'text-slate-500'}`}>{m.belbinCategory}</span>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-primary-light text-sm font-semibold block">{m.role}</span>
-                                        <span className="text-slate-500 text-xs">{m.category}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : selectedCourse ? (
+                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
+                    <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <h4 className="text-white font-semibold mb-2">Sin grupos aún</h4>
+                    <p className="text-slate-400 text-sm">Selecciona un ramo con alumnos inscritos y haz clic en "Generar Grupos Inteligentes".</p>
+                </div>
+            ) : null}
         </div>
     )
 }
 
 function RankingDocentePanel() {
+    const courses = useQuery(api.courses.getMyCourses)
+    const [selectedCourse, setSelectedCourse] = useState('')
+    const students = useQuery(
+        api.courses.getCourseStudents,
+        selectedCourse ? { course_id: selectedCourse as any } : "skip"
+    )
+
+    const sorted = [...(students || [])].sort((a, b) => b.total_points - a.total_points)
+    const medals = ['🥇', '🥈', '🥉']
+
     return (
         <div>
-            <p className="text-slate-400 mb-6">Vista del ranking de todos tus ramos. Se actualizará automáticamente cuando tus alumnos completen misiones.</p>
-            <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
-                <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <h4 className="text-white font-semibold mb-2">Ranking disponible pronto</h4>
-                <p className="text-slate-400 text-sm">Crea un ramo y agrega alumnos para ver el ranking en tiempo real.</p>
+            <p className="text-slate-400 mb-6">Ranking de alumnos por ramo en tiempo real.</p>
+
+            <div className="mb-6">
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Ramo</label>
+                <select
+                    value={selectedCourse}
+                    onChange={e => setSelectedCourse(e.target.value)}
+                    className="w-full max-w-md bg-surface-light border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                    aria-label="Selecciona un ramo para ver el ranking"
+                >
+                    <option value="">Selecciona un ramo</option>
+                    {(courses || []).map((c: any) => (
+                        <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                    ))}
+                </select>
             </div>
+
+            {selectedCourse && sorted.length > 0 ? (
+                <div className="bg-surface-light border border-white/5 rounded-2xl overflow-hidden">
+                    <div className="flex items-center px-6 py-3 bg-white/5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="w-12 text-center">#</span>
+                        <span className="flex-1">Alumno</span>
+                        <span className="w-28 text-center">Belbin</span>
+                        <span className="w-24 text-right">Puntos</span>
+                    </div>
+                    <div className="divide-y divide-white/5">
+                        {sorted.map((s, i) => (
+                            <div key={s._id} className={`flex items-center px-6 py-4 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
+                                <span className="w-12 text-center text-lg">{medals[i] || <span className="text-slate-500 text-sm">{i + 1}</span>}</span>
+                                <div className="flex-1">
+                                    <p className="text-white font-medium">{s.name}</p>
+                                    <p className="text-slate-500 text-xs">{s.student_id || s.email}</p>
+                                </div>
+                                <span className="w-28 text-center text-primary-light text-xs font-semibold">{s.belbin}</span>
+                                <span className="w-24 text-right text-accent-light font-bold">{s.total_points.toLocaleString()}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : selectedCourse ? (
+                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
+                    <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <h4 className="text-white font-semibold mb-2">Sin alumnos inscritos</h4>
+                    <p className="text-slate-400 text-sm">Carga una whitelist con los RUTs de tus alumnos para que se inscriban automáticamente.</p>
+                </div>
+            ) : (
+                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
+                    <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <h4 className="text-white font-semibold mb-2">Selecciona un ramo</h4>
+                    <p className="text-slate-400 text-sm">Elige un ramo para ver el ranking de tus alumnos.</p>
+                </div>
+            )}
         </div>
     )
 }
