@@ -2,15 +2,18 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
 import { requireAuth } from "./withUser";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Obtener el perfil del usuario actual autenticado
 export const getProfile = query({
     args: {},
     handler: async (ctx) => {
         try {
-            const user = await requireAuth(ctx);
-            return user;
-        } catch {
+            const userId = await getAuthUserId(ctx);
+            if (!userId) return null;
+            return await ctx.db.get(userId);
+        } catch (e) {
+            console.error("Error in getProfile:", e);
             return null;
         }
     },

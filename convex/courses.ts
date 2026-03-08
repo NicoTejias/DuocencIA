@@ -269,6 +269,8 @@ export const getCourseStudents = query({
                         _id: item._id,
                         name: item.student_name || null,
                         identifier: item.student_identifier,
+                        spendable_points: 0,
+                        ranking_points: 0,
                         total_points: 0,
                         status: "pending"
                     };
