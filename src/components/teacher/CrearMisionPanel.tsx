@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../convex/_generated/api"
-import { Target, Plus, Loader2, Trash2, CheckCircle, Flame, Sparkles, Eye, EyeOff } from 'lucide-react'
+import { Target, Plus, Loader2, Trash2, CheckCircle, Flame, Sparkles, Eye, EyeOff, AlertTriangle, Trophy } from 'lucide-react'
 import Papa from 'papaparse'
 import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../utils/documentParser'
 import { formatRutWithDV, cleanRut, calculateRutDV } from '../utils/rutUtils'
@@ -26,6 +26,7 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
     const [numQuestions, setNumQuestions] = useState(5)
     const [difficulty, setDifficulty] = useState('medio')
     const [quizType, setQuizType] = useState('multiple_choice')
+    const [maxAttempts, setMaxAttempts] = useState(1)
     const [generating, setGenerating] = useState(false)
     const [quizPreview, setQuizPreview] = useState<any>(null)
 
@@ -59,7 +60,8 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                 document_id: selectedDoc as any,
                 num_questions: numQuestions,
                 difficulty,
-                quiz_type: quizType
+                quiz_type: quizType,
+                max_attempts: maxAttempts
             })
             setQuizPreview(result)
             setSuccess(`✅ Quiz "${result.title}" generado con ${result.numQuestions} preguntas.`)
@@ -225,6 +227,26 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-slate-300 mb-2 block">6. Máximo de Intentos</label>
+                                    <div className="flex gap-3">
+                                        {[1, 3, 5, 99].map(n => (
+                                            <button
+                                                key={n}
+                                                onClick={() => setMaxAttempts(n)}
+                                                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all border ${maxAttempts === n ? 'bg-gold/20 border-gold text-gold shadow-lg shadow-gold/10' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`}
+                                            >
+                                                {n === 99 ? '∞ Ilimitado' : `${n} ${n === 1 ? 'intento' : 'intentos'}`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-medium uppercase tracking-widest px-1">
+                                        {maxAttempts === 99
+                                            ? 'Los alumnos podrán repetir el quiz infinitas veces.'
+                                            : `Los alumnos solo podrán realizar este quiz ${maxAttempts} ${maxAttempts === 1 ? 'vez' : 'veces'}.`}
+                                    </p>
                                 </div>
 
                                 <button

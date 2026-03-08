@@ -1,11 +1,9 @@
 import { useState, useRef } from 'react'
-import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../convex/_generated/api"
-import { FileSpreadsheet, Upload, Plus, Trash2, CheckCircle, AlertTriangle, Users, AlertCircle } from 'lucide-react'
+import { useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
+import { Upload, Trash2, CheckCircle, X, Loader2 } from 'lucide-react'
 import Papa from 'papaparse'
-import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../utils/documentParser'
-import { formatRutWithDV, cleanRut, calculateRutDV } from '../utils/rutUtils'
-import { toast } from 'sonner'
+import { formatRutWithDV } from '../../utils/rutUtils'
 
 export default function WhitelistPanel({ courses }: { courses: any[] }) {
     const uploadWhitelist = useMutation(api.courses.batchUploadWhitelist)
@@ -185,7 +183,7 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
                     <span className="text-red-400 text-lg shrink-0">⚠️</span>
                     <p className="text-red-400 text-sm">{error}</p>
-                    <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-300">
+                    <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-300" title="Cerrar error">
                         <X className="w-4 h-4" />
                     </button>
                 </div>

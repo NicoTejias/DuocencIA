@@ -59,7 +59,7 @@ export default function BelbinTest() {
     const [saving, setSaving] = useState(false)
     const [resultCategory, setResultCategory] = useState('')
     const saveBelbin = useMutation(api.users.saveBelbinProfile)
-    const user = useQuery(api.users.me)
+    const user = useQuery(api.users.getProfile)
     const navigate = useNavigate()
 
     const handleAnswer = (rol: string) => {

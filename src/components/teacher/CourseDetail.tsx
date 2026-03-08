@@ -4,7 +4,7 @@ import { api } from "../../../convex/_generated/api"
 import {
     ChevronRight, BookOpen, FileText, Gift,
     Trash2, Target, Flame, Sparkles, Loader2,
-    Users, Trophy, Coins, CheckCircle, Edit3
+    Users, Trophy, Coins, CheckCircle, Edit3, X
 } from 'lucide-react'
 import { formatRutWithDV } from "../../utils/rutUtils"
 import { toast } from 'sonner'
@@ -13,7 +13,11 @@ import { EditMissionModal, EditRewardModal } from './EditModals'
 
 export default function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
     const documents = useQuery(api.documents.getDocumentsByCourse, { course_id: course._id })
-    const rewards = useQuery(api.rewards.getRewardsByCourse, { course_id: course._id })
+    const { results: rewards } = usePaginatedQuery(
+        api.rewards.getRewardsByCourse,
+        { course_id: course._id },
+        { initialNumItems: 10 }
+    )
     const missions = useQuery(api.missions.getMissions, { course_id: course._id })
     const quizzes = useQuery(api.quizzes.getQuizzesByCourse, { course_id: course._id })
     const { results: students, status: studentsStatus, loadMore: loadMoreStudents } = usePaginatedQuery(
@@ -214,6 +218,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setViewingQuizResults(q._id) }}
                                                             className="flex-1 bg-accent/20 text-accent-light hover:bg-accent/30 text-xs font-bold py-2 rounded-lg border border-accent/20 transition-all flex items-center justify-center gap-2"
+                                                            title="Ver resultados del quiz"
                                                         >
                                                             <Users className="w-4 h-4" /> VER RESULTADOS
                                                         </button>

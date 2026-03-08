@@ -1,11 +1,6 @@
-import { useState, useRef } from 'react'
-import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../convex/_generated/api"
-import { BarChart3 } from 'lucide-react'
-import Papa from 'papaparse'
-import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../utils/documentParser'
-import { formatRutWithDV, cleanRut, calculateRutDV } from '../utils/rutUtils'
-import { toast } from 'sonner'
+import { useQuery } from "convex/react"
+import { api } from "../../../convex/_generated/api"
+import { BarChart3, Loader2, Sparkles } from 'lucide-react'
 
 export default function AnaliticasPanel() {
     const stats = useQuery(api.analytics.getTeacherStats)

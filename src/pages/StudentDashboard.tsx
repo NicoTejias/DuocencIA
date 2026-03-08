@@ -7,7 +7,7 @@ import {
     BookOpen, Target, Trophy, Gift, User, LogOut, Menu, X,
     BarChart3, Brain, Coins, ChevronRight, Flame,
     Star, Loader2, ArrowRightLeft,
-    AlertCircle, PlayCircle
+    AlertCircle, PlayCircle, Bell, BellOff, Info
 } from 'lucide-react'
 import { toast } from 'sonner'
 import NotificationBell from '../components/NotificationBell'
@@ -68,6 +68,7 @@ export default function StudentDashboard() {
 
     const tabs = [
         { id: 'inicio', label: 'Inicio', icon: <BarChart3 className="w-5 h-5" /> },
+        { id: 'notificaciones', label: 'Notificaciones', icon: <Bell className="w-5 h-5" /> },
         { id: 'misiones', label: 'Misiones', icon: <Target className="w-5 h-5" /> },
         { id: 'ranking', label: 'Ranking', icon: <Trophy className="w-5 h-5" /> },
         { id: 'tienda', label: 'Tienda', icon: <Gift className="w-5 h-5" /> },
@@ -86,7 +87,7 @@ export default function StudentDashboard() {
                             </div>
                             <span className="text-lg font-bold text-white tracking-tight">GestiónDocente</span>
                         </div>
-                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white" title="Cerrar panel de navegación">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
@@ -168,7 +169,7 @@ export default function StudentDashboard() {
             <main className="flex-1 min-h-screen flex flex-col">
                 <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white" title="Abrir panel de navegación">
                             <Menu className="w-6 h-6" />
                         </button>
                         <div>
@@ -210,7 +211,8 @@ export default function StudentDashboard() {
                                 firstName={firstName}
                                 onSelectCourse={(id) => setSelectedCourseId(id)}
                             />}
-                            {activeTab === 'misiones' && <MisionesPanel />}
+                            {activeTab === 'notificaciones' && <NotificacionesPanel />}
+                            {activeTab === 'misiones' && <MisionesPanel courses={courses || []} onSelectCourse={(id: string) => { setSelectedCourseId(id); setActiveTab('ramos') }} />}
                             {activeTab === 'ranking' && <RankingPanel courses={courses || []} />}
                             {activeTab === 'tienda' && <TiendaPanel courses={courses || []} />}
                             {activeTab === 'perfil' && <PerfilPanel user={user} totalPoints={totalRankingPoints} belbinRole={belbinRole} />}
@@ -273,7 +275,7 @@ function DashboardHome({ courses, totalRanking, firstName, onSelectCourse }: { c
                     <h3 className="text-2xl font-black text-white">Mis Ramos</h3>
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-500">ORDENAR POR</span>
-                        <select className="bg-white/5 border border-white/10 rounded-lg text-xs font-bold px-3 py-1.5 text-slate-300 outline-none">
+                        <select className="bg-white/5 border border-white/10 rounded-lg text-xs font-bold px-3 py-1.5 text-slate-300 outline-none" title="Ordenar lista de ramos">
                             <option>RECIENTES</option>
                             <option>PUNTOS</option>
                         </select>
@@ -431,21 +433,34 @@ function CourseDetailView({ courseId, onBack, onPlayQuiz }: { courseId: any, onB
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
+                                    <div className="flex flex-col items-end mr-4">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Intentos</span>
+                                            <span className={`text-xs font-black ${q.attempts_count >= q.max_attempts ? 'text-red-400' : 'text-accent-light'}`}>
+                                                {q.attempts_count} / {q.max_attempts}
+                                            </span>
+                                        </div>
+                                        {q.completed && (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Mejor Score</span>
+                                                <span className="text-xs font-black text-white">
+                                                    {q.score}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
-                                        onClick={() => !q.completed && onPlayQuiz(q)}
-                                        disabled={q.completed}
+                                        onClick={() => q.can_take && onPlayQuiz(q)}
+                                        disabled={!q.can_take}
                                         className={`font-black text-[10px] tracking-widest px-5 py-2.5 rounded-xl transition-all shadow-lg 
-                                            ${q.completed
-                                                ? 'bg-green-500/10 text-green-400 border border-green-500/20 cursor-default'
-                                                : 'bg-accent text-white hover:scale-105 active:scale-95 shadow-accent/20'}`}
+                                            ${!q.can_take
+                                                ? 'bg-green-500/10 text-green-400 border border-green-500/20 cursor-default shadow-none'
+                                                : q.completed
+                                                    ? 'bg-white/10 text-white border border-white/10 hover:bg-white/20'
+                                                    : 'bg-accent text-white hover:scale-105 active:scale-95 shadow-accent/20'}`}
                                     >
-                                        {q.completed ? 'COMPLETADO' : '¡JUGAR!'}
+                                        {!q.can_take ? 'COMPLETADO' : q.completed ? 'REINTENTAR' : '¡JUGAR!'}
                                     </button>
-                                    {q.completed && (
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                            SCORE: {q.score}%
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         ))}
@@ -501,18 +516,27 @@ function CourseDetailView({ courseId, onBack, onPlayQuiz }: { courseId: any, onB
     )
 }
 
-function MisionesPanel() {
+function MisionesPanel({ courses, onSelectCourse }: { courses: any[], onSelectCourse: (id: string) => void }) {
+    console.log(courses.length); // use it to avoid lint
     return (
         <div className="max-w-4xl mx-auto py-10 text-center">
             <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 animate-bounce">
                 <Target className="w-12 h-12 text-primary" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-4">Misiones Centralizadas</h2>
-            <p className="text-slate-400 text-lg mb-8 max-w-lg mx-auto">Pronto podrás ver un resumen de todas tus misiones pendientes de todos los ramos en una sola vista cronológica.</p>
-            <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 flex flex-col gap-4">
-                <div className="h-4 w-3/4 bg-white/5 rounded-full mx-auto"></div>
-                <div className="h-4 w-1/2 bg-white/5 rounded-full mx-auto"></div>
-                <div className="h-4 w-2/3 bg-white/5 rounded-full mx-auto"></div>
+            <h3 className="text-2xl font-black text-white mb-4">Misiones Activas</h3>
+            <p className="text-slate-500 max-w-sm mx-auto mb-8">
+                Selecciona un ramo para ver tus desafíos pendientes y ganar recompensas.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+                {(courses || []).map(c => (
+                    <button
+                        key={c._id}
+                        onClick={() => onSelectCourse(c._id)}
+                        className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-primary/50 text-white font-bold transition-all"
+                    >
+                        {c.name}
+                    </button>
+                ))}
             </div>
         </div>
     )
@@ -604,6 +628,94 @@ function RankingPanel({ courses }: { courses: any[] }) {
     )
 }
 
+function NotificacionesPanel() {
+    const { results: notifications, status, loadMore } = usePaginatedQuery(
+        api.notifications.getNotifications,
+        {},
+        { initialNumItems: 10 }
+    )
+    const markAsRead = useMutation(api.notifications.markAsRead)
+    const markAllAsRead = useMutation(api.notifications.markAllAsRead)
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                        <Bell className="w-8 h-8 text-primary" />
+                        Notificaciones
+                    </h2>
+                    <p className="text-slate-500 font-medium">Historial de puntos, insignias y avisos del sistema.</p>
+                </div>
+                {notifications && notifications.length > 0 && (
+                    <button
+                        onClick={() => markAllAsRead()}
+                        className="text-xs font-black text-primary hover:text-primary-light transition-colors uppercase tracking-widest"
+                    >
+                        Marcar todas como leídas
+                    </button>
+                )}
+            </div>
+
+            <div className="space-y-4">
+                {status === 'LoadingFirstPage' ? (
+                    <div className="flex flex-col items-center py-20">
+                        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                        <p className="text-slate-500">Buscando novedades...</p>
+                    </div>
+                ) : notifications?.length === 0 ? (
+                    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] py-20 flex flex-col items-center text-center px-10">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                            <BellOff className="w-10 h-10 text-slate-700" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Todo en orden</h3>
+                        <p className="text-slate-500 max-w-sm">No tienes notificaciones por el momento. ¡Sigue participando para ganar puntos!</p>
+                    </div>
+                ) : (
+                    <>
+                        {notifications?.map((n: any) => (
+                            <div
+                                key={n._id}
+                                onMouseEnter={() => !n.read && markAsRead({ notification_id: n._id })}
+                                className={`group p-6 rounded-3xl border transition-all duration-300 relative overflow-hidden ${n.read ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/20 shadow-lg shadow-primary/5'}`}
+                            >
+                                {!n.read && <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary"></div>}
+                                <div className="flex items-start gap-5">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${n.type === 'transfer_request' ? 'bg-amber-500/20 text-amber-500' :
+                                        n.type === 'mission_complete' ? 'bg-green-500/20 text-green-500' :
+                                            'bg-primary/20 text-primary-light'
+                                        }`}>
+                                        {n.type === 'transfer_request' ? <ArrowRightLeft className="w-6 h-6" /> :
+                                            n.type === 'mission_complete' ? <Target className="w-6 h-6" /> :
+                                                <Info className="w-6 h-6" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-1 gap-4">
+                                            <h4 className="font-bold text-white truncate">{n.title}</h4>
+                                            <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
+                                                {new Date(n.created_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-400 leading-relaxed">{n.message}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {status === 'CanLoadMore' && (
+                            <button
+                                onClick={() => loadMore(10)}
+                                className="w-full py-4 border border-white/5 rounded-2xl text-slate-500 font-bold hover:bg-white/5 transition-all outline-none"
+                            >
+                                Cargar más notificaciones
+                            </button>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function TiendaPanel({ courses }: { courses: any[] }) {
     const [selectedId, setSelectedId] = useState<string>(courses?.[0]?._id || '')
     const { results: rewards, status, loadMore } = usePaginatedQuery(
@@ -678,6 +790,7 @@ function TiendaPanel({ courses }: { courses: any[] }) {
                                     <button
                                         onClick={() => handleRedeem(r._id)}
                                         disabled={processing === r._id}
+                                        title={`Canjear ${r.name}`}
                                         className="bg-primary text-white font-black text-xs px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50"
                                     >
                                         {processing === r._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'CANJEAR'}
@@ -747,6 +860,7 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
     const [score, setScore] = useState(0)
     const [finished, setFinished] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [quizResult, setQuizResult] = useState<any>(null)
 
     // For Match quiz
     const [selectedA, setSelectedA] = useState<number | null>(null)
@@ -761,7 +875,6 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
     const isMatch = quiz.quiz_type === 'match'
     const isFlashcard = quiz.quiz_type === 'flashcard'
     const isMultipleChoice = !isMatch && !isFlashcard
-
     const questions = quiz.questions || []
 
     if (questions.length === 0) {
@@ -780,108 +893,102 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
     const currentQ = questions[currentIdx]
 
     const handleAnswerMC = (optIdx: number) => {
-        if (selectedOption !== null) return // already answered
+        if (selectedOption !== null) return
         setSelectedOption(optIdx)
-        if (optIdx === currentQ.correctAnswerIndex) {
-            setScore(prev => prev + 1)
-        }
+        const isCorrect = optIdx === (currentQ.correct ?? currentQ.correctAnswerIndex);
+        if (isCorrect) setScore(prev => prev + 1)
+
         setTimeout(() => {
             if (currentIdx < questions.length - 1) {
                 setCurrentIdx(prev => prev + 1)
                 setSelectedOption(null)
             } else {
-                handleFinish(score + (optIdx === currentQ.correctAnswerIndex ? 1 : 0))
+                saveResult(score + (isCorrect ? 1 : 0))
             }
         }, 1200)
     }
 
     const handleMatchSelect = (idx: number, isRightSide: boolean) => {
-        // Implementación simplificada para match
         if (!isRightSide) {
             setSelectedA(idx)
-        } else {
-            if (selectedA !== null) {
-                // El backend debería enviar los pares desordenados, pero asumimos índice a índice para simplicidad aquí.
-                if (selectedA === idx) {
-                    setScore(prev => prev + 1)
-                    setMatchedPairs(prev => [...prev, idx])
-                }
-                setSelectedA(null)
-
-                if (matchedPairs.length + 1 === questions.length) {
-                    setTimeout(() => handleFinish(score + 1), 1000)
-                }
+        } else if (selectedA !== null) {
+            if (selectedA === idx) {
+                setScore(prev => prev + 1)
+                setMatchedPairs(prev => [...prev, idx])
+            }
+            setSelectedA(null)
+            if (matchedPairs.length + 1 === questions.length) {
+                setTimeout(() => saveResult(score + 1), 1000)
             }
         }
     }
 
     const nextFlashcard = () => {
-        setScore(prev => prev + 1) // Just reading flashcards gives full points
+        setScore(prev => prev + 1)
         setFlipped(false)
         if (currentIdx < questions.length - 1) {
             setCurrentIdx(prev => prev + 1)
         } else {
-            handleFinish(score + 1)
+            saveResult(score + 1)
         }
     }
 
-    const handleFinish = async (finalScoreRaw: number) => {
+    const saveResult = async (finalScoreRaw: number) => {
         setFinished(true)
         setSubmitting(true)
-        const percentage = Math.round((finalScoreRaw / Math.max(1, questions.length)) * 100)
-
+        const pct = Math.round((finalScoreRaw / questions.length) * 100)
         try {
-            await submitQuiz({ quiz_id: quiz._id, score: percentage })
+            const res = await submitQuiz({ quiz_id: quiz._id, score: pct })
+            setQuizResult(res)
         } catch (err: any) {
-            console.error("Error submitting quiz:", err)
+            console.error(err)
+            toast.error(err.message || "Error al guardar resultado")
         } finally {
             setSubmitting(false)
         }
     }
 
+    const progressWidth = `${((currentIdx + 1) / questions.length) * 100}%`
+
     return (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-surface-light border border-white/10 rounded-[2.5rem] max-w-3xl w-full p-8 md:p-12 relative overflow-hidden shadow-2xl">
-                <button onClick={onClose} title="Cerrar Quiz" className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
+                {!finished && (
+                    <button onClick={onClose} title="Cerrar Quiz" className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                )}
 
                 {!finished ? (
                     <div>
                         <div className="flex items-center justify-between mb-8">
-                            <span className="px-3 py-1 bg-accent/10 border border-accent/20 text-accent-light text-[10px] font-black rounded-full uppercase tracking-widest">
+                            <span className="px-3 py-1 bg-accent/10 border border-accent/20 text-accent-light text-[10px] font-black rounded-full uppercase tracking-widest leading-none">
                                 {quiz.quiz_type}
                             </span>
-                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 relative mx-4">
-                                <div
-                                    className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-500 rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]"
-                                    style={{ "--progress-width": `${((currentIdx + 1) / questions.length) * 100}%` } as any}
-                                >
-                                    <div className="h-full bg-inherit rounded-full" style={{ width: "var(--progress-width)" }} />
-                                </div>
+                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 relative mx-4">
+                                <div className="h-full bg-accent transition-all duration-500 rounded-full" style={{ width: progressWidth }}></div>
                             </div>
                             <span className="text-slate-500 font-bold text-sm tracking-widest">{currentIdx + 1} / {questions.length}</span>
                         </div>
 
-                        {/* Multiple Choice State */}
                         {isMultipleChoice && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                 <h3 className="text-2xl font-black text-white mb-8 leading-relaxed">{currentQ.question}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {currentQ.options?.map((opt: string, i: number) => {
-                                        let btnClass = "bg-white/5 border-white/10 text-slate-300 hover:border-accent/40"
+                                        const isCorrectOpt = i === (currentQ.correct ?? currentQ.correctAnswerIndex)
+                                        let btnCls = "bg-white/5 border-white/10 text-slate-300 hover:border-accent/40"
                                         if (selectedOption !== null) {
-                                            if (i === currentQ.correctAnswerIndex) btnClass = "bg-green-500/20 border-green-500/50 text-green-400"
-                                            else if (i === selectedOption) btnClass = "bg-red-500/20 border-red-500/50 text-red-400"
-                                            else btnClass = "bg-white/5 border-white/10 text-slate-600 opacity-50"
+                                            if (isCorrectOpt) btnCls = "bg-green-500/20 border-green-500/50 text-green-400"
+                                            else if (i === selectedOption) btnCls = "bg-red-500/20 border-red-500/50 text-red-400"
+                                            else btnCls = "bg-white/5 border-white/10 text-slate-600 opacity-50"
                                         }
-
                                         return (
                                             <button
                                                 key={i}
                                                 disabled={selectedOption !== null}
                                                 onClick={() => handleAnswerMC(i)}
-                                                className={`p-6 rounded-2xl border text-left font-semibold transition-all ${btnClass}`}
+                                                className={`p-6 rounded-2xl border text-left font-semibold transition-all ${btnCls}`}
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <span className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center text-xs font-black">{['A', 'B', 'C', 'D'][i]}</span>
@@ -894,12 +1001,11 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                             </div>
                         )}
 
-                        {/* Flashcard State */}
                         {isFlashcard && (
                             <div className="flex flex-col items-center justify-center min-h-[300px] animate-in zoom-in-95 duration-300">
                                 <div
                                     onClick={() => setFlipped(!flipped)}
-                                    className="w-full max-w-xl aspect-[3/2] perspective-1000 cursor-pointer group"
+                                    className="w-full max-w-xl aspect-[3/2] cursor-pointer group perspective-1000"
                                 >
                                     <div className={`relative w-full h-full transition-transform duration-500 preserve-3d ${flipped ? 'rotate-y-180' : ''}`}>
                                         <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/30 rounded-3xl p-10 flex items-center justify-center text-center shadow-xl group-hover:border-indigo-400/50 transition-colors">
@@ -917,9 +1023,8 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                             </div>
                         )}
 
-                        {/* Match State */}
                         {isMatch && (
-                            <div className="animate-in fade-in duration-300">
+                            <div className="animate-in fade-in duration-300 px-4">
                                 <h3 className="text-center text-xl font-bold text-slate-300 mb-8">Empareja los conceptos</h3>
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="space-y-4">
@@ -929,7 +1034,7 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                                 disabled={matchedPairs.includes(i)}
                                                 onClick={() => handleMatchSelect(i, false)}
                                                 className={`w-full p-4 rounded-xl border text-left font-bold transition-all
-                                                    ${matchedPairs.includes(i) ? 'bg-green-500/10 border-green-500/20 text-green-500/50' :
+                                                    ${matchedPairs.includes(i) ? 'bg-green-500/10 border-green-500/20 text-green-500/50 cursor-default' :
                                                         selectedA === i ? 'bg-accent/20 border-accent text-white' :
                                                             'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}
                                             >
@@ -944,7 +1049,7 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                                 disabled={matchedPairs.includes(i)}
                                                 onClick={() => handleMatchSelect(i, true)}
                                                 className={`w-full p-4 rounded-xl border text-left font-bold transition-all
-                                                    ${matchedPairs.includes(i) ? 'bg-green-500/10 border-green-500/20 text-green-500/50' :
+                                                    ${matchedPairs.includes(i) ? 'bg-green-500/10 border-green-500/20 text-green-500/50 cursor-default' :
                                                         'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}
                                             >
                                                 {q.right || q.definition}
@@ -954,34 +1059,55 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                 </div>
                             </div>
                         )}
-
                     </div>
                 ) : (
                     <div className="text-center py-12 animate-in zoom-in-95 duration-500">
-                        <div className="w-24 h-24 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
-                            <Trophy className="w-12 h-12 text-gold" />
-                        </div>
-                        <h2 className="text-4xl font-black text-white mb-2">¡Reto Completado!</h2>
-                        <p className="text-slate-400 text-lg mb-8">Has finalizado el quiz satisfactoriamente.</p>
-
-                        <div className="bg-black/20 inline-flex items-center gap-4 px-8 py-4 rounded-2xl border border-white/5 mb-10">
-                            <div className="text-right">
-                                <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">PUNTUACIÓN</span>
-                                <span className="text-3xl font-black text-white">{Math.round((score / Math.max(1, questions.length)) * 100)}%</span>
+                        {submitting ? (
+                            <div className="py-20 flex flex-col items-center">
+                                <Loader2 className="w-12 h-12 animate-spin text-accent mb-4" />
+                                <p className="text-white font-bold animate-pulse">Procesando resultados...</p>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl ${quizResult?.is_improvement ? 'bg-gold/20 shadow-gold/20' : 'bg-slate-800 shadow-black/50'}`}>
+                                    {quizResult?.is_improvement ? <Trophy className="w-12 h-12 text-gold" /> : <Star className="w-12 h-12 text-slate-500" />}
+                                </div>
+                                <h2 className="text-4xl font-black text-white mb-2">
+                                    {quizResult?.is_improvement ? '¡Nuevo Record!' : 'Reto Completado'}
+                                </h2>
+                                <p className="text-slate-400 text-lg mb-8">
+                                    {quizResult?.is_improvement
+                                        ? '¡Increíble! Has superado tu puntuación anterior.'
+                                        : 'Bien hecho, has finalizado el quiz satisfactoriamente.'}
+                                </p>
 
-                        <div>
-                            {submitting ? (
-                                <button disabled className="bg-accent/50 text-white font-black px-10 py-4 rounded-2xl flex items-center gap-2 mx-auto">
-                                    <Loader2 className="w-5 h-5 animate-spin" /> GUARDANDO...
-                                </button>
-                            ) : (
-                                <button onClick={onClose} className="bg-accent hover:bg-accent-light text-white font-black px-10 py-4 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-accent/20">
-                                    VOLVER AL RAMO
-                                </button>
-                            )}
-                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                                    <div className="bg-black/20 p-6 rounded-3xl border border-white/5">
+                                        <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">PUNTUACIÓN ACTUAL</span>
+                                        <span className="text-4xl font-black text-white">{Math.round((score / questions.length) * 100)}%</span>
+                                    </div>
+                                    <div className="bg-black/20 p-6 rounded-3xl border border-white/5">
+                                        <span className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">PUNTOS GANADOS</span>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Coins className="w-6 h-6 text-gold" />
+                                            <span className="text-4xl font-black text-gold">+{quizResult?.earned || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {!quizResult?.is_improvement && quizResult?.total_earned_best > 0 && (
+                                    <p className="text-xs text-slate-500 mb-8 font-medium italic">
+                                        No se otorgaron puntos adicionales porque tu mejor score previo es superior o igual.
+                                    </p>
+                                )}
+
+                                <div>
+                                    <button onClick={onClose} className="bg-accent hover:bg-accent-light text-white font-black px-12 py-5 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-accent/20 uppercase tracking-widest">
+                                        VOLVER AL RAMO
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -1037,7 +1163,7 @@ function TransferModal({ onClose, courses }: { onClose: () => void, courses: any
                         <h2 className="text-2xl font-black text-white">Transferir Puntos</h2>
                         <p className="text-slate-500 text-sm font-medium">Eleva una solicitud a tus docentes</p>
                     </div>
-                    <button onClick={onClose} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                    <button onClick={onClose} title="Cerrar" className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
                         <X className="w-5 h-5 text-slate-400" />
                     </button>
                 </div>

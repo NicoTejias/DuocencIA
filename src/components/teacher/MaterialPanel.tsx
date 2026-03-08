@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../convex/_generated/api"
-import { FileText, Upload, Trash2, Loader2 } from 'lucide-react'
+import { api } from "../../../convex/_generated/api"
+import { FileText, Upload, Trash2, Loader2, X, CheckCircle, Eye, EyeOff, BookOpen } from 'lucide-react'
 import Papa from 'papaparse'
-import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../utils/documentParser'
-import { formatRutWithDV, cleanRut, calculateRutDV } from '../utils/rutUtils'
+import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../../utils/documentParser'
+import { formatRutWithDV, cleanRut, calculateRutDV } from '../../utils/rutUtils'
 import { toast } from 'sonner'
 
 export default function MaterialPanel({ courses }: { courses: any[] }) {
@@ -121,7 +121,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
                     <span className="text-red-400 text-lg shrink-0">⚠️</span>
                     <p className="text-red-400 text-sm">{error}</p>
-                    <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-300">
+                    <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-300" title="Cerrar error">
                         <X className="w-4 h-4" />
                     </button>
                 </div>

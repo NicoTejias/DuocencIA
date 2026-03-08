@@ -27,7 +27,7 @@ function LoadingScreen() {
 // Componente que protege rutas que requieren autenticación
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) {
   const { isLoading, isAuthenticated } = useConvexAuth()
-  const user = useQuery(api.users.me)
+  const user = useQuery(api.users.getProfile)
 
   if (isLoading) return <LoadingScreen />
   if (!isAuthenticated) return <Navigate to="/login" replace />
@@ -43,7 +43,7 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode,
 // Componente que redirige a usuarios ya autenticados
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = useConvexAuth()
-  const user = useQuery(api.users.me, isAuthenticated ? undefined : "skip")
+  const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
 
   if (isLoading) return <LoadingScreen />
 
@@ -57,7 +57,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 // Redirige al dashboard correcto según el rol del usuario
 function DashboardRedirect() {
   const { isLoading, isAuthenticated } = useConvexAuth()
-  const user = useQuery(api.users.me, isAuthenticated ? undefined : "skip")
+  const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
 
   if (isLoading) return <LoadingScreen />
   if (!isAuthenticated) return <Navigate to="/login" replace />
