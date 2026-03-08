@@ -9,6 +9,7 @@ export const generateQuiz = action({
         document_id: v.id("course_documents"),
         num_questions: v.number(), // 5, 10, 15
         difficulty: v.string(), // "facil", "medio", "dificil"
+        quiz_type: v.optional(v.string()), // "multiple_choice", "flashcard", "match"
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
@@ -43,7 +44,11 @@ export const generateQuiz = action({
             dificil: "difícil (análisis, síntesis, problemas complejos)",
         };
 
-        const prompt = `Eres un generador de quizzes educativos para educación superior en Chile. 
+        const type = args.quiz_type || "multiple_choice";
+        let prompt = "";
+
+        if (type === "multiple_choice") {
+            prompt = `Eres un generador de quizzes educativos para educación superior en Chile. 
 Genera EXACTAMENTE ${args.num_questions} preguntas de opción múltiple basándote en el siguiente contenido académico.
 
 REGLAS:
@@ -70,6 +75,32 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con est
     }
   ]
 }`;
+        } else if (type === "flashcard" || type === "match") {
+            const isMatch = type === "match";
+            prompt = `Eres un generador de material educativo para educación superior en Chile. 
+Extrae EXACTAMENTE ${args.num_questions} pares de conceptos y sus definiciones desde el siguiente contenido académico.
+Esto se usará para un juego de ${isMatch ? 'relacionar columnas (Match)' : 'tarjetas de memoria (Flashcards)'}.
+
+REGLAS:
+- El concepto de frente ("front") debe ser corto (1 a 4 palabras).
+- La definición ("back") debe ser concisa y clara, fácil de leer.
+- Nivel de profundidad: ${difficultyMap[args.difficulty] || "medio"}
+- Escribe en español.
+
+CONTENIDO DEL DOCUMENTO:
+${content}
+
+RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con esta estructura:
+{
+  "title": "${isMatch ? 'Relacionar Conceptos' : 'Flashcards'}: [nombre temático]",
+  "questions": [
+    {
+      "front": "Nombre del Concepto Clave",
+      "back": "Definición corta y precisa del concepto"
+    }
+  ]
+}`;
+        }
 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
@@ -95,6 +126,7 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con est
             course_id: doc.course_id,
             document_id: args.document_id,
             title: quizData.title || `Quiz de ${doc.file_name}`,
+            quiz_type: type,
             questions: quizData.questions,
             difficulty: args.difficulty,
             num_questions: quizData.questions.length,
@@ -115,6 +147,7 @@ export const saveQuiz = mutation({
         course_id: v.id("courses"),
         document_id: v.id("course_documents"),
         title: v.string(),
+        quiz_type: v.optional(v.string()),
         questions: v.any(),
         difficulty: v.string(),
         num_questions: v.number(),
@@ -128,6 +161,7 @@ export const saveQuiz = mutation({
             document_id: args.document_id,
             teacher_id: userId,
             title: args.title,
+            quiz_type: args.quiz_type || "multiple_choice",
             questions: args.questions,
             difficulty: args.difficulty,
             num_questions: args.num_questions,
@@ -156,5 +190,23 @@ export const getQuizzesByDocument = query({
             .query("quizzes")
             .filter((q) => q.eq(q.field("document_id"), args.document_id))
             .collect();
+    },
+});
+
+// Eliminar un quiz
+export const deleteQuiz = mutation({
+    args: { quiz_id: v.id("quizzes") },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("No autenticado");
+
+        const user = await ctx.db.get(userId);
+        if (!user || user.role !== "teacher")
+            throw new Error("Solo docentes pueden eliminar quizzes");
+
+        const quiz = await ctx.db.get(args.quiz_id);
+        if (!quiz) throw new Error("Quiz no encontrado");
+
+        await ctx.db.delete(args.quiz_id);
     },
 });

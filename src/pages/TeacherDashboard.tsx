@@ -215,7 +215,49 @@ function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
     const documents = useQuery(api.documents.getDocumentsByCourse, { course_id: course._id })
     const rewards = useQuery(api.rewards.getRewardsByCourse, { course_id: course._id })
     const missions = useQuery(api.missions.getMissions, { course_id: course._id })
+    const quizzes = useQuery(api.quizzes.getQuizzesByCourse, { course_id: course._id })
     const students = useQuery(api.courses.getCourseStudents, { course_id: course._id })
+
+    const [expandedMission, setExpandedMission] = useState<string | null>(null)
+    const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null)
+
+    // Mutations for deletion
+    const deleteReward = useMutation(api.rewards.deleteReward)
+    const deleteMission = useMutation(api.missions.deleteMission)
+    const deleteQuiz = useMutation(api.quizzes.deleteQuiz)
+
+    const handleDeleteReward = async (e: React.MouseEvent, id: any) => {
+        e.stopPropagation()
+        if (confirm('¿Estás seguro de que quieres eliminar esta recompensa?')) {
+            try {
+                await deleteReward({ reward_id: id })
+            } catch (err: any) {
+                alert(err.message || 'Error al eliminar recompensa')
+            }
+        }
+    }
+
+    const handleDeleteMission = async (e: React.MouseEvent, id: any) => {
+        e.stopPropagation()
+        if (confirm('¿Estás seguro de que quieres eliminar esta misión?')) {
+            try {
+                await deleteMission({ mission_id: id })
+            } catch (err: any) {
+                alert(err.message || 'Error al eliminar misión')
+            }
+        }
+    }
+
+    const handleDeleteQuiz = async (e: React.MouseEvent, id: any) => {
+        e.stopPropagation()
+        if (confirm('¿Estás seguro de que quieres eliminar este quiz?')) {
+            try {
+                await deleteQuiz({ quiz_id: id })
+            } catch (err: any) {
+                alert(err.message || 'Error al eliminar quiz')
+            }
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -255,29 +297,141 @@ function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
                     </h3>
                     {rewards === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : rewards.length === 0 ? <p className="text-slate-500 text-sm">No hay recompensas</p> : (
                         <ul className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {rewards.map((r: any) => <li key={r._id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg"><span className="flex items-center gap-3 truncate"><div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0"></div><span className="truncate">{r.name}</span></span><span className="text-gold font-mono text-xs shrink-0 ml-2 bg-gold/10 px-2 py-0.5 rounded-md">{r.cost} pts</span></li>)}
+                            {rewards.map((r: any) => (
+                                <li key={r._id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg group">
+                                    <span className="flex items-center gap-3 truncate">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0"></div>
+                                        <span className="truncate">{r.name}</span>
+                                    </span>
+                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className="text-gold font-mono text-xs bg-gold/10 px-2 py-0.5 rounded-md">{r.cost} pts</span>
+                                        <button onClick={(e) => handleDeleteReward(e, r._id)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
                     )}
                 </div>
-                <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-primary/20 transition-all">
+                <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-primary/20 transition-all col-span-1 md:col-span-2">
                     <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
-                        <span className="flex items-center gap-2"><Target className="w-5 h-5 text-primary-light" /> Misiones</span>
-                        <span className="text-xs bg-primary/10 text-primary-light px-2.5 py-1 rounded-full">{missions?.length || 0}</span>
+                        <span className="flex items-center gap-2"><Target className="w-5 h-5 text-primary-light" /> Misiones y Quizzes</span>
+                        <div className="flex gap-2">
+                            <span className="text-xs bg-primary/10 text-primary-light px-2.5 py-1 rounded-full">{missions?.length || 0} manuales</span>
+                            <span className="text-xs bg-accent/10 text-accent-light px-2.5 py-1 rounded-full">{quizzes?.length || 0} con IA</span>
+                        </div>
                     </h3>
-                    {missions === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : missions.length === 0 ? <p className="text-slate-500 text-sm">No hay misiones activas</p> : (
-                        <ul className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {missions.map((m: any) => <li key={m._id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg"><span className="flex items-center gap-3 truncate"><div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div><span className="truncate">{m.title}</span></span><span className="text-primary-light font-mono text-xs shrink-0 ml-2 bg-primary/10 px-2 py-0.5 rounded-md">{m.points} pts</span></li>)}
-                        </ul>
-                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Misiones Manuales */}
+                        <div className="bg-surface border border-white/5 rounded-xl p-4">
+                            <h4 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                                <Flame className="w-4 h-4 text-primary" /> Misiones Manuales
+                            </h4>
+                            {missions === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : missions.length === 0 ? <p className="text-slate-500 text-sm">No hay misiones manuales activas</p> : (
+                                <ul className="space-y-3">
+                                    {missions.map((m: any) => (
+                                        <li key={m._id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedMission(expandedMission === m._id ? null : m._id)}>
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-white text-sm truncate pr-2">{m.title}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-primary-light font-mono text-xs shrink-0 bg-primary/10 px-2 py-0.5 rounded-md">{m.points} pts</span>
+                                                    <button
+                                                        onClick={(e) => handleDeleteMission(e, m._id)}
+                                                        title="Eliminar misión"
+                                                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all z-10"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {expandedMission === m._id && (
+                                                <div className="mt-3 pt-3 border-t border-white/5 text-sm text-slate-300">
+                                                    <p>{m.description}</p>
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {/* Quizzes IA */}
+                        <div className="bg-surface border border-white/5 rounded-xl p-4">
+                            <h4 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-accent" /> Quizzes con IA
+                            </h4>
+                            {quizzes === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : quizzes.length === 0 ? <p className="text-slate-500 text-sm">No hay quizzes generados con IA</p> : (
+                                <ul className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {quizzes.map((q: any) => (
+                                        <li key={q._id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedQuiz(expandedQuiz === q._id ? null : q._id)}>
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-white text-sm truncate pr-2">{q.title}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-accent-light font-mono text-xs shrink-0 bg-accent/10 px-2 py-0.5 rounded-md">{q.num_questions} preg.</span>
+                                                    <button onClick={(e) => handleDeleteQuiz(e, q._id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {expandedQuiz === q._id && (
+                                                <div className="mt-3 pt-3 border-t border-white/5 text-sm space-y-4">
+                                                    <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                                                        <span>Dificultad: <strong className="text-white capitalize">{q.difficulty}</strong></span>
+                                                    </div>
+                                                    {q.questions.map((question: any, idx: number) => (
+                                                        <div key={idx} className="bg-surface-light border border-white/5 p-3 rounded-lg">
+                                                            <p className="text-white font-medium mb-3"><span className="text-accent-light mr-1">{idx + 1}.</span>{question.question}</p>
+                                                            <div className="space-y-2 mb-2">
+                                                                {question.options.map((opt: string, optIdx: number) => (
+                                                                    <div key={optIdx} className={`px-3 py-2 rounded-lg text-xs flex ${optIdx === question.correct ? 'bg-green-500/15 text-green-300 border border-green-500/30 font-medium' : 'bg-surface border border-white/5 text-slate-400'}`}>
+                                                                        <span className="font-bold mr-2 opacity-70">{String.fromCharCode(65 + optIdx)}.</span> {opt}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {question.explanation && <p className="text-xs text-slate-400 italic mt-3 border-t border-white/5 pt-2">💡 {question.explanation}</p>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
                 </div>
                 <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
                     <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
                         <span className="flex items-center gap-2"><Users className="w-5 h-5 text-blue-400" /> Alumnos</span>
                         <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0}</span>
                     </h3>
-                    {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos inscritos</p> : (
-                        <ul className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {students.map((s: any) => <li key={s._id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg"><span className="flex items-center gap-3 truncate"><div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold shrink-0">{s.name ? s.name[0].toUpperCase() : '?'}</div><div className="flex flex-col truncate"><span className="truncate font-medium">{s.name || 'Sin nombre'}</span><span className="text-slate-500 text-xs truncate">{s.student_id ? s.student_id : (s.email || 'Sin identificador')}</span></div></span><span className="text-slate-400 text-xs shrink-0 ml-2 font-mono bg-white/5 px-2 py-1 rounded-md">{s.total_points} pts</span></li>)}
+                    {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos cargados</p> : (
+                        <ul className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                            {students.map((s: any) => (
+                                <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group">
+                                    <div className="flex items-center gap-3 truncate">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-accent/20 text-accent-light' : 'bg-slate-700/50 text-slate-400'}`}>
+                                            {s.name ? s.name[0].toUpperCase() : '?'}
+                                        </div>
+                                        <div className="flex flex-col truncate">
+                                            <span className="text-white font-medium truncate">{s.name}</span>
+                                            <span className="text-slate-500 text-xs truncate">
+                                                {s.student_id || s.email || s.identifier || 'Sin ID'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                                        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${s.status === 'registered' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                                            {s.status === 'registered' ? 'Registrado' : 'Pendiente'}
+                                        </span>
+                                        <span className="text-slate-400 text-xs font-mono font-bold">
+                                            {s.total_points} pts
+                                        </span>
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
                     )}
                 </div>
@@ -393,6 +547,7 @@ function CrearMisionPanel({ courses }: { courses: any[] }) {
     const [selectedDoc, setSelectedDoc] = useState('')
     const [numQuestions, setNumQuestions] = useState(5)
     const [difficulty, setDifficulty] = useState('medio')
+    const [quizType, setQuizType] = useState('multiple_choice')
     const [generating, setGenerating] = useState(false)
     const [quizPreview, setQuizPreview] = useState<any>(null)
 
@@ -426,6 +581,7 @@ function CrearMisionPanel({ courses }: { courses: any[] }) {
                 document_id: selectedDoc as any,
                 num_questions: numQuestions,
                 difficulty,
+                quiz_type: quizType
             })
             setQuizPreview(result)
             setSuccess(`✅ Quiz "${result.title}" generado con ${result.numQuestions} preguntas.`)
@@ -538,11 +694,32 @@ function CrearMisionPanel({ courses }: { courses: any[] }) {
                             </div>
                         )}
 
+                        {/* Selector de Tipo de Juego */}
+                        {selectedDoc && (
+                            <div>
+                                <label className="text-sm font-medium text-slate-300 mb-2 block">3. Tipo de Juego</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <button onClick={() => setQuizType('multiple_choice')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'multiple_choice' ? 'bg-accent/20 border-accent text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`}>
+                                        <div className="font-semibold text-sm flex items-center gap-2"><Sparkles className="w-4 h-4" /> Quiz Clásico</div>
+                                        <div className="text-xs opacity-70 mt-1">Opción múltiple con 4 alternativas</div>
+                                    </button>
+                                    <button onClick={() => setQuizType('flashcard')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'flashcard' ? 'bg-blue-500/20 border-blue-500 text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`}>
+                                        <div className="font-semibold text-sm flex items-center gap-2"><BookOpen className="w-4 h-4" /> Flashcards</div>
+                                        <div className="text-xs opacity-70 mt-1">Tarjetas de memoria (concepto/definición)</div>
+                                    </button>
+                                    <button onClick={() => setQuizType('match')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'match' ? 'bg-purple-500/20 border-purple-500 text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`}>
+                                        <div className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> Relacionar Parejas</div>
+                                        <div className="text-xs opacity-70 mt-1">Unir conceptos con sus definiciones</div>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Configuración del quiz */}
                         {selectedDoc && (
                             <>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-300 mb-2 block">3. Número de Preguntas</label>
+                                    <label className="text-sm font-medium text-slate-300 mb-2 block">4. Cantidad de Preguntas/Pares</label>
                                     <div className="flex gap-3">
                                         {[5, 10, 15].map(n => (
                                             <button
@@ -557,7 +734,7 @@ function CrearMisionPanel({ courses }: { courses: any[] }) {
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-medium text-slate-300 mb-2 block">4. Dificultad</label>
+                                    <label className="text-sm font-medium text-slate-300 mb-2 block">5. Dificultad</label>
                                     <div className="grid grid-cols-3 gap-3">
                                         {difficultyOptions.map(opt => (
                                             <button
@@ -603,25 +780,41 @@ function CrearMisionPanel({ courses }: { courses: any[] }) {
                             <p className="text-slate-400 text-sm mb-6">{quizPreview.numQuestions} preguntas generadas · Guardado automáticamente</p>
 
                             <div className="space-y-6">
-                                {quizPreview.questions.map((q: any, i: number) => (
-                                    <div key={i} className="bg-surface border border-white/5 rounded-xl p-5">
-                                        <p className="text-white font-semibold mb-3">
-                                            <span className="text-accent-light mr-2">P{i + 1}.</span>
-                                            {q.question}
-                                        </p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                                            {q.options.map((opt: string, oi: number) => (
-                                                <div key={oi} className={`px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 ${oi === q.correct ? 'bg-green-500/15 border border-green-500/30 text-green-300' : 'bg-white/5 border border-white/5 text-slate-400'}`}>
-                                                    <span className="font-bold text-xs w-5">{String.fromCharCode(65 + oi)}.</span>
-                                                    {opt}
+                                {quizPreview.questions[0]?.front ? (
+                                    <div className="grid gap-3">
+                                        {quizPreview.questions.map((q: any, i: number) => (
+                                            <div key={i} className="bg-surface border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                                                <div className="sm:w-1/3 w-full font-bold text-white flex items-center gap-2">
+                                                    <span className="text-accent-light bg-accent/10 w-6 h-6 flex items-center justify-center rounded-full text-xs shrink-0">{i + 1}</span>
+                                                    {q.front}
                                                 </div>
-                                            ))}
-                                        </div>
-                                        {q.explanation && (
-                                            <p className="text-sm text-slate-500 italic border-t border-white/5 pt-2 mt-2">💡 {q.explanation}</p>
-                                        )}
+                                                <div className="sm:w-2/3 w-full text-slate-300 text-sm pl-8 sm:pl-0 border-l-0 sm:border-l border-white/10 sm:px-4">
+                                                    {q.back}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    quizPreview.questions.map((q: any, i: number) => (
+                                        <div key={i} className="bg-surface border border-white/5 rounded-xl p-5">
+                                            <p className="text-white font-semibold mb-3">
+                                                <span className="text-accent-light mr-2">P{i + 1}.</span>
+                                                {q.question}
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                                                {q.options.map((opt: string, oi: number) => (
+                                                    <div key={oi} className={`px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 ${oi === q.correct ? 'bg-green-500/15 border border-green-500/30 text-green-300' : 'bg-white/5 border border-white/5 text-slate-400'}`}>
+                                                        <span className="font-bold text-xs w-5">{String.fromCharCode(65 + oi)}.</span>
+                                                        {opt}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {q.explanation && (
+                                                <p className="text-sm text-slate-500 italic border-t border-white/5 pt-2 mt-2">💡 {q.explanation}</p>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}

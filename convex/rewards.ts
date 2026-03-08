@@ -81,3 +81,21 @@ export const redeemReward = mutation({
         return { success: true };
     },
 });
+
+// Eliminar una recompensa (solo docente)
+export const deleteReward = mutation({
+    args: { reward_id: v.id("rewards") },
+    handler: async (ctx, args) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("No autenticado");
+
+        const user = await ctx.db.get(userId);
+        if (!user || user.role !== "teacher")
+            throw new Error("Solo docentes pueden eliminar recompensas");
+
+        const reward = await ctx.db.get(args.reward_id);
+        if (!reward) throw new Error("Recompensa no encontrada");
+
+        await ctx.db.delete(args.reward_id);
+    },
+});

@@ -110,32 +110,62 @@ export const getEnrollmentStatus = query({
     },
 });
 
-// Obtener alumnos de un ramo (para docentes)
+// Obtener alumnos de un ramo (para docentes) incluyendo whitelist
 export const getCourseStudents = query({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);
         if (!userId) return [];
 
+        // 1. Obtener inscritos (alumnos que ya se registraron)
         const enrollments = await ctx.db
             .query("enrollments")
             .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
             .collect();
 
-        const students = [];
+        const registeredStudents = [];
+        const registeredIdentifiers = new Set();
+
         for (const en of enrollments) {
             const user = await ctx.db.get(en.user_id);
             if (user) {
-                students.push({
+                registeredStudents.push({
                     _id: user._id,
                     name: user.name || "Sin nombre",
                     email: user.email,
                     student_id: user.student_id,
                     total_points: en.total_points,
                     belbin: user.belbin_profile?.role_dominant || "Sin determinar",
+                    status: "registered"
+                });
+
+                // Guardar identificadores para filtrar whitelist luego
+                if (user.student_id) registeredIdentifiers.add(user.student_id.toLowerCase().trim());
+                if (user.email) registeredIdentifiers.add(user.email.toLowerCase().trim());
+            }
+        }
+
+        // 2. Obtener whitelist (alumnos cargados por CSV que aún no se registran)
+        const whitelist = await ctx.db
+            .query("whitelists")
+            .filter((q) => q.eq(q.field("course_id"), args.course_id))
+            .collect();
+
+        const pendingStudents = [];
+        for (const item of whitelist) {
+            const iden = item.student_identifier.toLowerCase().trim();
+            // Solo agregar si no está ya registrado
+            if (!registeredIdentifiers.has(iden)) {
+                pendingStudents.push({
+                    _id: item._id,
+                    name: "Pendiente de registro",
+                    identifier: item.student_identifier,
+                    total_points: 0,
+                    status: "pending"
                 });
             }
         }
-        return students;
+
+        return [...registeredStudents, ...pendingStudents];
     },
 });

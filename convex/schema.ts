@@ -100,7 +100,8 @@ export default defineSchema({
         document_id: v.id("course_documents"),
         teacher_id: v.id("users"),
         title: v.string(),
-        questions: v.any(), // Array de { question, options[], correct, explanation }
+        quiz_type: v.optional(v.string()), // "multiple_choice" | "flashcard" | "match"
+        questions: v.any(), // Array de { question... } o { front, back } o { concept, definition }
         difficulty: v.string(), // "facil" | "medio" | "dificil"
         num_questions: v.number(),
         created_at: v.number(),
