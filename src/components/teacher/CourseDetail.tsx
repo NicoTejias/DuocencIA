@@ -37,13 +37,14 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const [editingReward, setEditingReward] = useState<any>(null)
 
     // Confirm states
-    const [confirmDelete, setConfirmDelete] = useState<{ type: 'reward' | 'mission' | 'quiz' | 'cleanup', id: any } | null>(null)
+    const [confirmDelete, setConfirmDelete] = useState<{ type: 'reward' | 'mission' | 'quiz' | 'cleanup' | 'reset_points', id: any } | null>(null)
 
     // Mutations
     const deleteReward = useMutation(api.rewards.deleteReward)
     const deleteMission = useMutation(api.missions.deleteMission)
     const deleteQuiz = useMutation(api.quizzes.deleteQuiz)
     const cleanUpWhitelist = useMutation(api.courses.cleanUpWhitelist)
+    const resetCoursePoints = useMutation(api.courses.resetCoursePoints)
 
     const [processing, setProcessing] = useState(false)
 
@@ -63,6 +64,9 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
             } else if (confirmDelete.type === 'cleanup') {
                 const res = await cleanUpWhitelist({ course_id: course._id })
                 toast.success(`Limpieza completada: ${res.deleted} registros corregidos y ${res.fixed} RUTs formateados.`)
+            } else if (confirmDelete.type === 'reset_points') {
+                const res = await resetCoursePoints({ course_id: course._id })
+                toast.success(`Puntos reiniciados para ${res.studentsReset} alumnos. (${res.missionsReset} misiones y ${res.quizzesReset} quizzes borrados).`)
             }
         } catch (err: any) {
             toast.error(err.message || 'Error en la operación')
@@ -261,15 +265,17 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         </div>
                     </div>
                 </div>
-                <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
-                    <header className="flex flex-col gap-4 mb-6">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Users className="w-5 h-5 text-blue-400" />
-                                <span>Alumnos</span>
-                                <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0}</span>
-                            </h3>
-                            <div className="flex gap-2">
+                <div className="space-y-6">
+                    {/* Controles Globales de Alumnos */}
+                    <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
+                        <header className="flex flex-col gap-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-blue-400" />
+                                    <span>Gestión de Alumnos</span>
+                                    <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0} Total</span>
+                                </h3>
+                                <div className="flex gap-2">
                                 <button
                                     onClick={async () => {
                                         setProcessing(true);
@@ -298,6 +304,15 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                     {processing && confirmDelete?.type === 'cleanup' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                                     Limpiar
                                 </button>
+                                <button
+                                    onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })}
+                                    disabled={processing && confirmDelete?.type === 'reset_points'}
+                                    className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all flex items-center gap-1.5 font-medium uppercase tracking-wider text-[10px]"
+                                    title="Reiniciar todos los puntos a 0"
+                                >
+                                    {processing && confirmDelete?.type === 'reset_points' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                    Reset Puntos
+                                </button>
                             </div>
                         </div>
                         <div className="relative group">
@@ -311,66 +326,90 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                             />
                         </div>
                     </header>
+                </div>
+
+                    {/* Cajas por Sección */}
                     {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos cargados</p> : (
-                        <ul className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {students.filter((s: any) =>
-                                (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
-                                (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase())
-                            ).map((s: any) => (
-                                <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
-                                    <div className="flex items-center gap-3 truncate">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-accent/20 text-accent-light' : 'bg-slate-700/50 text-slate-400'}`}>
-                                            {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
-                                        </div>
-                                        <div className="flex flex-col truncate">
-                                            <span className="text-white font-medium truncate uppercase">
-                                                {s.name || (s.identifier ? formatRutWithDV(s.identifier.replace(/[^\d]/g, '')) : (s.student_id ? (s.student_id.includes('-') ? s.student_id : formatRutWithDV(s.student_id.replace(/[^\d]/g, ''))) : 'Alumno'))}
-                                            </span>
-                                            <div className="flex gap-4 mt-1">
-                                                <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
-                                                    <Trophy className="w-3 h-3 text-gold" /> Ranking: {s.ranking_points || 0}
-                                                </span>
-                                                <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
-                                                    <Coins className="w-3 h-3 text-gold/60" /> Canjeable: {s.spendable_points || 0}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
-                                        <div className="flex items-center gap-2">
-                                            {s.status === 'registered' ? (
-                                                <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                    <CheckCircle className="w-3 h-3" /> Registrado
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] font-bold text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                    Pendiente
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
-                                            {s.belbin}
-                                        </span>
-                                    </div>
-                                </li>
+                        <>
+                            {Object.entries(
+                                students.filter((s: any) =>
+                                    (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                    (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                    (s.section || '').toLowerCase().includes(studentSearch.toLowerCase())
+                                ).reduce((acc: any, student: any) => {
+                                    const sec = student.section || 'Sin Sección Asignada';
+                                    if (!acc[sec]) acc[sec] = [];
+                                    acc[sec].push(student);
+                                    return acc;
+                                }, {})
+                            ).sort((a: any, b: any) => a[0].localeCompare(b[0])).map(([sectionName, sectionStudents]: [string, any]) => (
+                                <div key={sectionName} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <span>{sectionName === 'Sin Sección Asignada' ? sectionName : `Alumnos ${sectionName.toLowerCase().includes('secci') ? '' : 'Sección '}${sectionName}`}</span>
+                                        <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full shrink-0">{sectionStudents.length}</span>
+                                    </h3>
+                                    <ul className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {sectionStudents.map((s: any) => (
+                                            <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                                                <div className="flex items-center gap-3 truncate">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-accent/20 text-accent-light' : 'bg-slate-700/50 text-slate-400'}`}>
+                                                        {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
+                                                    </div>
+                                                    <div className="flex flex-col truncate">
+                                                        <span className="text-white font-medium truncate uppercase">
+                                                            {s.name || (s.identifier ? formatRutWithDV(s.identifier.replace(/[^\d]/g, '')) : (s.student_id ? (s.student_id.includes('-') ? s.student_id : formatRutWithDV(s.student_id.replace(/[^\d]/g, ''))) : 'Alumno'))}
+                                                        </span>
+                                                        <div className="flex gap-4 mt-1">
+                                                            <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
+                                                                <Trophy className="w-3 h-3 text-gold" /> Ranking: {s.ranking_points || 0}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-wider">
+                                                                <Coins className="w-3 h-3 text-gold/60" /> Canjeable: {s.spendable_points || 0}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                                                    <div className="flex items-center gap-2">
+                                                        {s.status === 'registered' ? (
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                <CheckCircle className="w-3 h-3" /> Registrado
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                Pendiente
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                                            {s.belbin}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             ))}
 
                             {studentsStatus === "CanLoadMore" && (
-                                <li className="list-none">
+                                <div className="py-2">
                                     <button
-                                        onClick={() => loadMoreStudents(20)}
-                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all border border-white/5"
+                                        onClick={() => loadMoreStudents(50)}
+                                        className="w-full py-4 bg-surface-light hover:bg-white/5 text-slate-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all border border-white/5 hover:border-white/10"
                                     >
-                                        Cargar más alumnos
+                                        Cargar más alumnos globalmente
                                     </button>
-                                </li>
+                                </div>
                             )}
                             {studentsStatus === "LoadingMore" && (
-                                <li className="list-none py-4 text-center">
+                                <div className="py-4 text-center">
                                     <Loader2 className="w-6 h-6 animate-spin text-slate-500 mx-auto" />
-                                </li>
+                                </div>
                             )}
-                        </ul>
+                        </>
                     )}
                 </div>
             </div>
@@ -398,9 +437,9 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                 onClose={() => setConfirmDelete(null)}
                 onConfirm={handleConfirmAction}
                 loading={processing}
-                title={confirmDelete?.type === 'cleanup' ? 'Limpiar Lista' : 'Eliminar Registro'}
-                message={confirmDelete?.type === 'cleanup' ? '¿Estás seguro de que quieres limpiar la lista de alumnos? Se eliminarán duplicados y se formatearán los RUTs.' : '¿Estás seguro de que quieres eliminar este registro permanentemente? Esta acción no se puede deshacer.'}
-                confirmText={confirmDelete?.type === 'cleanup' ? 'Limpiar Ahora' : 'Eliminar'}
+                title={confirmDelete?.type === 'cleanup' ? 'Limpiar Lista' : confirmDelete?.type === 'reset_points' ? 'Reiniciar Puntuaciones' : 'Eliminar Registro'}
+                message={confirmDelete?.type === 'cleanup' ? '¿Estás seguro de que quieres limpiar la lista de alumnos? Se eliminarán duplicados y se formatearán los RUTs.' : confirmDelete?.type === 'reset_points' ? 'CRÍTICO: ¿Seguro que quieres borrar TODOS los puntos y registros de quizzes/misiones de TODOS los alumnos de este ramo? Empezarán desde CERO.' : '¿Estás seguro de que quieres eliminar este registro permanentemente? Esta acción no se puede deshacer.'}
+                confirmText={confirmDelete?.type === 'cleanup' ? 'Limpiar Ahora' : confirmDelete?.type === 'reset_points' ? 'Sí, Reiniciar a 0' : 'Eliminar'}
                 variant={confirmDelete?.type === 'cleanup' ? 'warning' : 'danger'}
             />
         </div>

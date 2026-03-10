@@ -8,9 +8,10 @@ import { formatRutWithDV } from '../../utils/rutUtils'
 export default function WhitelistPanel({ courses }: { courses: any[] }) {
     const uploadWhitelist = useMutation(api.courses.batchUploadWhitelist)
     const fileRef = useRef<HTMLInputElement>(null)
-    const [parsedData, setParsedData] = useState<{ id: string, name: string }[]>([])
+    const [parsedData, setParsedData] = useState<{ id: string, name: string, section?: string }[]>([])
     const [fileName, setFileName] = useState('')
     const [selectedCourse, setSelectedCourse] = useState('')
+    const [globalSection, setGlobalSection] = useState('')
     const [uploading, setUploading] = useState(false)
     const [success, setSuccess] = useState('')
     const [error, setError] = useState('')
@@ -53,12 +54,26 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
 
                 // Buscar la fila de headers (puede no ser la primera si tiene títulos)
                 let headerRowIdx = 0
+                let detectedSection = ''
+                
                 for (let i = 0; i < Math.min(5, jsonData.length); i++) {
                     const row = (jsonData[i] || []).map(c => String(c || '').toLowerCase())
+                    
+                    // Intentar extraer la sección del texto como "Histórico Asistencia Curso : GDP3475-004D | ..."
+                    const fullRowText = (jsonData[i] || []).join(' ')
+                    const sectionMatch = fullRowText.match(/([0-9]{3}[A-Z])/i)
+                    if (sectionMatch && !detectedSection) {
+                        detectedSection = sectionMatch[1].toUpperCase()
+                    }
+
                     if (row.some(c => c.includes('rut') || c.includes('alumno') || c.includes('matrícula') || c.includes('matricula'))) {
                         headerRowIdx = i
                         break
                     }
+                }
+
+                if (detectedSection) {
+                    setGlobalSection(detectedSection)
                 }
 
                 const headers = (jsonData[headerRowIdx] || []).map(h => String(h || ''))
@@ -70,6 +85,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                 const nombresCol = findColumn(headers, ['nombres', 'nombre'])
                 const apPaternoCol = findColumn(headers, ['apellido paterno', 'ap. paterno', 'paterno'])
                 const apMaternoCol = findColumn(headers, ['apellido materno', 'ap. materno', 'materno'])
+                // Detectar columna de sección
+                const seccionCol = findColumn(headers, ['sección', 'seccion', 'grupo', 'curso'])
 
                 if (rutCol === -1) {
                     // Fallback: usar la primera columna numérica como RUT
@@ -87,7 +104,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                             const rawId = String(row[firstNumericCol] || '').trim()
                             const cleanBody = rawId.replace(/[^\d]/g, '')
                             const id = cleanBody ? formatRutWithDV(cleanBody) : rawId
-                            return { id, name: '' }
+                            const section = seccionCol !== -1 ? String(row[seccionCol] || '').trim() : detectedSection || undefined
+                            return { id, name: '', section }
                         })
                         .filter(e => e.id.length > 3)
                     setParsedData(entries)
@@ -104,7 +122,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                             if (apPaternoCol !== -1) parts.push(String(row[apPaternoCol] || '').trim())
                             if (apMaternoCol !== -1) parts.push(String(row[apMaternoCol] || '').trim())
                             const name = parts.filter(Boolean).join(' ')
-                            return { id: rut, name }
+                            const section = seccionCol !== -1 ? String(row[seccionCol] || '').trim() : detectedSection || undefined
+                            return { id: rut, name, section }
                         })
                         .filter(e => e.id.length > 3)
                     setParsedData(entries)
@@ -122,6 +141,7 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                     const rutCol = findColumn(headers, ['rut alumno', 'rut', 'matrícula', 'matricula', 'identificador'])
                     const nombresCol = findColumn(headers, ['nombres', 'nombre'])
                     const apPaternoCol = findColumn(headers, ['apellido paterno', 'paterno'])
+                    const seccionCol = findColumn(headers, ['sección', 'seccion', 'grupo', 'curso'])
 
                     const entries = results.data
                         .map((row: any) => {
@@ -133,7 +153,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                             const parts = []
                             if (nombresCol !== -1) parts.push(String(values[nombresCol] || '').trim())
                             if (apPaternoCol !== -1) parts.push(String(values[apPaternoCol] || '').trim())
-                            return { id, name: parts.filter(Boolean).join(' ') }
+                            const section = seccionCol !== -1 ? String(values[seccionCol] || '').trim() : undefined
+                            return { id, name: parts.filter(Boolean).join(' '), section }
                         })
                         .filter(e => e.id.length > 3)
                     setParsedData(entries)
@@ -148,9 +169,15 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
         setUploading(true)
         setError('')
         try {
+            const finalData = parsedData.map(e => ({
+                identifier: e.id,
+                name: e.name,
+                section: e.section || globalSection || undefined
+            }))
+
             const result = await uploadWhitelist({
                 course_id: selectedCourse as any,
-                students: parsedData.map(e => ({ identifier: e.id, name: e.name })),
+                students: finalData,
             })
             setSuccess(`✅ ${result.added} alumnos cargados exitosamente en la whitelist.`)
             setParsedData([])
@@ -203,6 +230,20 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                 </div>
 
                 <div>
+                    <label className="text-sm font-medium text-slate-300 mb-2 block">
+                        Sección General (Opcional)
+                        <span className="text-xs text-slate-500 font-normal ml-2">Extraída del archivo automáticamente si es detectada</span>
+                    </label>
+                    <input
+                        type="text"
+                        value={globalSection}
+                        onChange={e => setGlobalSection(e.target.value)}
+                        placeholder="Ej. 004D, Sección 1..."
+                        className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary placeholder:text-slate-600"
+                    />
+                </div>
+
+                <div>
                     <label className="text-sm font-medium text-slate-300 mb-2 block">Archivo XLSX o CSV</label>
                     <label className="flex flex-col items-center justify-center w-full h-36 bg-surface border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-accent/40 transition-all group" title="Haz clic para subir el listado de alumnos">
                         <div className="flex gap-2 mb-2">
@@ -227,6 +268,7 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                                 <span className="w-8 text-center">#</span>
                                 <span className="w-32">RUT</span>
                                 <span className="flex-1">Nombre</span>
+                                <span className="w-32">Sección</span>
                                 <span className="w-8"></span>
                             </div>
                             {/* Filas de alumnos */}
@@ -236,6 +278,7 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                                         <span className="w-8 text-center text-slate-600 text-xs">{i + 1}</span>
                                         <span className="w-32 text-slate-300 font-mono text-sm">{entry.id}</span>
                                         <span className="flex-1 text-slate-400 text-sm truncate">{entry.name || '—'}</span>
+                                        <span className="w-32 text-slate-500 text-xs truncate bg-black/20 px-2 py-1 rounded-md">{entry.section || globalSection || 'N/A'}</span>
                                         <button
                                             onClick={() => setParsedData(parsedData.filter((_, idx) => idx !== i))}
                                             className="w-8 flex justify-center text-slate-600 hover:text-red-400 transition-colors"

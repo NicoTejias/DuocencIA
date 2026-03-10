@@ -188,6 +188,7 @@ export const fixAllStudentIds = mutation({
                                 ranking_points: 0,
                                 spendable_points: 0,
                                 total_points: 0,
+                                section: w.section || undefined,
                             });
                             enrolled++;
                         }

@@ -24,7 +24,8 @@ export const batchUploadWhitelist = mutation({
         course_id: v.id("courses"),
         students: v.array(v.object({
             identifier: v.string(),
-            name: v.optional(v.string())
+            name: v.optional(v.string()),
+            section: v.optional(v.string())
         }))
     },
     handler: async (ctx, args) => {
@@ -35,16 +36,8 @@ export const batchUploadWhitelist = mutation({
         if (!course || course.teacher_id !== user._id)
             throw new Error("No autorizado para este ramo");
 
-        // 1. LIMPIEZA TOTAL: Borrar todos los alumnos actuales de este ramo
-        // para que solo queden los del nuevo archivo subido
-        const existingEntries = await ctx.db
-            .query("whitelists")
-            .filter((q) => q.eq(q.field("course_id"), args.course_id))
-            .collect();
-
-        for (const entry of existingEntries) {
-            await ctx.db.delete(entry._id);
-        }
+        // REMOVED 1. LIMPIEZA TOTAL: Eliminamos el borrado previo para permitir 
+        // tener estudiantes de multiples secciones/listas simultaneos.
 
         let added = 0;
         const seen = new Set(); // Para evitar duplicados dentro del mismo archivo
@@ -56,14 +49,33 @@ export const batchUploadWhitelist = mutation({
             const normalized = normalizeRut(rawId);
             if (!normalized || seen.has(normalized)) continue;
 
-            await ctx.db.insert("whitelists", {
-                course_id: args.course_id,
-                student_identifier: normalized,
-                student_name: student.name?.trim() || undefined,
-            });
+            // Revisar si ya existe este estudiante en la whitelist de ESTE ramo
+            const existing = await ctx.db
+                .query("whitelists")
+                .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+                .filter((q) => q.eq(q.field("student_identifier"), normalized))
+                .unique();
+
+            if (existing) {
+                // Si existe, solo actualizamos su sección si viene una nueva
+                if (student.section?.trim()) {
+                    await ctx.db.patch(existing._id, {
+                        section: student.section.trim(),
+                        student_name: student.name?.trim() || existing.student_name
+                    });
+                }
+            } else {
+                // Si no existe, lo insertamos
+                await ctx.db.insert("whitelists", {
+                    course_id: args.course_id,
+                    student_identifier: normalized,
+                    student_name: student.name?.trim() || undefined,
+                    section: student.section?.trim() || undefined,
+                });
+                added++;
+            }
 
             seen.add(normalized);
-            added++;
         }
         return { added };
     },
@@ -285,6 +297,7 @@ export const getCourseStudents = query({
                         ranking_points: enDoc.ranking_points || enDoc.total_points || 0,
                         total_points: enDoc.spendable_points || enDoc.total_points || 0, // Aliased for legacy
                         belbin: userDoc.belbin_profile?.role_dominant || "Sin determinar",
+                        section: enDoc.section || item.section || undefined,
                         status: "registered"
                     };
                 } else {
@@ -295,6 +308,7 @@ export const getCourseStudents = query({
                         spendable_points: 0,
                         ranking_points: 0,
                         total_points: 0,
+                        section: item.section || undefined,
                         status: "pending"
                     };
                 }
@@ -382,4 +396,65 @@ export const deleteCourse = mutation({
         // Finalmente el ramo
         await ctx.db.delete(args.course_id);
     },
+});
+
+// Reiniciar todos los puntos de un ramo (Solo docente)
+export const resetCoursePoints = mutation({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+
+        const course = await ctx.db.get(args.course_id);
+        if (!course || course.teacher_id !== user._id) {
+            throw new Error("No autorizado para reiniciar este ramo");
+        }
+
+        // 1. Resetear puntos en Enrollments
+        const enrollments = await ctx.db
+            .query("enrollments")
+            .withIndex("by_course", q => q.eq("course_id", args.course_id))
+            .collect();
+
+        let studentsReset = 0;
+        for (const e of enrollments) {
+            await ctx.db.patch(e._id, {
+                ranking_points: 0,
+                spendable_points: 0,
+                total_points: 0
+            });
+            studentsReset++;
+        }
+
+        // 2. Borrar las misiones completadas (submissions) de este curso
+        // Primero necesitamos los IDs de las misiones de este curso
+        const missions = await ctx.db.query("missions").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
+        let missionsReset = 0;
+
+        for (const m of missions) {
+            const submissions = await ctx.db.query("mission_submissions").withIndex("by_mission", q => q.eq("mission_id", m._id)).collect();
+            for (const sub of submissions) {
+                await ctx.db.delete(sub._id);
+                missionsReset++;
+            }
+        }
+
+        // 3. Borrar los quizzes completados (submissions) de este curso
+        const quizzes = await ctx.db.query("quizzes").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
+        let quizzesReset = 0;
+
+        for (const quiz of quizzes) {
+            const submissions = await ctx.db.query("quiz_submissions").withIndex("by_quiz", q => q.eq("quiz_id", quiz._id)).collect();
+            for (const sub of submissions) {
+                await ctx.db.delete(sub._id);
+                quizzesReset++;
+            }
+        }
+
+        return {
+            success: true,
+            studentsReset,
+            missionsReset,
+            quizzesReset
+        };
+    }
 });

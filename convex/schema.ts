@@ -50,6 +50,7 @@ export default defineSchema({
         course_id: v.id("courses"),
         student_identifier: v.string(), // RUT o Correo
         student_name: v.optional(v.string()), // Nombre (opcional, para visualización antes de registro)
+        section: v.optional(v.string()), // Sección del ramo (ej. "Sección 1")
     })
         .index("by_course", ["course_id"])
         .index("by_identifier", ["student_identifier"]),
@@ -61,6 +62,7 @@ export default defineSchema({
         spendable_points: v.number(), // Puntos disponibles para canjear
         total_points: v.optional(v.number()), // Legacy (compatibilidad)
         group_id: v.optional(v.string()),
+        section: v.optional(v.string()), // Sección del ramo (copiado desde whitelist al registrarse)
     })
         .index("by_user", ["user_id"])
         .index("by_course", ["course_id"])
