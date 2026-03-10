@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
-import { User, Mail, Shield, Key, Save, Loader2, ArrowLeft, BadgeCheck, IdCard, Settings, Sparkles } from 'lucide-react'
+import { User, Mail, Shield, Key, Save, Loader2, ArrowLeft, BadgeCheck, IdCard } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
