@@ -21,7 +21,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     )
     const missions = useQuery(api.missions.getMissions, { course_id: course._id })
     const quizzes = useQuery(api.quizzes.getQuizzesByCourse, { course_id: course._id })
-    const { results: students, status: studentsStatus, loadMore: loadMoreStudents } = usePaginatedQuery(
+    const { results: students } = usePaginatedQuery(
         api.courses.getCourseStudents,
         { course_id: course._id },
         { initialNumItems: 500 }
