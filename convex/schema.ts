@@ -19,6 +19,7 @@ export default defineSchema({
         is_verified: v.optional(v.boolean()),
         student_id: v.optional(v.string()), // RUT o Matrícula
         last_daily_bonus_at: v.optional(v.number()), // Timestamp del último bono diario
+        daily_streak: v.optional(v.number()), // Días de racha de quizzes diarios
         belbin_profile: v.optional(v.object({
             role_dominant: v.string(),
             category: v.string(),

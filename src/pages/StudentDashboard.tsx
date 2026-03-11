@@ -106,7 +106,7 @@ export default function StudentDashboard() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 mb-3">
                             <div className="bg-black/20 rounded-xl p-2 border border-white/5">
                                 <p className="text-[10px] text-slate-500 font-bold uppercase">Ranking</p>
                                 <div className="flex items-center gap-1">
@@ -121,6 +121,14 @@ export default function StudentDashboard() {
                                     <span className="text-xs font-black text-white">{totalSpendablePoints.toLocaleString()}</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-orange-500/10 to-gold/10 rounded-xl p-2.5 border border-orange-500/20 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <Flame className="w-4 h-4 text-orange-500 mb-0.5" />
+                                <span className="text-[10px] text-orange-400 font-bold uppercase">Racha Actual</span>
+                            </div>
+                            <span className="text-sm font-black text-orange-400">{user.daily_streak || 0} 🔥</span>
                         </div>
                     </div>
 
@@ -1069,8 +1077,15 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
 
                                 {quizResult?.daily_bonus_applied && (
                                     <div className="bg-gold/10 border border-gold/20 rounded-2xl p-4 mb-8 text-gold flex items-center justify-center gap-2 animate-bounce">
-                                        <Sparkles className="w-4 h-4" />
-                                        <span className="text-xs font-black uppercase tracking-widest">+20 PTS BONO DIARIO APLICADO</span>
+                                        <Sparkles className="w-5 h-5 flex-shrink-0" />
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-sm font-black uppercase tracking-widest text-center leading-tight">
+                                                +{quizResult.daily_bonus} PTS BONO POR RACHA
+                                            </span>
+                                            <span className="text-[10px] font-bold mt-1 opacity-80 uppercase tracking-widest text-center">
+                                                ¡{quizResult.new_streak} {quizResult.new_streak === 1 ? 'DÍA' : 'DÍAS'} DE RACHA DIARIA! Sigue así para ganar hasta 50 pts
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
 

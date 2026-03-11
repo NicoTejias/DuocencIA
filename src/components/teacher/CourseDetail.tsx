@@ -364,8 +364,13 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                                             {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
                                                         </div>
                                                         <div className="flex flex-col truncate">
-                                                            <span className="text-white text-sm font-semibold truncate uppercase">
+                                                            <span className="text-white text-sm font-semibold truncate uppercase flex items-center gap-2">
                                                                 {s.name || (s.identifier ? formatRutWithDV(s.identifier.replace(/[^\d]/g, '')) : (s.student_id ? (s.student_id.includes('-') ? s.student_id : formatRutWithDV(s.student_id.replace(/[^\d]/g, ''))) : 'Alumno'))}
+                                                                {s.daily_streak > 0 && (
+                                                                    <span className="text-[10px] text-orange-400 bg-orange-400/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 font-bold shadow-sm" title={`Racha de ${s.daily_streak} días`}>
+                                                                        <Flame className="w-3 h-3 fill-orange-500" /> {s.daily_streak}
+                                                                    </span>
+                                                                )}
                                                             </span>
                                                             <div className="flex gap-4 mt-1">
                                                                 <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">

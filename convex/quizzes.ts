@@ -355,19 +355,37 @@ export const submitQuiz = mutation({
             throw new Error(`Has alcanzado el límite de ${maxAttempts} intentos permitido para este quiz.`);
         }
 
-        // --- Lógica de Bono Diario ---
+        // --- Lógica de Bono Diario por Racha ---
         const now = Date.now();
         const lastBonus = user.last_daily_bonus_at || 0;
+        const currentStreak = user.daily_streak || 0;
 
-        const lastDate = new Date(lastBonus).toLocaleDateString('es-CL');
-        const currentDate = new Date(now).toLocaleDateString('es-CL');
+        // Validar rachas usando la zona horaria chilena
+        const todayDateStr = new Date(now).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
+        const lastBonusDateStr = lastBonus ? new Date(lastBonus).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' }) : "";
+        const yesterdayDateStr = new Date(now - 1000 * 60 * 60 * 24).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
 
         let dailyBonus = 0;
-        if (lastDate !== currentDate) {
-            dailyBonus = 20; // Bono de 20 puntos por primer quiz del día
-            await ctx.db.patch(user._id, { last_daily_bonus_at: now });
+        let newStreak = currentStreak;
+
+        if (lastBonusDateStr !== todayDateStr) {
+            if (lastBonusDateStr === yesterdayDateStr) {
+                // Continúa la racha
+                newStreak += 1;
+            } else {
+                // Empieza de nuevo
+                newStreak = 1;
+            }
+            
+            // 5pts por día de racha, tope de 50pts máximos diarios
+            dailyBonus = Math.min(newStreak * 5, 50);
+            
+            await ctx.db.patch(user._id, { 
+                last_daily_bonus_at: now,
+                daily_streak: newStreak
+            });
         }
-        // -----------------------------
+        // ----------------------------------------
 
         // Cálculo de puntos base según dificultad y número de preguntas.
         const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
@@ -417,7 +435,9 @@ export const submitQuiz = mutation({
                 total_earned_now: currentEarnedPoints,
                 new_rank: newRankingPoints,
                 new_spendable: newSpendablePoints,
-                daily_bonus_applied: dailyBonus > 0
+                daily_bonus_applied: dailyBonus > 0,
+                daily_bonus: dailyBonus,
+                new_streak: newStreak
             };
         }
 
@@ -435,6 +455,8 @@ export const submitQuiz = mutation({
                 earned: dailyBonus,
                 is_improvement: false,
                 daily_bonus_applied: true,
+                daily_bonus: dailyBonus,
+                new_streak: newStreak,
                 new_rank: newPoints,
                 new_spendable: newSpendable
             };
@@ -444,7 +466,8 @@ export const submitQuiz = mutation({
             success: true,
             earned: 0,
             is_improvement: false,
-            total_earned_best: bestPreviousPoints
+            total_earned_best: bestPreviousPoints,
+            new_streak: currentStreak
         };
     },
 });

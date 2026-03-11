@@ -298,6 +298,7 @@ export const getCourseStudents = query({
                         total_points: enDoc.spendable_points || enDoc.total_points || 0, // Aliased for legacy
                         belbin: userDoc.belbin_profile?.role_dominant || "Sin determinar",
                         section: enDoc.section || item.section || undefined,
+                        daily_streak: userDoc.daily_streak || 0,
                         status: "registered"
                     };
                 } else {
