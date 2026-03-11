@@ -271,9 +271,11 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         </div>
                     </div>
                 </div>
-                <div className="space-y-6">
-                    {/* Controles Globales de Alumnos */}
-                    <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
+            </div>
+
+            <div className="space-y-6">
+                {/* Controles Globales de Alumnos */}
+                <div className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all">
                         <header className="flex flex-col gap-4">
                             <div className="flex flex-wrap items-center justify-between gap-4">
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -336,96 +338,105 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
 
                     {/* Cajas por Sección */}
                     {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos cargados</p> : (
-                        <>
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                                {Object.entries(
-                                    students.filter((s: any) =>
-                                        (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
-                                        (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
-                                        (s.section || '').toLowerCase().includes(studentSearch.toLowerCase())
-                                    ).reduce((acc: any, student: any) => {
-                                        const sec = student.section || 'Sin Sección Asignada';
-                                        if (!acc[sec]) acc[sec] = [];
-                                        acc[sec].push(student);
-                                        return acc;
-                                    }, {})
-                                ).sort((a: any, b: any) => a[0].localeCompare(b[0])).map(([sectionName, sectionStudents]: [string, any]) => (
-                                    <div key={sectionName} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all flex flex-col h-full max-h-[500px]">
-                                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6 shrink-0">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                                            <span>{sectionName === 'Sin Sección Asignada' ? sectionName : `Alumnos ${sectionName.toLowerCase().includes('secci') ? '' : 'Sección '}${sectionName}`}</span>
-                                            <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full shrink-0 ml-auto">{sectionStudents.length}</span>
-                                        </h3>
-                                        <ul className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                                            {sectionStudents.map((s: any) => (
-                                                <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all cursor-default">
-                                                    <div className="flex items-center gap-3 truncate">
-                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 shadow-lg ${s.status === 'registered' ? 'bg-gradient-to-br from-accent to-accent-light text-white' : 'bg-slate-700/50 text-slate-400'}`}>
-                                                            {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
-                                                        </div>
-                                                        <div className="flex flex-col truncate">
-                                                            <span className="text-white text-sm font-semibold truncate uppercase flex items-center gap-2">
-                                                                {s.name || (s.identifier ? formatRutWithDV(s.identifier.replace(/[^\d]/g, '')) : (s.student_id ? (s.student_id.includes('-') ? s.student_id : formatRutWithDV(s.student_id.replace(/[^\d]/g, ''))) : 'Alumno'))}
-                                                                {s.daily_streak > 0 && (
-                                                                    <span className="text-[10px] text-orange-400 bg-orange-400/10 border border-orange-400/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 font-bold shadow-sm" title={`Racha de ${s.daily_streak} días`}>
-                                                                        <Flame className="w-3 h-3 fill-orange-500" /> {s.daily_streak}
-                                                                    </span>
-                                                                )}
-                                                            </span>
-                                                            <div className="flex gap-4 mt-1">
-                                                                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">
-                                                                    <Trophy className="w-3 h-3 text-gold" />: {s.ranking_points || 0}
-                                                                </span>
-                                                                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">
-                                                                    <Coins className="w-3 h-3 text-gold/60" />: {s.spendable_points || 0}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
-                                                        <div className="flex items-center gap-2">
-                                                            {s.status === 'registered' ? (
-                                                                <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                                    <CheckCircle className="w-2.5 h-2.5" /> Ok
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                                    Falta Registro
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider truncate max-w-[80px]">
-                                                                {s.belbin}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                ))}
-                            </div>
+                        (() => {
+                            const sectionsEntries = Object.entries(
+                                students.filter((s: any) =>
+                                    (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                    (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                    (s.section || '').toLowerCase().includes(studentSearch.toLowerCase())
+                                ).reduce((acc: any, student: any) => {
+                                    const sec = student.section || 'Sin Sección Asignada';
+                                    if (!acc[sec]) acc[sec] = [];
+                                    acc[sec].push(student);
+                                    return acc;
+                                }, {})
+                            ).sort((a: any, b: any) => a[0].localeCompare(b[0]));
 
-                            {studentsStatus === "CanLoadMore" && (
-                                <div className="py-2">
-                                    <button
-                                        onClick={() => loadMoreStudents(50)}
-                                        className="w-full py-4 bg-surface-light hover:bg-white/5 text-slate-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all border border-white/5 hover:border-white/10"
-                                    >
-                                        Cargar más alumnos globalmente
-                                    </button>
-                                </div>
-                            )}
-                            {studentsStatus === "LoadingMore" && (
-                                <div className="py-4 text-center">
-                                    <Loader2 className="w-6 h-6 animate-spin text-slate-500 mx-auto" />
-                                </div>
-                            )}
-                        </>
+                            const numSections = sectionsEntries.length;
+                            const gridClass = numSections === 1 ? 'grid-cols-1 xl:w-1/2' :
+                                              numSections === 2 ? 'grid-cols-1 xl:grid-cols-2' :
+                                              numSections === 4 ? 'grid-cols-1 xl:grid-cols-2' :
+                                              'grid-cols-1 xl:grid-cols-3';
+
+                            return (
+                                <>
+                                    <div className={`grid ${gridClass} gap-6 items-start`}>
+                                        {sectionsEntries.map(([sectionName, sectionStudents]: [string, any]) => (
+                                            <div key={sectionName} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all flex flex-col h-full max-h-[500px]">
+                                                <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6 shrink-0">
+                                                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                                                    <span>{sectionName === 'Sin Sección Asignada' ? sectionName : `Alumnos ${sectionName.toLowerCase().includes('secci') ? '' : 'Sección '}${sectionName}`}</span>
+                                                    <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full shrink-0 ml-auto">{sectionStudents.length}</span>
+                                                </h3>
+                                                <ul className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                                    {sectionStudents.map((s: any) => (
+                                                        <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all cursor-default">
+                                                            <div className="flex items-center gap-3 truncate">
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 shadow-lg ${s.status === 'registered' ? 'bg-gradient-to-br from-accent to-accent-light text-white' : 'bg-slate-700/50 text-slate-400'}`}>
+                                                                    {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
+                                                                </div>
+                                                                <div className="flex flex-col truncate">
+                                                                    <span className="text-white text-sm font-semibold truncate uppercase flex items-center gap-2">
+                                                                        {s.name || (s.identifier ? formatRutWithDV(s.identifier.replace(/[^\d]/g, '')) : (s.student_id ? (s.student_id.includes('-') ? s.student_id : formatRutWithDV(s.student_id.replace(/[^\d]/g, ''))) : 'Alumno'))}
+                                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 font-bold shadow-sm ${s.daily_streak > 0 ? 'text-orange-400 bg-orange-400/10 border border-orange-400/20' : 'text-slate-500 bg-white/5 border border-white/10'}`} title={`Racha de ${s.daily_streak || 0} días`}>
+                                                                            <Flame className={`w-3 h-3 ${s.daily_streak > 0 ? 'fill-orange-500' : 'text-slate-500'}`} /> {s.daily_streak || 0}
+                                                                        </span>
+                                                                    </span>
+                                                                    <div className="flex gap-4 mt-1">
+                                                                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">
+                                                                            <Trophy className="w-3 h-3 text-gold" />: {s.ranking_points || 0}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-wider">
+                                                                            <Coins className="w-3 h-3 text-gold/60" />: {s.spendable_points || 0}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    {s.status === 'registered' ? (
+                                                                        <span className="flex items-center gap-1 text-[9px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                            <CheckCircle className="w-2.5 h-2.5" /> Ok
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                            Falta Registro
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider truncate max-w-[80px]">
+                                                                        {s.belbin}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {studentsStatus === "CanLoadMore" && (
+                                        <div className="py-2 mt-4">
+                                            <button
+                                                onClick={() => loadMoreStudents(50)}
+                                                className="w-full py-4 bg-surface-light hover:bg-white/5 text-slate-400 text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all border border-white/5 hover:border-white/10"
+                                            >
+                                                Cargar más alumnos globalmente
+                                            </button>
+                                        </div>
+                                    )}
+                                    {studentsStatus === "LoadingMore" && (
+                                        <div className="py-4 text-center mt-4">
+                                            <Loader2 className="w-6 h-6 animate-spin text-slate-500 mx-auto" />
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()
                     )}
                 </div>
-            </div>
 
             {viewingQuizResults && (
                 <QuizResultsModal
