@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthActions } from "@convex-dev/auth/react"
 import { Rocket, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
@@ -11,6 +11,19 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+
+    // Detectar errores que vienen en la URL (ej: de Google Auth)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const urlError = params.get("error");
+        if (urlError) {
+            setError(decodeURIComponent(urlError));
+            // Si el error es sobre el dominio, podemos ser más específicos
+            if (urlError.includes("institucionales")) {
+                navigate("/auth-error?error=" + encodeURIComponent(urlError));
+            }
+        }
+    }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()

@@ -88,7 +88,13 @@ function DashboardRedirect() {
 
   // 3. Si hay sesión, esperar perfil.
   if (user === undefined) return <LoadingScreen />
-  if (user === null) return <Navigate to="/login" replace />
+  
+  // 4. Si el perfil es null pero estamos autenticados, es un error de sincronización
+  // o el usuario se acaba de borrar. Reintentamos o mandamos a login.
+  if (user === null) {
+      console.error("User is authenticated but profile is null");
+      return <Navigate to="/login" replace />
+  }
 
   const userRole = (user as any)?.role || 'student';
   const target = userRole === 'teacher' ? '/docente' : '/alumno'
