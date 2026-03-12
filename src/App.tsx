@@ -62,7 +62,6 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode,
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth()
   const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
-  const location = useLocation()
 
   if (isAuthLoading) return <LoadingScreen />
 
