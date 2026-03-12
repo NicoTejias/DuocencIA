@@ -295,7 +295,7 @@ export const getCourseStudents = query({
                         student_id: userDoc.student_id,
                         spendable_points: enDoc.spendable_points || enDoc.total_points || 0,
                         ranking_points: enDoc.ranking_points || enDoc.total_points || 0,
-                        total_points: enDoc.spendable_points || enDoc.total_points || 0, // Aliased for legacy
+                        total_points: enDoc.ranking_points || enDoc.total_points || 0, // Aliased to ranking_points for display accuracy
                         belbin: userDoc.belbin_profile?.role_dominant || "Sin determinar",
                         section: enDoc.section || item.section || undefined,
                         daily_streak: userDoc.daily_streak || 0,
@@ -460,3 +460,61 @@ export const resetCoursePoints = mutation({
         };
     }
 });
+
+// Obtener ranking global de todas las secciones de un ramo (mismo código)
+export const getGlobalRanking = query({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        try {
+            await requireAuth(ctx);
+            const refCourse = await ctx.db.get(args.course_id);
+            if (!refCourse) return [];
+
+            // 1. Encontrar todos los ramos con el mismo código
+            const relatedCourses = await ctx.db
+                .query("courses")
+                .withIndex("by_code", q => q.eq("code", refCourse.code))
+                .collect();
+
+            const courseIds = relatedCourses.map(c => c._id);
+            const courseMap = new Map();
+            relatedCourses.forEach(c => courseMap.set(c._id, c));
+
+            // Obtener todos los docentes (para cachear nombres)
+            const teachers = await Promise.all(relatedCourses.map(c => ctx.db.get(c.teacher_id)));
+            const teacherMap = new Map();
+            teachers.forEach(t => { if (t) teacherMap.set(t._id, t.name); });
+
+            // 2. Obtener inscripciones de todos esos ramos
+            let allEnrollments = [];
+            for (const cId of courseIds) {
+                const ens = await ctx.db
+                    .query("enrollments")
+                    .withIndex("by_course", q => q.eq("course_id", cId))
+                    .collect();
+                allEnrollments.push(...ens);
+            }
+
+            // 3. Cruzar con usuarios y ordenar
+            const results = await Promise.all(allEnrollments.map(async (en) => {
+                const user = await ctx.db.get(en.user_id);
+                const course = courseMap.get(en.course_id);
+                return {
+                    _id: en._id,
+                    name: user?.name || "Sin nombre",
+                    student_id: user?.student_id,
+                    ranking_points: en.ranking_points || en.total_points || 0,
+                    section: en.section || "S/S",
+                    courseName: course?.name,
+                    teacherName: teacherMap.get(course?.teacher_id) || "Docente"
+                };
+            }));
+
+            // Ordenar por puntos de ranking DESC
+            return results.sort((a, b) => b.ranking_points - a.ranking_points).slice(0, 100); // Top 100 para no sobrecargar
+        } catch {
+            return [];
+        }
+    },
+});
+

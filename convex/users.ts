@@ -11,7 +11,14 @@ export const getProfile = query({
         try {
             const userId = await getAuthUserId(ctx);
             if (!userId) return null;
-            return await ctx.db.get(userId);
+            const user = await ctx.db.get(userId);
+            if (!user) return null;
+
+            // Retornar el perfil con un is_verified calculado
+            return {
+                ...user,
+                is_verified: !!(user.is_verified || user.emailVerificationTime)
+            };
         } catch (e) {
             console.error("Error in getProfile:", e);
             return null;
@@ -114,6 +121,19 @@ export const autoEnroll = mutation({
     },
 });
 
+// Verifica si un RUT está en alguna whitelist para permitir el registro
+export const checkWhitelist = query({
+    args: { student_id: v.string() },
+    handler: async (ctx, args) => {
+        const normalized = normalizeRut(args.student_id);
+        const entry = await ctx.db
+            .query("whitelists")
+            .withIndex("by_identifier", (q) => q.eq("student_identifier", normalized))
+            .first();
+        return { allowed: !!entry };
+    },
+});
+
 export const updateProfile = mutation({
     args: {
         name: v.optional(v.string()),
@@ -134,6 +154,16 @@ export const updateProfile = mutation({
         if (Object.keys(patch).length > 0) {
             await ctx.db.patch(user._id, patch);
         }
+        return { success: true };
+    },
+});
+
+export const verifyAccount = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("No autenticado");
+        await ctx.db.patch(userId, { is_verified: true });
         return { success: true };
     },
 });
@@ -198,6 +228,43 @@ export const fixAllStudentIds = mutation({
         }
         return { fixed, enrolled };
     }
+});
+
+// Compra de "Congelar Racha" (Ice Cube)
+export const buyIceCube = mutation({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireAuth(ctx);
+        const COST = 200;
+
+        // 1. Verificar inscripción y puntos disponibles en ese ramo
+        const enrollment = await ctx.db
+            .query("enrollments")
+            .withIndex("by_user", (q) => q.eq("user_id", user._id))
+            .filter((q) => q.eq(q.field("course_id"), args.course_id))
+            .unique();
+
+        if (!enrollment) throw new Error("No estás inscrito en este ramo");
+        
+        const currentPoints = enrollment.spendable_points ?? 0;
+        if (currentPoints < COST) {
+            throw new Error(`Puntos insuficientes. Necesitas ${COST} puntos y tienes ${currentPoints}.`);
+        }
+
+        // 2. Descontar puntos
+        await ctx.db.patch(enrollment._id, {
+            spendable_points: currentPoints - COST,
+            // total_points se mantiene igual ya que es el acumulado histórico
+        });
+
+        // 3. Otorgar el "Cubo de Hielo"
+        const currentCubes = user.ice_cubes || 0;
+        await ctx.db.patch(user._id, {
+            ice_cubes: currentCubes + 1
+        });
+
+        return { success: true, new_cubes: currentCubes + 1 };
+    },
 });
 
 

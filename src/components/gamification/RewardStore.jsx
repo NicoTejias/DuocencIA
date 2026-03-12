@@ -1,16 +1,18 @@
 import React from 'react';
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { ShoppingBag, Star, Coins, Info, Loader2 } from 'lucide-react';
+import { api } from "../../_generated/api";
+import { ShoppingBag, Star, Coins, Info, Loader2, Snowflake, Flame, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const RewardStore = ({ courseId }) => {
     // 1. Obtener datos del usuario y recompensas desde Convex
-    const user = useQuery(api.users.me);
+    const user = useQuery(api.users.getProfile);
     const rewards = useQuery(api.rewards.getRewardsByCourse, { course_id: courseId });
     const enrollment = useQuery(api.courses.getEnrollmentStatus, { course_id: courseId });
 
-    // 2. Mutación para canjear
+    // 2. Mutaciones
     const redeem = useMutation(api.rewards.redeemReward);
+    const buyIceCube = useMutation(api.users.buyIceCube);
 
     if (!rewards || !user || enrollment === undefined) {
         return (
@@ -23,93 +25,182 @@ const RewardStore = ({ courseId }) => {
     const handleRedeem = async (reward) => {
         try {
             await redeem({ reward_id: reward._id });
-            alert(`¡Felicidades! Has canjeado: ${reward.name}`);
+            toast.success(`¡Felicidades! Has canjeado: ${reward.name}`);
         } catch (error) {
-            alert(`Error: ${error.message}`);
+            toast.error(`Error: ${error.message}`);
         }
     };
 
+    const handleBuyIceCube = async () => {
+        try {
+            await buyIceCube({ course_id: courseId });
+            toast.success("¡Cubo de Hielo obtenido! Tu racha está protegida.");
+        } catch (error) {
+            toast.error(`Error: ${error.message}`);
+        }
+    };
+
+    const spendablePoints = enrollment?.spendable_points ?? 0;
+
     return (
-        <div className="bg-slate-950 text-slate-100 p-8 font-sans min-h-screen">
+        <div className="bg-surface text-slate-100 p-8 font-sans min-h-screen">
             {/* Header del Mercado */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                 <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h1 className="text-4xl font-black bg-gradient-to-r from-primary-light to-accent-light bg-clip-text text-transparent">
                         Mercado de Recompensas
                     </h1>
                     <p className="text-slate-400 mt-2 text-lg">
-                        Gasta tus puntos obtenidos en misiones por beneficios para la clase.
+                        Invierte tus puntos en beneficios exclusivos y protección de racha.
                     </p>
                 </div>
 
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center gap-4 shadow-2xl shadow-indigo-500/10">
-                    <div className="bg-amber-500/20 p-3 rounded-full">
-                        <Coins className="text-amber-400 w-8 h-8" />
+                <div className="flex gap-4">
+                    {/* Visualización de Hielos */}
+                    <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-4 flex items-center gap-4 shadow-xl shadow-cyan-500/5">
+                        <div className="bg-cyan-500/20 p-3 rounded-full relative">
+                            <Snowflake className="text-cyan-400 w-8 h-8" />
+                            {user.ice_cubes > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-cyan-400 text-black text-[10px] font-black px-1.5 rounded-full ring-2 ring-slate-950">
+                                    {user.ice_cubes}
+                                </span>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-cyan-400 uppercase tracking-widest font-black">Protección</p>
+                            <p className="text-2xl font-black text-white">Racha</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm text-slate-400 uppercase tracking-wider font-semibold">Tus Puntos</p>
-                        <p className="text-3xl font-black text-white">{enrollment?.total_points || 0}</p>
+
+                    <div className="bg-slate-900 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-2xl">
+                        <div className="bg-amber-500/20 p-3 rounded-full">
+                            <Coins className="text-amber-400 w-8 h-8" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">Puntos Disponibles</p>
+                            <p className="text-3xl font-black text-white">{spendablePoints}</p>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            {/* Grid de Recompensas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {rewards.map((item) => (
-                    <div
-                        key={item._id}
-                        className="group bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col"
-                    >
-                        <div className="relative h-48 overflow-hidden bg-slate-800">
-                            {item.image_url ? (
-                                <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                    <ShoppingBag className="w-12 h-12" />
-                                </div>
-                            )}
+            {/* Recompensa Recomendada (SISTEMA) */}
+            <section className="mb-16">
+                <div className="flex items-center gap-3 mb-6">
+                    <Star className="text-primary w-6 h-6 fill-primary" />
+                    <h2 className="text-2xl font-bold text-white">Recomendado por el Sistema</h2>
+                </div>
+                
+                <div className="bg-gradient-to-br from-indigo-600/20 via-slate-900 to-cyan-600/20 border border-indigo-500/30 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 blur-[100px] pointer-events-none" />
+                    
+                    <div className="relative">
+                        <div className="w-40 h-40 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-3xl flex items-center justify-center shadow-2xl rotate-3 group-hover:rotate-6 transition-transform duration-500">
+                            <Snowflake className="w-20 h-20 text-white animate-pulse" />
                         </div>
-
-                        <div className="p-6 flex-grow flex flex-col">
-                            <div className="flex justify-between items-start mb-3">
-                                <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">
-                                    {item.name}
-                                </h3>
-                                <div className="flex items-center text-amber-400 font-bold shrink-0">
-                                    <Coins className="w-4 h-4 mr-1" />
-                                    {item.cost}
-                                </div>
-                            </div>
-
-                            <p className="text-slate-400 text-sm mb-6">
-                                {item.description}
-                            </p>
-
-                            <div className="mt-auto space-y-4">
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-slate-500">Stock:</span>
-                                    <span className={item.stock < 5 ? 'text-rose-400 font-bold' : 'text-emerald-400'}>
-                                        {item.stock} disponibles
-                                    </span>
-                                </div>
-
-                                <button
-                                    onClick={() => handleRedeem(item)}
-                                    disabled={enrollment.total_points < item.cost || item.stock === 0}
-                                    className={`w-full py-3 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-2
-                    ${enrollment.total_points >= item.cost && item.stock > 0
-                                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg active:scale-95'
-                                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                        }`}
-                                >
-                                    <ShoppingBag className="w-5 h-5" />
-                                    {enrollment.total_points >= item.cost ? 'Canjear Ahora' : 'Puntos Insuficientes'}
-                                </button>
-                            </div>
+                        <div className="absolute -bottom-4 -right-4 bg-orange-500 rounded-2xl p-3 shadow-xl flex items-center gap-2">
+                           <Flame className="w-6 h-6 text-white" />
+                           <span className="text-white font-black">SAVE STREAK</span>
                         </div>
                     </div>
-                ))}
-            </div>
+
+                    <div className="flex-1 text-center md:text-left">
+                        <h3 className="text-3xl font-black text-white mb-2 italic tracking-tight">Cubo de Hielo (Congelar Racha)</h3>
+                        <p className="text-slate-400 text-lg leading-relaxed max-w-xl">
+                            ¿Faltaste un día? ¡No hay problema! Este ítem se consume automáticamente si no te conectas, 
+                            manteniendo tu racha intacta. Los puntos extra de racha (+5 a +50) son vitales para el ranking.
+                        </p>
+                        
+                        <div className="mt-8 flex flex-wrap items-center justify-center md:justify-start gap-4">
+                            <div className="flex items-center gap-2 text-2xl font-black text-amber-400 bg-amber-400/10 px-6 py-2 rounded-full border border-amber-400/20">
+                                <Coins className="w-6 h-6" />
+                                200 PTS
+                            </div>
+                            <button 
+                                onClick={handleBuyIceCube}
+                                disabled={spendablePoints < 200}
+                                className={`px-10 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 flex items-center gap-3 shadow-xl
+                                    ${spendablePoints >= 200 
+                                        ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white hover:shadow-indigo-500/40' 
+                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'}`}
+                            >
+                                <ShoppingBag className="w-6 h-6" />
+                                {spendablePoints >= 200 ? 'COMPRAR AHORA' : 'PUNTOS INSUFICIENTES'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Grid de Recompensas del Ramo */}
+            <section>
+                <div className="flex items-center gap-3 mb-8">
+                    <ShoppingBag className="text-slate-400 w-6 h-6" />
+                    <h2 className="text-2xl font-bold text-white">Premios del Docente</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {rewards.length === 0 ? (
+                        <div className="col-span-full bg-slate-900/50 border border-white/5 rounded-3xl p-12 text-center">
+                            <p className="text-slate-500 font-medium italic">El docente aún no ha publicado premios específicos para este ramo.</p>
+                        </div>
+                    ) : (
+                        rewards.map((item) => (
+                            <div
+                                key={item._id}
+                                className="group bg-slate-900 border border-white/5 rounded-[2rem] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 flex flex-col"
+                            >
+                                <div className="relative h-56 overflow-hidden bg-slate-800 flex items-center justify-center">
+                                    {item.image_url ? (
+                                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-slate-700">
+                                            <ShoppingBag className="w-20 h-20 opacity-20" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+                                        <Coins className="w-4 h-4 text-amber-400" />
+                                        <span className="text-amber-400 font-black">{item.cost}</span>
+                                    </div>
+                                </div>
+
+                                <div className="p-8 flex-grow flex flex-col">
+                                    <h3 className="text-xl font-black text-white mb-3 group-hover:text-primary-light transition-colors">
+                                        {item.name}
+                                    </h3>
+
+                                    <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                                        {item.description}
+                                    </p>
+
+                                    <div className="mt-auto space-y-6">
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                            <span className="text-slate-500">Stock del Ramo:</span>
+                                            <span className={item.stock < 5 ? 'text-rose-400' : 'text-emerald-400'}>
+                                                {item.stock} unidades
+                                            </span>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleRedeem(item)}
+                                            disabled={spendablePoints < item.cost || item.stock === 0}
+                                            className={`w-full py-4 px-6 rounded-2xl font-black transition-all flex items-center justify-center gap-3
+                                                ${spendablePoints >= item.cost && item.stock > 0
+                                                    ? 'bg-white text-black hover:bg-primary-light hover:text-white shadow-xl active:scale-95'
+                                                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            {spendablePoints >= item.cost ? 'CANJEAR' : 'PUNTOS INSUFICIENTES'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </section>
         </div>
     );
 };

@@ -145,6 +145,7 @@ function App() {
           </ProtectedRoute>
         } />
 
+
         {/* Ruta inteligente que redirige al dashboard correcto según el rol */}
         <Route path="/dashboard" element={
           <DashboardRedirect />

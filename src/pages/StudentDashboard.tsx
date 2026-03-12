@@ -43,11 +43,17 @@ export default function StudentDashboard() {
         navigate('/')
     }
 
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false)
+
     // Auto-enrollment logic
     const autoEnroll = useMutation(api.users.autoEnroll)
     useEffect(() => {
         if (user && user.role === 'student') {
-            autoEnroll().catch(() => { })
+            if (!user.student_id) {
+                setShowCompleteProfile(true)
+            } else {
+                autoEnroll().catch(() => { })
+            }
         }
     }, [user])
 
@@ -78,6 +84,12 @@ export default function StudentDashboard() {
 
     return (
         <div className="min-h-screen bg-surface flex text-slate-200">
+            {showCompleteProfile && (
+                <CompleteProfileModal 
+                    user={user} 
+                    onComplete={() => setShowCompleteProfile(false)} 
+                />
+            )}
             {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-light border-r border-white/5 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 border-b border-white/5">
@@ -569,42 +581,69 @@ function MisionesPanel({ courses, onSelectCourse }: { courses: any[], onSelectCo
 
 function RankingPanel({ courses }: { courses: any[] }) {
     const [selectedId, setSelectedId] = useState<string>(courses?.[0]?._id || '')
-    const { results: leaderboard, status, loadMore } = usePaginatedQuery(
+    const [isGlobal, setIsGlobal] = useState(false)
+
+    // Vista Local (Paginada)
+    const { results: leaderboard, status: localStatus, loadMore } = usePaginatedQuery(
         api.missions.getLeaderboard,
-        selectedId ? { course_id: selectedId as any } : 'skip',
+        (selectedId && !isGlobal) ? { course_id: selectedId as any } : 'skip',
         { initialNumItems: 10 }
     )
 
+    // Vista Global (Top 100)
+    const globalLeaderboard = useQuery(api.courses.getGlobalRanking,
+        (selectedId && isGlobal) ? { course_id: selectedId as any } : 'skip'
+    )
+
+    const currentLeaderboard = isGlobal ? (globalLeaderboard || []) : leaderboard
+    const status = isGlobal ? (globalLeaderboard ? "Loaded" : "LoadingFirstPage") : localStatus
+
     return (
         <div className="max-w-4xl mx-auto py-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 text-center md:text-left">
-                <div className="flex items-center gap-6 justify-center md:justify-start">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 text-center lg:text-left">
+                <div className="flex items-center gap-6 justify-center lg:justify-start">
                     <Trophy className="w-16 h-16 text-gold" />
                     <div>
                         <h2 className="text-3xl font-black text-white mb-1">Salón de la Fama</h2>
                         <p className="text-slate-400">Compite con tus compañeros y alcanza la cima del ranking.</p>
                     </div>
                 </div>
-                <div className="flex items-center justify-center gap-4">
+                
+                <div className="flex flex-col md:flex-row items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
                     <select
                         title="Seleccionar Ramo"
                         aria-label="Seleccionar Ramo"
                         value={selectedId}
                         onChange={(e) => setSelectedId(e.target.value)}
-                        className="bg-surface-light border border-white/10 rounded-2xl px-6 py-3 font-bold text-white outline-none focus:border-primary/50 transition-all"
+                        className="bg-transparent border-none rounded-2xl px-4 py-2 font-bold text-white outline-none"
                     >
                         {courses.length === 0 && <option value="">Sin Ramos</option>}
                         {courses.map(c => (
                             <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                     </select>
+                    
+                    <div className="flex bg-black/40 rounded-xl p-1 shrink-0">
+                        <button 
+                            onClick={() => setIsGlobal(false)}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!isGlobal ? 'bg-primary text-white' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            Mi Sección
+                        </button>
+                        <button 
+                            onClick={() => setIsGlobal(true)}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isGlobal ? 'bg-accent text-white' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            Ranking Global
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="bg-surface-light rounded-3xl overflow-hidden border border-white/10">
                 {status === "LoadingFirstPage" ? (
                     <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-gold" /></div>
-                ) : leaderboard.length === 0 ? (
+                ) : currentLeaderboard.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-16 text-center">
                         <Trophy className="w-12 h-12 text-slate-600 mb-4" />
                         <h3 className="text-white font-semibold">Sin alumnos inscritos</h3>
@@ -612,31 +651,45 @@ function RankingPanel({ courses }: { courses: any[] }) {
                     </div>
                 ) : (
                     <>
-                        {leaderboard.map((student, i) => (
-                            <div key={student.userId} className={`flex items-center justify-between p-6 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
-                                <div className="flex items-center gap-6">
-                                    <span className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg
+                        {currentLeaderboard.map((student: any, i: number) => (
+                            <div key={student._id || student.userId} className={`flex items-center justify-between p-6 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
+                                <div className="flex items-center gap-6 overflow-hidden">
+                                    <span className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg
                                         ${i === 0 ? 'bg-gold/20 text-gold shadow-lg shadow-gold/20' :
                                             i === 1 ? 'bg-slate-400/20 text-slate-300' :
                                                 i === 2 ? 'bg-amber-700/20 text-amber-600' :
                                                     'bg-white/5 text-slate-500'}`}>
                                         #{i + 1}
                                     </span>
-                                    <div>
-                                        <h4 className="font-bold text-white text-lg">{student.name}</h4>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <Brain className="w-3 h-3 text-slate-500" />
-                                            <span className="text-xs text-slate-400">{student.belbin}</span>
+                                    <div className="min-w-0">
+                                        <h4 className="font-bold text-white text-lg truncate">{student.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <Brain className="w-3 h-3 text-slate-500" />
+                                                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">{student.belbin || "Sin determinar"}</span>
+                                            </div>
+                                            {isGlobal && (
+                                                <>
+                                                    <span className="text-slate-700">•</span>
+                                                    <span className="text-[10px] font-black text-primary-light uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded border border-primary/10">
+                                                        {student.section}
+                                                    </span>
+                                                    <span className="text-slate-700">•</span>
+                                                    <span className="text-[10px] font-medium text-slate-500 truncate" title={student.teacherName}>
+                                                        {student.teacherName}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl border border-white/5 shrink-0 ml-4">
                                     <Coins className="w-5 h-5 text-gold" />
-                                    <span className="font-black text-xl text-white">{student.points}</span>
+                                    <span className="font-black text-xl text-white">{(student.points || student.ranking_points || 0).toLocaleString()}</span>
                                 </div>
                             </div>
                         ))}
-                        {status === "CanLoadMore" && (
+                        {status === "CanLoadMore" && !isGlobal && (
                             <div className="p-4 border-t border-white/5 text-center">
                                 <button
                                     onClick={() => loadMore(10)}
@@ -1001,10 +1054,10 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                 >
                                     <div className={`relative w-full h-full transition-transform duration-500 preserve-3d ${flipped ? 'rotate-y-180' : ''}`}>
                                         <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/30 rounded-3xl p-10 flex items-center justify-center text-center shadow-xl group-hover:border-indigo-400/50 transition-colors">
-                                            <h3 className="text-3xl font-black text-white">{currentQ.term || currentQ.question}</h3>
+                                            <h3 className="text-3xl font-black text-white">{currentQ.front || currentQ.term || currentQ.question || currentQ.concept}</h3>
                                         </div>
                                         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-tl from-emerald-900 to-slate-900 border-2 border-emerald-500/30 rounded-3xl p-10 flex items-center justify-center text-center shadow-xl">
-                                            <h3 className="text-2xl font-semibold text-emerald-100">{currentQ.definition || currentQ.answer}</h3>
+                                            <h3 className="text-2xl font-semibold text-emerald-100">{currentQ.back || currentQ.definition || currentQ.answer}</h3>
                                         </div>
                                     </div>
                                 </div>
@@ -1030,7 +1083,7 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                                         selectedA === i ? 'bg-accent/20 border-accent text-white' :
                                                             'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}
                                             >
-                                                {q.left || q.term}
+                                                {q.front || q.left || q.term || q.concept}
                                             </button>
                                         ))}
                                     </div>
@@ -1044,7 +1097,7 @@ function QuizPlayer({ quiz, onClose }: { quiz: any, onClose: () => void }) {
                                                     ${matchedPairs.includes(i) ? 'bg-green-500/10 border-green-500/20 text-green-500/50 cursor-default' :
                                                         'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}
                                             >
-                                                {q.right || q.definition}
+                                                {q.back || q.right || q.definition}
                                             </button>
                                         ))}
                                     </div>
@@ -1280,6 +1333,97 @@ function TransferModal({ onClose, courses }: { onClose: () => void, courses: any
 }
 
 
+
+function CompleteProfileModal({ user, onComplete }: { user: any, onComplete: () => void }) {
+    const [rut, setRut] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const updateProfile = useMutation(api.users.updateProfile)
+    const checkWhitelist = useQuery(api.users.checkWhitelist, rut.length >= 8 ? { student_id: rut } : "skip")
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
+
+        if (rut.length < 8) {
+            setError('Ingresa un RUT válido.')
+            setLoading(false)
+            return
+        }
+
+        if (checkWhitelist === undefined) {
+             // Loading
+        } else if (!checkWhitelist?.allowed) {
+            setError('RUT No Autorizado: No estás en el listado de ningún ramo. Verifica con tu docente.')
+            setLoading(false)
+            return
+        }
+
+        try {
+            await updateProfile({ student_id: rut })
+            toast.success('¡Perfil completado! Bienvenido.')
+            onComplete()
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-surface flex items-center justify-center p-6 bg-cover bg-center" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(100, 100, 255, 0.05), transparent), radial-gradient(circle at 80% 70%, rgba(255, 100, 255, 0.05), transparent)' }}>
+            <div className="max-w-md w-full animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-surface-light border border-white/10 rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden text-center">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl -z-10" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-accent/20 blur-3xl -z-10" />
+
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/20">
+                        <GraduationCap className="w-10 h-10 text-white" />
+                    </div>
+
+                    <h2 className="text-3xl font-black text-white mb-2">¡Hola, {user.name.split(' ')[0]}!</h2>
+                    <p className="text-slate-400 mb-10 text-sm">
+                        Para activar tu cuenta institucional, por favor ingresa tu **RUT o Matrícula**. Esto nos permitirá vincularte con tus ramos automáticamente.
+                    </p>
+
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-8 flex items-center gap-3 text-left">
+                            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                            <p className="text-red-400 text-xs font-bold leading-relaxed">{error}</p>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSave} className="space-y-6">
+                        <div className="text-left">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4 mb-2 block">RUT / Identificador de Alumno</label>
+                            <input
+                                type="text"
+                                value={rut}
+                                onChange={(e) => setRut(e.target.value)}
+                                placeholder="Ej: 12.345.678-9"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-lg placeholder:text-slate-700 focus:border-primary transition-all outline-none"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading || rut.length < 8}
+                            className="w-full bg-primary hover:bg-primary-light text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest text-xs"
+                        >
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Activar mi Cuenta'}
+                        </button>
+                    </form>
+
+                    <p className="mt-8 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                        Plataforma de Seguridad DuocencIA
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 function PerfilPanel({ user, totalPoints, belbinRole }: { user: any, totalPoints: number, belbinRole: string }) {
     const navigate = useNavigate()
