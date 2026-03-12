@@ -21,6 +21,8 @@ export default defineSchema({
         last_daily_bonus_at: v.optional(v.number()), // Timestamp del último bono diario
         daily_streak: v.optional(v.number()), // Días de racha de quizzes diarios
         ice_cubes: v.optional(v.number()), // Cantidad de "Congelar Racha" disponibles
+        push_token: v.optional(v.string()), // Token para notificaciones push (FCM/WebPush)
+        last_notified_streak_at: v.optional(v.number()), // Evita duplicar avisos de racha
         belbin_profile: v.optional(v.object({
             role_dominant: v.string(),
             category: v.string(),
