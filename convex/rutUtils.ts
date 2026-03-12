@@ -30,17 +30,26 @@ export function formatRutWithDV(rutBody: string | number): string {
 }
 
 export function normalizeRut(rut: string): string {
-    // Retorna el RUT con guion y DV calculado si solo vienen números
+    // 1. Limpiar todo lo que no sea número o K
     const clean = rut.replace(/[^\dkK]/g, '').toUpperCase();
     if (!clean) return '';
 
-    if (clean.includes('-')) return clean;
+    // 2. Si ya tiene guion, confiamos en ese formato y lo devolvemos limpio
+    if (rut.includes('-')) {
+        const parts = rut.split('-');
+        const body = parts[0].replace(/[^\d]/g, '');
+        const dv = parts[1].trim().toUpperCase();
+        return `${body}-${dv}`;
+    }
 
-    // Si no tiene guion, asumimos que es un RUT sin DV (como los de la imagen del usuario)
-    // O si tiene DV pero no guion, intentamos detectarlo
-    // Pero según el usuario: "los Rut deben tener un digito verificador, no te lo muestra en el excel"
-    // Así que lo calculamos siempre si no tiene guion.
-
+    // 3. Si no tiene guion, pero tiene 9 dígitos, asumimos que el último es el DV
+    if (clean.length === 9) {
+        const body = clean.substring(0, 8);
+        const dv = clean.substring(8);
+        return `${body}-${dv}`;
+    }
+    
+    // 4. Si tiene 8 dígitos o menos, asumimos que es solo el cuerpo y calculamos el DV
     const body = clean.replace(/[^\d]/g, '');
     return formatRutWithDV(body);
 }

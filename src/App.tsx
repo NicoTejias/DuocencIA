@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useConvexAuth } from "convex/react"
 import { useQuery } from "convex/react"
 import { api } from "../convex/_generated/api"
@@ -106,6 +107,12 @@ function DashboardRedirect() {
 
 
 function App() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  
+  useEffect(() => {
+    console.log("App Auth State:", { isLoading, isAuthenticated });
+  }, [isLoading, isAuthenticated]);
+
   return (
     <>
 

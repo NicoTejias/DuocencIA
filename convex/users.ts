@@ -126,11 +126,23 @@ export const checkWhitelist = query({
     args: { student_id: v.string() },
     handler: async (ctx, args) => {
         const normalized = normalizeRut(args.student_id);
-        const entry = await ctx.db
+        const bodyOnly = args.student_id.replace(/[^\d]/g, '');
+
+        // 1. Buscar por RUT normalizado (Ej: 12345678-9)
+        const entryNormalized = await ctx.db
             .query("whitelists")
             .withIndex("by_identifier", (q) => q.eq("student_identifier", normalized))
             .first();
-        return { allowed: !!entry };
+        
+        if (entryNormalized) return { allowed: true };
+
+        // 2. Buscar por solo números (Ej: 12345678)
+        const entryBody = await ctx.db
+            .query("whitelists")
+            .withIndex("by_identifier", (q) => q.eq("student_identifier", bodyOnly))
+            .first();
+
+        return { allowed: !!entryBody };
     },
 });
 
