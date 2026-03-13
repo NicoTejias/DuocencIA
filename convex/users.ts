@@ -154,13 +154,43 @@ export const autoEnroll = mutation({
             }
         }
 
-        // Búsqueda profunda de fallback: Si no encontramos nada, buscar por coincidencia de cuerpo
+        // Inscribir también por email
+        const userEmail = user.email?.toLowerCase();
+        if (userEmail) {
+            const byEmail = await ctx.db
+                .query("whitelists")
+                .withIndex("by_identifier", (q) => q.eq("student_identifier", userEmail))
+                .collect();
+            
+            for (const item of byEmail) {
+                if (!seen.has(item._id)) {
+                    seen.add(item._id);
+                    matchingWhitelists.push(item);
+                }
+            }
+        }
+
+        // Búsqueda profunda de fallback: Si no encontramos nada después de RUT e Email, buscar por coincidencia de cuerpo
         if (matchingWhitelists.length === 0 && bodyOnly.length >= 7) {
             const allWhitelists = await ctx.db.query("whitelists").collect();
             for (const w of allWhitelists) {
-                const wBody = w.student_identifier.replace(/[^\d]/g, '');
-                if (wBody === bodyOnly || wBody.startsWith(bodyOnly) || bodyOnly.startsWith(wBody)) {
-                    matchingWhitelists.push(w);
+                const wId = w.student_identifier.toLowerCase();
+                
+                // Fallback por email manual (por si no matchó exacto antes por mayúsculas/minúsculas)
+                if (userEmail && wId === userEmail) {
+                    if (!seen.has(w._id)) {
+                        seen.add(w._id);
+                        matchingWhitelists.push(w);
+                        continue;
+                    }
+                }
+
+                const wBody = wId.replace(/[^\d]/g, '');
+                if (wBody && (wBody === bodyOnly || wBody.includes(bodyOnly) || bodyOnly.includes(wBody) || wBody.startsWith(bodyOnly) || bodyOnly.startsWith(wBody) || wBody.endsWith(bodyOnly) || bodyOnly.endsWith(wBody))) {
+                    if (!seen.has(w._id)) {
+                        seen.add(w._id);
+                        matchingWhitelists.push(w);
+                    }
                 }
             }
         }
@@ -191,54 +221,55 @@ export const autoEnroll = mutation({
     },
 });
 
-// Verifica si un RUT está en alguna whitelist para permitir el registro
+// Verifica si un RUT o el Email actual está en alguna whitelist para permitir el registro
 export const checkWhitelist = query({
     args: { student_id: v.string() },
     handler: async (ctx, args) => {
         if (!args.student_id || args.student_id.length < 3) return { allowed: false };
 
+        // 1. Obtener identidad del usuario actual
+        const identity = await ctx.auth.getUserIdentity();
+        const userEmail = identity?.email?.toLowerCase() || "";
+
+        // 2. Si el email está en la whitelist, permitir registro de inmediato
+        if (userEmail) {
+            const matchByEmail = await ctx.db
+                .query("whitelists")
+                .withIndex("by_identifier", (q) => q.eq("student_identifier", userEmail))
+                .first();
+            if (matchByEmail) return { allowed: true };
+        }
+
         const inputRaw = args.student_id.trim();
         const inputNormalized = normalizeRut(inputRaw);
         const inputClean = inputRaw.replace(/[^\dkK]/g, '').toUpperCase();
-        const inputBodyOnly = inputRaw.replace(/[^\d]/g, '');
+        const inputNumbersOnly = inputRaw.replace(/[^\d]/g, '');
 
-        // 1. Intento Rápido: Coincidencia exacta con el índice por RUT normalizado
+        // 1. Intento Rápido: Coincidencia exacta con el input limpio (XY)
         const fastMatch = await ctx.db
-            .query("whitelists")
-            .withIndex("by_identifier", (q) => q.eq("student_identifier", inputNormalized))
-            .first();
-        if (fastMatch) return { allowed: true };
-
-        // 2. Intento Rápido 2: Coincidencia con el input tal cual
-        const rawMatch = await ctx.db
-            .query("whitelists")
-            .withIndex("by_identifier", (q) => q.eq("student_identifier", inputRaw))
-            .first();
-        if (rawMatch) return { allowed: true };
-
-        // 3. Intento Rápido 3: Coincidencia con el cuerpo limpio
-        const cleanMatch = await ctx.db
             .query("whitelists")
             .withIndex("by_identifier", (q) => q.eq("student_identifier", inputClean))
             .first();
-        if (cleanMatch) return { allowed: true };
+        if (fastMatch) return { allowed: true };
 
-        // 4. Búsqueda Exhaustiva (Fallback para formatos no normalizados en la DB o casos de borde)
+        // 2. Búsqueda Exhaustiva (Fallback Final): Comparar cuerpos numéricos
         const allWhitelists = await ctx.db.query("whitelists").collect();
         const match = allWhitelists.find(w => {
-            const dbId = w.student_identifier;
-            const dbClean = dbId.replace(/[^\dkK]/g, '').toUpperCase();
-            const dbBody = dbId.replace(/[^\d]/g, '');
+            const dbId = w.student_identifier.toUpperCase().replace(/[^\dkK]/g, '');
+            const dbNumbersOnly = w.student_identifier.replace(/[^\d]/g, '');
+            
+            // Match exacto de lo que está limpio en DB
+            if (dbId === inputClean) return true;
 
-            // Comparar cuerpos numéricos (más robusto si el DV está mal o el formato varía)
-            if (inputBodyOnly.length >= 7 && dbBody.length >= 7) {
-                if (inputBodyOnly === dbBody) return true;
-                if (inputBodyOnly.startsWith(dbBody)) return true;
-                if (dbBody.startsWith(inputBodyOnly)) return true;
+            // Comparar solo números (saltándose el DV o prefijos)
+            if (inputNumbersOnly.length >= 7 && dbNumbersOnly.length >= 7) {
+                if (inputNumbersOnly.includes(dbNumbersOnly) || dbNumbersOnly.includes(inputNumbersOnly)) return true;
+                if (inputNumbersOnly.startsWith(dbNumbersOnly) || dbNumbersOnly.startsWith(inputNumbersOnly)) return true;
+                if (inputNumbersOnly.endsWith(dbNumbersOnly) || dbNumbersOnly.endsWith(inputNumbersOnly)) return true;
             }
 
-            // Comparar versiones limpias (incluye K)
-            if (dbClean === inputClean) return true;
+            // Comparar email si existe
+            if (userEmail && dbId.toLowerCase() === userEmail.toLowerCase()) return true;
             
             return false;
         });

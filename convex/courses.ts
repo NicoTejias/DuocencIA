@@ -9,29 +9,12 @@ export const createCourse = mutation({
     handler: async (ctx, args) => {
         const user = await requireTeacher(ctx);
 
-        const courseId = await ctx.db.insert("courses", {
+        return await ctx.db.insert("courses", {
             name: args.name,
             code: args.code,
             description: args.description,
             teacher_id: user._id,
         });
-
-        // Agregar recompensas recomendadas por defecto
-        const recommendedRewards = [
-            { name: "Multiplicador de Puntaje x2", description: "Multiplica x2 los puntos de tu próximo quiz", cost: 100, stock: 999 },
-            { name: "Multiplicador de Puntaje x1.5", description: "Multiplica x1.5 los puntos de tu próximo quiz", cost: 50, stock: 999 },
-            { name: "Congelar Racha (Recuperación)", description: "Si fallaste ayer, recupera tu racha hoy comprando este item", cost: 10, stock: 999 },
-            { name: "Subir Nota (3.7 a 4.0)", description: "Eleva tu nota final de una evaluación de 3.7 a 4.0", cost: 500, stock: 50 }
-        ];
-
-        for (const reward of recommendedRewards) {
-            await ctx.db.insert("rewards", {
-                course_id: courseId,
-                ...reward
-            });
-        }
-
-        return courseId;
     },
 });
 
@@ -271,7 +254,15 @@ export const getCourseStudents = query({
 
                     if (userByNormalized) return userByNormalized;
 
-                    // 2. Intentar por ID limpio (sin puntos ni guion)
+                    // 2. Intentar buscar por correo electrónico (muy común si la whitelist tiene emails)
+                    const userByEmail = await ctx.db
+                        .query("users")
+                        .withIndex("email", q => q.eq("email", id))
+                        .unique();
+                    
+                    if (userByEmail) return userByEmail;
+
+                    // 3. Intentar por ID limpio (sin puntos ni guion)
                     const clean = normalized.replace(/[^\dkK]/g, '').toUpperCase();
                     const userByClean = await ctx.db
                         .query("users")
@@ -280,7 +271,7 @@ export const getCourseStudents = query({
 
                     if (userByClean) return userByClean;
 
-                    // 3. Si el ID original era limpio, intentar normalizarlo
+                    // 4. Si el ID original era limpio, intentar match literal
                     const userByRaw = await ctx.db
                         .query("users")
                         .withIndex("by_student_id", q => q.eq("student_id", id.toUpperCase()))

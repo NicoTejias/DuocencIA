@@ -35,6 +35,16 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     // Catálogo de recompensas recomendadas
     const REWARD_TEMPLATES = [
         {
+            category: '✨ Gamificación (Sistema)',
+            color: 'from-accent/20 to-primary/10 border-accent/20',
+            items: [
+                { name: 'Multiplicador de Puntaje x2', description: 'Multiplica x2 los puntos de tu próximo quiz (uno solo).', cost: 100, stock: 999, emoji: '🚀' },
+                { name: 'Multiplicador de Puntaje x1.5', description: 'Multiplica x1.5 los puntos de tu próximo quiz (uno solo).', cost: 50, stock: 999, emoji: '✨' },
+                { name: 'Congelar Racha (Recuperación)', description: 'Si fallaste ayer, recupera tu racha hoy comprando este item.', cost: 100, stock: 999, emoji: '🧊' },
+                { name: 'Subir Nota (3.7 a 4.0)', description: 'Eleva tu nota final de una evaluación de 3.7 a 4.0.', cost: 500, stock: 50, emoji: '📈' },
+            ]
+        },
+        {
             category: '🎓 Académicas',
             color: 'from-blue-500/20 to-blue-600/10 border-blue-500/20',
             items: [

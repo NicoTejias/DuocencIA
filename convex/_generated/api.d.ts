@@ -11,7 +11,12 @@
 import type * as admin from "../admin.js";
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
+import type * as backup_system from "../backup_system.js";
 import type * as courses from "../courses.js";
+import type * as debug from "../debug.js";
+import type * as debug_David from "../debug_David.js";
+import type * as debug_find_user from "../debug_find_user.js";
+import type * as debug_student from "../debug_student.js";
 import type * as documents from "../documents.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
@@ -35,7 +40,12 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   analytics: typeof analytics;
   auth: typeof auth;
+  backup_system: typeof backup_system;
   courses: typeof courses;
+  debug: typeof debug;
+  debug_David: typeof debug_David;
+  debug_find_user: typeof debug_find_user;
+  debug_student: typeof debug_student;
   documents: typeof documents;
   groups: typeof groups;
   http: typeof http;
