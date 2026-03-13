@@ -3,7 +3,6 @@ import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Upload, Trash2, CheckCircle, X, Loader2 } from 'lucide-react'
 import Papa from 'papaparse'
-import { formatRutWithDV } from '../../utils/rutUtils'
 
 export default function WhitelistPanel({ courses }: { courses: any[] }) {
     const uploadWhitelist = useMutation(api.courses.batchUploadWhitelist)
