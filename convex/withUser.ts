@@ -10,14 +10,14 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx) {
     const user = await ctx.db
         .query("users")
         .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-        .unique();
+        .first();
 
     if (!user) {
         // Podríamos intentar buscar por email si el clerkId no existe aún (migración)
         const userByEmail = await ctx.db
             .query("users")
             .withIndex("email", (q) => q.eq("email", identity.email))
-            .unique();
+            .first();
         
         if (userByEmail) {
             // Vincular el clerkId al usuario existente

@@ -17,7 +17,7 @@ export const storeUser = mutation({
         const user = await ctx.db
             .query("users")
             .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-            .unique();
+            .first();
 
         if (user !== null) {
             // Usuario ya existe y está vinculado
@@ -28,7 +28,7 @@ export const storeUser = mutation({
         const userByEmail = await ctx.db
             .query("users")
             .withIndex("email", (q) => q.eq("email", identity.email))
-            .unique();
+            .first();
 
         if (userByEmail !== null) {
             // Vincular cuenta existente con Clerk
