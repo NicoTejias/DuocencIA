@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Rocket, Trophy, Users, BookOpen, Shield, ChevronRight, Sparkles, Target, Gift, BarChart3, LogOut } from 'lucide-react'
 import { useConvexAuth, useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
-import { api } from "../convex/_generated/api"
+import { api } from "../../convex/_generated/api"
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 
