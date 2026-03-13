@@ -9,7 +9,8 @@ import { normalizeRut } from "./rutUtils";
  */
 export const globalUnifyRuts = mutation({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx: any) => {
+
     // Bypass auth for CLI execution
     
     let usersFixed = 0;
@@ -62,15 +63,16 @@ export const globalUnifyRuts = mutation({
         // Buscar en la whitelist de este ramo si existe este alumno con cualquier variante de su RUT
         const whitelistEntry = await ctx.db
             .query("whitelists")
-            .withIndex("by_course", q => q.eq("course_id", en.course_id))
+            .withIndex("by_course", (q: any) => q.eq("course_id", en.course_id))
             .collect();
             
-        const match = whitelistEntry.find(w => {
+        const match = whitelistEntry.find((w: any) => {
             const cleanW = normalizeRut(w.student_identifier);
             return cleanW === cleanUserId || 
                    (cleanW.length >= 7 && cleanUserId.includes(cleanW)) ||
                    (cleanUserId.length >= 7 && cleanW.includes(cleanUserId));
         });
+
 
         if (match && student.student_id !== match.student_identifier) {
             // Sincronizamos el RUT del usuario con el de la whitelist para que las queries de 'getCourseStudents' lo encuentren
