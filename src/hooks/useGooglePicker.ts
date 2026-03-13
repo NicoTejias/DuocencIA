@@ -1,8 +1,11 @@
 // Google Drive Integration Hook
 import { useEffect, useState } from "react";
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || '';
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY?.trim() || '';
+// Limpieza agresiva de caracteres invisibles y espacios
+const cleanEnvVar = (val: string | undefined) => (val || '').replace(/[^\x20-\x7E]/g, '').trim();
+
+const CLIENT_ID = cleanEnvVar(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+const API_KEY = cleanEnvVar(import.meta.env.VITE_GOOGLE_API_KEY);
 const APP_ID = CLIENT_ID.split('-')[0] || '';
 const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
 
@@ -13,16 +16,13 @@ export function useGooglePicker() {
   // Debug logs (Safe & Detailed)
   useEffect(() => {
     if (CLIENT_ID) {
-      const maskedId = `${CLIENT_ID.substring(0, 12)}...${CLIENT_ID.slice(-15)}`;
+      const fullEnd = CLIENT_ID.slice(-25);
       console.log("🔍 Google Client ID Status:", {
         exists: true,
         length: CLIENT_ID.length,
-        format: maskedId,
-        endsWithDotCom: CLIENT_ID.endsWith('.com'),
-        fullEnd: CLIENT_ID.slice(-25)
+        endsWithCorrectDomain: CLIENT_ID.endsWith('.apps.googleusercontent.com'),
+        fullEnd: fullEnd
       });
-    } else {
-      console.error("❌ ERROR: VITE_GOOGLE_CLIENT_ID no está definido en Vercel.");
     }
   }, []);
 

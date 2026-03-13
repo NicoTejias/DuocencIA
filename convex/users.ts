@@ -306,9 +306,8 @@ export const updateProfile = mutation({
 export const verifyAccount = mutation({
     args: {},
     handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("No autenticado");
-        await ctx.db.patch(userId, { is_verified: true });
+        const user = await requireAuth(ctx);
+        await ctx.db.patch(user._id, { is_verified: true });
         return { success: true };
     },
 });
@@ -415,8 +414,7 @@ export const buyIceCube = mutation({
 export const savePushToken = mutation({
     args: { token: v.string() },
     handler: async (ctx, args) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("No autenticado");
-        await ctx.db.patch(userId, { push_token: args.token });
+        const user = await requireAuth(ctx);
+        await ctx.db.patch(user._id, { push_token: args.token });
     },
 });
