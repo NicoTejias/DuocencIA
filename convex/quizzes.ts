@@ -178,7 +178,7 @@ export const saveQuiz = mutation({
         if (!course || course.teacher_id !== user._id)
             throw new Error("No tienes permiso para agregar quizzes a este curso");
 
-        return await ctx.db.insert("quizzes", {
+        const quizId = await ctx.db.insert("quizzes", {
             course_id: args.course_id,
             document_id: args.document_id,
             teacher_id: user._id,
@@ -191,6 +191,26 @@ export const saveQuiz = mutation({
             is_active: true,
             max_attempts: args.max_attempts ?? 1,
         });
+
+        // Notificar a los alumnos inscritos
+        const enrollments = await ctx.db
+            .query("enrollments")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+        
+        for (const en of enrollments) {
+            const student = await ctx.db.get(en.user_id);
+            if (student?.push_token) {
+                await ctx.scheduler.runAfter(0, api.fcm.sendPushNotification, {
+                    token: student.push_token,
+                    title: `¡Nuevo Quiz: ${course.name}! 📝`,
+                    body: `Se ha publicado "${args.title}". ¡Entra y demuestra lo que sabes!`,
+                });
+            }
+        }
+
+        return quizId;
+
     },
 });
 

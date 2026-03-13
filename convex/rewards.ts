@@ -1,6 +1,8 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
+import { api } from "./_generated/api";
+
 
 import { paginationOptsValidator } from "convex/server";
 
@@ -40,13 +42,34 @@ export const createReward = mutation({
         if (!course || course.teacher_id !== user._id)
             throw new Error("No autorizado para crear recompensas en este ramo");
 
-        return await ctx.db.insert("rewards", {
+        const rewardId = await ctx.db.insert("rewards", {
             course_id: args.course_id,
             name: args.name,
             description: args.description,
             cost: args.cost,
             stock: args.stock,
         });
+
+        // Notificar a los alumnos inscritos
+        const enrollments = await ctx.db
+            .query("enrollments")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+        
+        for (const en of enrollments) {
+            const student = await ctx.db.get(en.user_id);
+            if (student?.push_token) {
+                await ctx.scheduler.runAfter(0, api.fcm.sendPushNotification, {
+                    token: student.push_token,
+                    title: `¡Nuevas Recompensas! 🎁`,
+                    body: `Se ha agregado "${args.name}" a la tienda de ${course.name}. ¡Canjéala con tus puntos!`,
+                });
+            }
+
+        }
+
+        return rewardId;
+
     },
 });
 

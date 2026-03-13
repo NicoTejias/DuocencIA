@@ -19,3 +19,8 @@ Thumbs.db
 
 # Convex generated (se regenera automáticamente)
 # convex/_generated/
+
+# Firebase Service Account
+*-firebase-adminsdk-*.json
+google-services.json
+
