@@ -15,6 +15,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
     const [uploading, setUploading] = useState(false)
     const [success, setSuccess] = useState('')
     const [error, setError] = useState('')
+    const [clearExisting, setClearExisting] = useState(false)
+    const deleteWhitelist = useMutation(api.courses.deleteCourseWhitelist)
 
     // Función inteligente para detectar columnas en el XLSX/CSV
     const findColumn = (headers: string[], keywords: string[]): number => {
@@ -102,14 +104,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                     const entries = dataRows
                         .map(row => {
                             const rawId = String(row[firstNumericCol] || '').trim()
-                            const cleanBody = rawId.replace(/[^\dkK]/g, '')
-                            // Si ya tiene guion o parece un RUT completo, no forzamos formatRutWithDV
-                            let id = rawId;
-                            if (!rawId.includes('-') && cleanBody.length >= 7 && cleanBody.length <= 8) {
-                                id = formatRutWithDV(cleanBody);
-                            } else {
-                                id = rawId.toUpperCase().replace(/\./g, '');
-                            }
+                            // Solo limpiar puntos y estandarizar a mayúsculas, sin agregar guiones ni DVs
+                            const id = rawId.replace(/\./g, '').replace(/\s/g, '').toUpperCase();
                             const section = seccionCol !== -1 ? String(row[seccionCol] || '').trim() : detectedSection || undefined
                             return { id, name: '', section }
                         })
@@ -119,13 +115,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                     const entries = dataRows
                         .map(row => {
                             const rawRut = String(row[rutCol] || '').trim()
-                            const cleanBody = rawRut.replace(/[^\dkK]/g, '')
-                            let rut = rawRut;
-                            if (!rawRut.includes('-') && cleanBody.length >= 7 && cleanBody.length <= 8) {
-                                rut = formatRutWithDV(cleanBody);
-                            } else {
-                                rut = rawRut.toUpperCase().replace(/\./g, '');
-                            }
+                            // Solo limpiar puntos y estandarizar a mayúsculas
+                            const rut = rawRut.replace(/\./g, '').replace(/\s/g, '').toUpperCase();
 
                             // Construir nombre completo
                             const parts = []
@@ -158,13 +149,8 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                         .map((row: any) => {
                             const values = Object.values(row) as string[]
                             const rawId = rutCol !== -1 ? String(values[rutCol] || '').trim() : String(values[0] || '').trim()
-                            const cleanBody = rawId.replace(/[^\dkK]/g, '')
-                            let id = rawId;
-                            if (!rawId.includes('-') && cleanBody.length >= 7 && cleanBody.length <= 8) {
-                                id = formatRutWithDV(cleanBody);
-                            } else {
-                                id = rawId.toUpperCase().replace(/\./g, '');
-                            }
+                            // Solo limpiar puntos y estandarizar a mayúsculas
+                            const id = rawId.replace(/\./g, '').replace(/\s/g, '').toUpperCase();
 
                             const parts = []
                             if (nombresCol !== -1) parts.push(String(values[nombresCol] || '').trim())
@@ -194,8 +180,9 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
             const result = await uploadWhitelist({
                 course_id: selectedCourse as any,
                 students: finalData,
+                clear_existing: clearExisting
             })
-            setSuccess(`✅ ${result.added} alumnos cargados exitosamente en la whitelist.`)
+            setSuccess(`✅ ${result.added} alumnos añadidos y ${result.updated} actualizados exitosamente.`)
             setParsedData([])
             setFileName('')
             if (fileRef.current) fileRef.current.value = ''
@@ -267,10 +254,45 @@ export default function WhitelistPanel({ courses }: { courses: any[] }) {
                             <span className="text-2xl">📄</span>
                         </div>
                         <span className="text-slate-400 text-sm font-medium">{fileName || 'Haz clic para subir el listado de alumnos'}</span>
-                        <span className="text-slate-500 text-xs mt-1">.xlsx o .csv — se detectará el RUT y calculará el dígito verificador</span>
+                        <span className="text-slate-500 text-xs mt-1">.xlsx o .csv — se detectará el RUT exacto de Blackboard</span>
                         <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} title="Subir archivo" />
                     </label>
                 </div>
+
+                <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/5">
+                    <input
+                        type="checkbox"
+                        id="clearExisting"
+                        checked={clearExisting}
+                        onChange={e => setClearExisting(e.target.checked)}
+                        className="w-4 h-4 rounded border-white/20 bg-surface text-accent focus:ring-accent"
+                    />
+                    <label htmlFor="clearExisting" className="text-sm text-slate-300 cursor-pointer select-none">
+                        Limpiar lista anterior antes de subir (recomendado para corregir errores)
+                    </label>
+                </div>
+
+                {selectedCourse && (
+                    <div className="pt-2 border-t border-white/5">
+                         <button 
+                            onClick={async () => {
+                                if (confirm('¿Estás seguro de que quieres borrar TODA la whitelist de este ramo? Los alumnos ya registrados no perderán sus puntos, pero futuros registros fallarán hasta que subas una lista nueva.')) {
+                                    try {
+                                        const res = await deleteWhitelist({ course_id: selectedCourse as any });
+                                        setSuccess(`✅ Se eliminaron ${res.deleted} registros de la whitelist.`);
+                                        setTimeout(() => setSuccess(''), 5000);
+                                    } catch (err: any) {
+                                        setError(err.message);
+                                    }
+                                }
+                            }}
+                            className="text-xs text-red-400/60 hover:text-red-400 flex items-center gap-1 transition-colors"
+                        >
+                            <Trash2 className="w-3 h-3" />
+                            Vaciar Whitelist de este ramo
+                        </button>
+                    </div>
+                )}
 
                 {parsedData.length > 0 && (
                     <div>

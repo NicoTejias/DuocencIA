@@ -22,6 +22,7 @@ export const createCourse = mutation({
 export const batchUploadWhitelist = mutation({
     args: {
         course_id: v.id("courses"),
+        clear_existing: v.optional(v.boolean()),
         students: v.array(v.object({
             identifier: v.string(),
             name: v.optional(v.string()),
@@ -36,34 +37,54 @@ export const batchUploadWhitelist = mutation({
         if (!course || course.teacher_id !== user._id)
             throw new Error("No autorizado para este ramo");
 
-        // REMOVED 1. LIMPIEZA TOTAL: Eliminamos el borrado previo para permitir 
-        // tener estudiantes de multiples secciones/listas simultaneos.
+        // 1. Limpieza opcional previa
+        if (args.clear_existing) {
+            const existingEntries = await ctx.db
+                .query("whitelists")
+                .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+                .collect();
+            for (const ent of existingEntries) {
+                await ctx.db.delete(ent._id);
+            }
+        }
 
         let added = 0;
-        const seen = new Set(); // Para evitar duplicados dentro del mismo archivo
+        let updated = 0;
+        const seen = new Set(); 
+
+        // Obtener todos los existentes para match inteligente
+        const currentWhitelist = await ctx.db
+            .query("whitelists")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
 
         for (const student of args.students) {
             const rawId = student.identifier.trim();
             if (!rawId || rawId.length < 3) continue;
 
             const normalized = normalizeRut(rawId);
+            const numbersOnly = normalized.replace(/[^\d]/g, '');
             if (!normalized || seen.has(normalized)) continue;
 
-            // Revisar si ya existe este estudiante en la whitelist de ESTE ramo
-            const existing = await ctx.db
-                .query("whitelists")
-                .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
-                .filter((q) => q.eq(q.field("student_identifier"), normalized))
-                .unique();
+            // 2. Match inteligente: buscar si ya existe alguien con este cuerpo numérico
+            const existing = currentWhitelist.find(w => {
+                const dbNumbers = w.student_identifier.replace(/[^\d]/g, '');
+                if (!dbNumbers || !numbersOnly) return false;
+                
+                // Match exacto de números o uno contenido en otro (para prefijos '2' o DVs extra)
+                return dbNumbers === numbersOnly || 
+                       (dbNumbers.length >= 7 && numbersOnly.length >= 7 && 
+                        (dbNumbers.includes(numbersOnly) || numbersOnly.includes(dbNumbers)));
+            });
 
             if (existing) {
-                // Si existe, solo actualizamos su sección si viene una nueva
-                if (student.section?.trim()) {
-                    await ctx.db.patch(existing._id, {
-                        section: student.section.trim(),
-                        student_name: student.name?.trim() || existing.student_name
-                    });
-                }
+                // Si existe, actualizamos a la nueva versión "limpia" de Blackboard
+                await ctx.db.patch(existing._id, {
+                    student_identifier: normalized,
+                    section: student.section?.trim() || existing.section,
+                    student_name: student.name?.trim() || existing.student_name
+                });
+                updated++;
             } else {
                 // Si no existe, lo insertamos
                 await ctx.db.insert("whitelists", {
@@ -77,8 +98,28 @@ export const batchUploadWhitelist = mutation({
 
             seen.add(normalized);
         }
-        return { added };
+        return { added, updated };
     },
+});
+
+// Borrar toda la whitelist de un ramo
+export const deleteCourseWhitelist = mutation({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+        const course = await ctx.db.get(args.course_id);
+        if (!course || course.teacher_id !== user._id) throw new Error("No autorizado");
+
+        const entries = await ctx.db
+            .query("whitelists")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+        
+        for (const ent of entries) {
+            await ctx.db.delete(ent._id);
+        }
+        return { deleted: entries.length };
+    }
 });
 
 /**
