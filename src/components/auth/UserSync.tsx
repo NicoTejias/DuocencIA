@@ -9,7 +9,17 @@ export function UserSync() {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      storeUser().catch(console.error);
+      storeUser()
+        .then(() => {
+          console.log("User synchronized successfully");
+        })
+        .catch((err) => {
+          console.error("Sync error:", err);
+          // Si el error es de dominio, redirigir a la página de error
+          if (err.message.includes("institucionales") || err.message.includes("permiten")) {
+            window.location.href = "/auth-error?error=" + encodeURIComponent(err.message);
+          }
+        });
     }
   }, [isAuthenticated, isLoading, storeUser]);
 
