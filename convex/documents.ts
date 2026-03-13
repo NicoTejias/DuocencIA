@@ -1,17 +1,13 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireAuth } from "./withUser";
 
 // Generar URL de upload para Convex File Storage
 export const generateUploadUrl = mutation({
     args: {},
     handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("No autenticado");
-
-        // Verificar que es docente
-        const user = await ctx.db.get(userId);
-        if (user?.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
+        const user = await requireAuth(ctx);
+        if (user.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
 
         return await ctx.storage.generateUploadUrl();
     },
@@ -28,15 +24,12 @@ export const saveDocument = mutation({
         content_text: v.string(),
     },
     handler: async (ctx, args) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("No autenticado");
-
-        const user = await ctx.db.get(userId);
-        if (user?.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
+        const user = await requireAuth(ctx);
+        if (user.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
 
         // Verificar que el curso pertenece al docente
         const course = await ctx.db.get(args.course_id);
-        if (!course || course.teacher_id !== userId) {
+        if (!course || course.teacher_id !== user._id) {
             throw new Error("No tienes permiso para subir a este ramo");
         }
 
@@ -48,7 +41,7 @@ export const saveDocument = mutation({
 
         return await ctx.db.insert("course_documents", {
             course_id: args.course_id,
-            teacher_id: userId,
+            teacher_id: user._id,
             file_id: args.file_id,
             file_name: args.file_name,
             file_type: args.file_type,
@@ -93,11 +86,10 @@ export const getMyDocuments = query({
 export const deleteDocument = mutation({
     args: { document_id: v.id("course_documents") },
     handler: async (ctx, args) => {
-        const userId = await getAuthUserId(ctx);
-        if (!userId) throw new Error("No autenticado");
+        const user = await requireAuth(ctx);
 
         const doc = await ctx.db.get(args.document_id);
-        if (!doc || doc.teacher_id !== userId) {
+        if (!doc || doc.teacher_id !== user._id) {
             throw new Error("No tienes permiso para eliminar este documento");
         }
 
