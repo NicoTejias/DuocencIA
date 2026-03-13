@@ -413,7 +413,16 @@ export const buyIceCube = mutation({
 export const savePushToken = mutation({
     args: { token: v.string() },
     handler: async (ctx, args) => {
-        const user = await requireAuth(ctx);
-        await ctx.db.patch(user._id, { push_token: args.token });
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return;
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (user) {
+            await ctx.db.patch(user._id, { push_token: args.token });
+        }
     },
 });
