@@ -49,16 +49,7 @@ export default function LandingPage() {
     const params = new URLSearchParams(location.search);
     const errorParam = params.get("error");
 
-    // 1. Manejar errores de Auth que vienen por URL
-    useEffect(() => {
-        if (errorParam) {
-            // Usamos window.location.href para romper cualquier bucle de React Router si es necesario
-            // y asegurar una carga limpia de la página de error.
-            window.location.href = "/auth-error?error=" + encodeURIComponent(errorParam);
-        }
-    }, [errorParam]);
-
-    // 2. Redirigir al dashboard si ya está autenticado y tenemos su perfil
+    // 1. Redirigir al dashboard si ya está autenticado y tenemos su perfil
     useEffect(() => {
         if (isAuthenticated && userProfile) {
             const target = (userProfile as any).role === 'teacher' ? '/docente' : '/alumno'
