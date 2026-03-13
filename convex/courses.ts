@@ -157,6 +157,24 @@ export const cleanUpWhitelist = mutation({
     }
 });
 
+// Mutación global para normalizar todas las whitelists del sistema (mantenimiento)
+export const fixAllWhitelists = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const whitelist = await ctx.db.query("whitelists").collect();
+        let fixed = 0;
+
+        for (const item of whitelist) {
+            const normalized = normalizeRut(item.student_identifier);
+            if (normalized && normalized !== item.student_identifier) {
+                await ctx.db.patch(item._id, { student_identifier: normalized });
+                fixed++;
+            }
+        }
+        return { fixed, total: whitelist.length };
+    }
+});
+
 // Obtener ramos de un alumno con puntos
 export const getMyCourses = query({
     args: {},

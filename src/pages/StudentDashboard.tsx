@@ -7,7 +7,7 @@ import {
     BookOpen, Target, Trophy, Gift, User, LogOut, Menu, X,
     BarChart3, Brain, Coins, ChevronRight, Flame,
     Star, Loader2, ArrowRightLeft,
-    AlertCircle, PlayCircle, Bell, BellOff, Info, Settings, Sparkles, Mail, GraduationCap
+    AlertCircle, PlayCircle, Bell, BellOff, Info, Settings, Sparkles, Mail, GraduationCap, CheckCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import NotificationBell from '../components/NotificationBell'
@@ -1339,14 +1339,14 @@ function CompleteProfileModal({ user, onComplete }: { user: any, onComplete: () 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const updateProfile = useMutation(api.users.updateProfile)
-    const checkWhitelist = useQuery(api.users.checkWhitelist, rut.length >= 8 ? { student_id: rut } : "skip")
+    const checkWhitelist = useQuery(api.users.checkWhitelist, rut.length >= 7 ? { student_id: rut } : "skip")
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setError('')
 
-        if (rut.length < 8) {
+        if (rut.length < 7) {
             setError('Ingresa un RUT válido.')
             setLoading(false)
             return
@@ -1397,14 +1397,28 @@ function CompleteProfileModal({ user, onComplete }: { user: any, onComplete: () 
                     <form onSubmit={handleSave} className="space-y-6">
                         <div className="text-left">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4 mb-2 block">RUT / Identificador de Alumno</label>
-                            <input
-                                type="text"
-                                value={rut}
-                                onChange={(e) => setRut(e.target.value)}
-                                placeholder="Ej: 12.345.678-9"
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-lg placeholder:text-slate-700 focus:border-primary transition-all outline-none"
-                                required
-                            />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={rut}
+                                    onChange={(e) => setRut(e.target.value)}
+                                    placeholder="Ej: 12.345.678-9"
+                                    className={`w-full bg-white/5 border rounded-2xl px-6 py-4 text-white font-bold text-lg placeholder:text-slate-700 transition-all outline-none ${checkWhitelist?.allowed ? 'border-emerald-500/50 focus:border-emerald-500' : 'border-white/10 focus:border-primary'}`}
+                                    required
+                                />
+                                {rut.length >= 7 && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        {checkWhitelist === undefined ? (
+                                            <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
+                                        ) : checkWhitelist?.allowed ? (
+                                            <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                        ) : (
+                                            <AlertCircle className="w-5 h-5 text-red-500" />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-slate-600 mt-2 ml-4">Ingresa tu RUT con o sin puntos y guion.</p>
                         </div>
 
                         <button

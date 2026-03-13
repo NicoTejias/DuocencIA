@@ -197,35 +197,53 @@ export const checkWhitelist = query({
     handler: async (ctx, args) => {
         if (!args.student_id || args.student_id.length < 3) return { allowed: false };
 
-        const normalized = normalizeRut(args.student_id);
-        const bodyOnly = args.student_id.replace(/[^\d]/g, '');
+        const inputRaw = args.student_id.trim();
+        const inputNormalized = normalizeRut(inputRaw);
+        const inputClean = inputRaw.replace(/[^\dkK]/g, '').toUpperCase();
+        const inputBodyOnly = inputRaw.replace(/[^\d]/g, '');
 
-        // 1. Buscar por RUT normalizado (Ej: 12345678-9)
-        const entryNormalized = await ctx.db
+        // 1. Intento Rápido: Coincidencia exacta con el índice por RUT normalizado
+        const fastMatch = await ctx.db
             .query("whitelists")
-            .withIndex("by_identifier", (q) => q.eq("student_identifier", normalized))
+            .withIndex("by_identifier", (q) => q.eq("student_identifier", inputNormalized))
             .first();
-        
-        if (entryNormalized) return { allowed: true };
+        if (fastMatch) return { allowed: true };
 
-        // 2. Buscar por solo números (Ej: 12345678)
-        const entryBody = await ctx.db
+        // 2. Intento Rápido 2: Coincidencia con el input tal cual
+        const rawMatch = await ctx.db
             .query("whitelists")
-            .withIndex("by_identifier", (q) => q.eq("student_identifier", bodyOnly))
+            .withIndex("by_identifier", (q) => q.eq("student_identifier", inputRaw))
             .first();
+        if (rawMatch) return { allowed: true };
 
-        if (entryBody) return { allowed: true };
+        // 3. Intento Rápido 3: Coincidencia con el cuerpo limpio
+        const cleanMatch = await ctx.db
+            .query("whitelists")
+            .withIndex("by_identifier", (q) => q.eq("student_identifier", inputClean))
+            .first();
+        if (cleanMatch) return { allowed: true };
 
-        // 3. Búsqueda de Texto: Buscar si el cuerpo del RUT ingresado coincide con el inicio de algún identificador en la whitelist
-        // Útil si en la whitelist está "12345678-9" y el alumno ingresa "12345678"
-        if (bodyOnly.length >= 7) {
-            const allWhitelists = await ctx.db.query("whitelists").collect(); // Nota: Esto es pesado si hay miles, pero para una institución está bien por ahora
-            const match = allWhitelists.find(w => 
-                w.student_identifier.replace(/[^\d]/g, '').startsWith(bodyOnly) ||
-                bodyOnly.startsWith(w.student_identifier.replace(/[^\d]/g, ''))
-            );
-            if (match) return { allowed: true };
-        }
+        // 4. Búsqueda Exhaustiva (Fallback para formatos no normalizados en la DB o casos de borde)
+        const allWhitelists = await ctx.db.query("whitelists").collect();
+        const match = allWhitelists.find(w => {
+            const dbId = w.student_identifier;
+            const dbClean = dbId.replace(/[^\dkK]/g, '').toUpperCase();
+            const dbBody = dbId.replace(/[^\d]/g, '');
+
+            // Comparar cuerpos numéricos (más robusto si el DV está mal o el formato varía)
+            if (inputBodyOnly.length >= 7 && dbBody.length >= 7) {
+                if (inputBodyOnly === dbBody) return true;
+                if (inputBodyOnly.startsWith(dbBody)) return true;
+                if (dbBody.startsWith(inputBodyOnly)) return true;
+            }
+
+            // Comparar versiones limpias (incluye K)
+            if (dbClean === inputClean) return true;
+            
+            return false;
+        });
+
+        if (match) return { allowed: true };
 
         return { allowed: false };
     },
