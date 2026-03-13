@@ -101,6 +101,8 @@ function DashboardRedirect() {
 
   const userRole = (user as any)?.role || 'student';
   const target = userRole === 'teacher' ? '/docente' : '/alumno'
+  
+  // Solo redirigir si no estamos ya en el destino (esto evita bucles)
   return <Navigate to={target} replace />
 }
 

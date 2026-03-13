@@ -8,16 +8,19 @@ export function UserSync() {
   const storeUser = useMutation(api.users.storeUser);
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    // Solo intentar sincronizar si estamos autenticados y NO hay errores previos en la URL
+    const hasError = new URLSearchParams(window.location.search).has("error");
+    
+    if (isAuthenticated && !isLoading && !hasError) {
       storeUser()
         .then(() => {
           console.log("User synchronized successfully");
         })
         .catch((err) => {
           console.error("Sync error:", err);
-          // Si el error es de dominio, redirigir a la página de error
+          // Si el error es de dominio, redirigir y PARAR el bucle
           if (err.message.includes("institucionales") || err.message.includes("permiten")) {
-            window.location.href = "/auth-error?error=" + encodeURIComponent(err.message);
+            window.location.replace("/auth-error?error=" + encodeURIComponent(err.message));
           }
         });
     }
