@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Rocket, Trophy, Users, BookOpen, Shield, ChevronRight, Sparkles, Target, Gift, BarChart3, LogOut } from 'lucide-react'
 import { useConvexAuth } from "convex/react"
-import { useAuthActions } from "@convex-dev/auth/react"
+import { useClerk } from "@clerk/clerk-react"
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 
@@ -40,7 +40,7 @@ const features = [
 
 export default function LandingPage() {
     const { isAuthenticated, isLoading } = useConvexAuth()
-    const { signOut } = useAuthActions()
+    const { signOut } = useClerk()
     const location = useLocation()
     const navigate = useNavigate()
 

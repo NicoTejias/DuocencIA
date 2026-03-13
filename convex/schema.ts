@@ -6,7 +6,7 @@ export default defineSchema({
     ...authTables,
     // Override the users table to include our custom fields
     users: defineTable({
-        // Campos requeridos por Convex Auth
+        // Campos requeridos por Convex Auth / Clerk Sync
         name: v.optional(v.string()),
         image: v.optional(v.string()),
         email: v.optional(v.string()),
@@ -14,6 +14,10 @@ export default defineSchema({
         phone: v.optional(v.string()),
         phoneVerificationTime: v.optional(v.number()),
         isAnonymous: v.optional(v.boolean()),
+        
+        // ID de Clerk para vinculación
+        clerkId: v.optional(v.string()), 
+
         // Campos personalizados de GestiónDocente
         role: v.optional(v.string()),  // "student" | "teacher" | "admin"
         is_verified: v.optional(v.boolean()),
@@ -41,7 +45,8 @@ export default defineSchema({
         })),
     })
         .index("email", ["email"])
-        .index("by_student_id", ["student_id"]),
+        .index("by_student_id", ["student_id"])
+        .index("by_clerk_id", ["clerkId"]),
 
     courses: defineTable({
         name: v.string(),

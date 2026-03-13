@@ -1,15 +1,33 @@
 import type { QueryCtx, MutationCtx } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 export async function requireAuth(ctx: QueryCtx | MutationCtx) {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-        throw new Error("No autenticado");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+        throw new Error("No autenticado por el proveedor externo");
     }
-    const user = await ctx.db.get(userId);
+
+    // Buscar al usuario por su clerkId
+    const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+        .unique();
+
     if (!user) {
-        throw new Error("Usuario no encontrado");
+        // Podríamos intentar buscar por email si el clerkId no existe aún (migración)
+        const userByEmail = await ctx.db
+            .query("users")
+            .withIndex("email", (q) => q.eq("email", identity.email))
+            .unique();
+        
+        if (userByEmail) {
+            // Vincular el clerkId al usuario existente
+            // Solo posible en mutaciones, en queries fallará pero storeUser lo arreglará
+            return userByEmail;
+        }
+        
+        throw new Error("Usuario no vinculado en la base de datos");
     }
+    
     return user;
 }
 

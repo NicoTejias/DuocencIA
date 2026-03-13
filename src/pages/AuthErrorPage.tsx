@@ -1,11 +1,11 @@
 import { useLocation } from "react-router-dom";
 import { ShieldAlert, Rocket, ArrowLeft } from "lucide-react";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { useClerk } from "@clerk/clerk-react";
 import { useEffect } from "react";
 
 export default function AuthErrorPage() {
     const location = useLocation();
-    const { signOut } = useAuthActions();
+    const { signOut } = useClerk();
     const params = new URLSearchParams(location.search);
     const error = params.get("error");
 

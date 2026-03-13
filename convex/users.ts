@@ -4,23 +4,79 @@ import { normalizeRut } from "./rutUtils";
 import { requireAuth } from "./withUser";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+// Sincroniza el usuario de Clerk con nuestra tabla de users
+export const storeUser = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Llamada a storeUser sin identidad autenticada");
+        }
+
+        // 1. Intentar buscar por clerkId
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (user !== null) {
+            // Usuario ya existe y está vinculado
+            return user._id;
+        }
+
+        // 2. Si no existe por clerkId, buscar por email (Migración/Vinculación)
+        const userByEmail = await ctx.db
+            .query("users")
+            .withIndex("email", (q) => q.eq("email", identity.email))
+            .unique();
+
+        if (userByEmail !== null) {
+            // Vincular cuenta existente con Clerk
+            await ctx.db.patch(userByEmail._id, {
+                clerkId: identity.subject,
+                image: identity.pictureUrl,
+                name: identity.name,
+            });
+            return userByEmail._id;
+        }
+
+        // 3. Si no existe nada, crear nuevo usuario
+        // Validar dominios institucionales aquí también por seguridad
+        const email = identity.email?.toLowerCase() || "";
+        const allowedDomains = ["@duocuc.cl", "@profesor.duoc.cl", "@duoc.cl"];
+        const isAllowed = allowedDomains.some(domain => email.endsWith(domain));
+
+        if (!isAllowed) {
+            throw new Error("Solo se permiten correos institucionales de Duoc UC.");
+        }
+
+        const isTeacherEmail = email.includes("@profesor.duoc.cl") || email.includes("@duoc.cl");
+
+        return await ctx.db.insert("users", {
+            name: identity.name,
+            email: identity.email,
+            image: identity.pictureUrl,
+            clerkId: identity.subject,
+            role: isTeacherEmail ? "teacher" : "student",
+            is_verified: true,
+        });
+    },
+});
+
 // Obtener el perfil del usuario actual autenticado
 export const getProfile = query({
     args: {},
     handler: async (ctx) => {
         try {
-            const userId = await getAuthUserId(ctx);
-            if (!userId) return null;
-            const user = await ctx.db.get(userId);
+            const user = await requireAuth(ctx);
             if (!user) return null;
 
-            // Retornar el perfil con un is_verified calculado
             return {
                 ...user,
-                is_verified: !!(user.is_verified || user.emailVerificationTime)
+                is_verified: !!(user.is_verified || (user as any).emailVerificationTime)
             };
         } catch (e) {
-            console.error("Error in getProfile:", e);
+            // Si requireAuth falla, devolvemos null en vez de error para que el frontend maneje el estado de carga
             return null;
         }
     },

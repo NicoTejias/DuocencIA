@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, usePaginatedQuery } from "convex/react"
-import { useAuthActions } from "@convex-dev/auth/react"
+import { useClerk } from "@clerk/clerk-react"
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
 import {
@@ -27,7 +27,7 @@ function getFirstName(fullName?: string): string {
 }
 
 export default function StudentDashboard() {
-    const { signOut } = useAuthActions()
+    const { signOut } = useClerk()
     const navigate = useNavigate()
     const user = useQuery(api.users.getProfile)
     const courses = useQuery(api.courses.getMyCourses)

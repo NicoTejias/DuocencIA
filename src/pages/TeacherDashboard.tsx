@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from "convex/react"
-import { useAuthActions } from "@convex-dev/auth/react"
+import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
 import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail } from 'lucide-react'
@@ -29,7 +29,7 @@ function getFirstName(fullName?: string): string {
 }
 
 export default function TeacherDashboard() {
-    const { signOut } = useAuthActions()
+    const { signOut } = useClerk()
     const navigate = useNavigate()
     const user = useQuery(api.users.getProfile)
     const courses = useQuery(api.courses.getMyCourses)
