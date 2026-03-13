@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || '';
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY?.trim() || '';
+const APP_ID = CLIENT_ID.split('-')[0] || '';
 const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
 
 export function useGooglePicker() {
@@ -54,6 +55,7 @@ export function useGooglePicker() {
         .addView(new (window as any).google.picker.DocsView().setParent('root')) // Ver archivos del usuario
         .setOAuthToken(token)
         .setDeveloperKey(API_KEY)
+        .setAppId(APP_ID)
         .setCallback(async (data: any) => {
           if (data.action === (window as any).google.picker.Action.PICKED) {
             const file = data.docs[0];
