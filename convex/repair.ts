@@ -1,7 +1,7 @@
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
-import { requireTeacher } from "./withUser";
+
+
 
 /**
  * REPARACIÓN GLOBAL: Unifica RUTs en Users, Whitelists y Enrollments.

@@ -12,7 +12,8 @@ export const sendPushNotification = action({
     body: v.string(),
     data: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
+
     const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountStr) {
       console.error("FIREBASE_SERVICE_ACCOUNT no configurada en Convex");
