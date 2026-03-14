@@ -413,16 +413,20 @@ export const buyIceCube = mutation({
 export const savePushToken = mutation({
     args: { token: v.string() },
     handler: async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) return;
+        try {
+            const identity = await ctx.auth.getUserIdentity();
+            if (!identity) return;
 
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-            .first();
+            const user = await ctx.db
+                .query("users")
+                .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+                .first();
 
-        if (user) {
-            await ctx.db.patch(user._id, { push_token: args.token });
+            if (user) {
+                await ctx.db.patch(user._id, { push_token: args.token });
+            }
+        } catch (err) {
+            console.error("Silent error in savePushToken:", err);
         }
     },
 });
