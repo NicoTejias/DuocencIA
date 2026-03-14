@@ -72,9 +72,10 @@ export function useGooglePicker() {
     gapi.load("picker", () => {
       const pickerWindow = (window as any).google.picker;
       
-      // Intentamos una configuración más clásica para evitar fallos de inicialización
-      const docsView = new pickerWindow.DocsView(pickerWindow.ViewId.DOCS);
-      docsView.setIncludeFolders(true);
+      // Vista de navegación jerárquica desde la raíz
+      const docsView = new pickerWindow.DocsView(pickerWindow.ViewId.DOCS)
+        .setIncludeFolders(true)
+        .setParent('root'); // Fuerza el inicio en la raíz de la unidad
       
       const pickerBuilder = new pickerWindow.PickerBuilder()
         .addView(docsView)

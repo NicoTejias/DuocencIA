@@ -52,7 +52,9 @@ export default function PushNotificationManager() {
                     const token = await requestNotificationPermission();
                     if (token) {
                         console.log('Web Push Token:', token);
-                        saveToken({ token });
+                        saveToken({ token }).catch(() => {
+                            // Silenciamos error de servidor en consola para evitar ruido
+                        });
                     }
                 } catch (err) {
                     console.error("Error setting up web push", err);
