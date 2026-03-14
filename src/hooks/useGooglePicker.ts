@@ -70,8 +70,14 @@ export function useGooglePicker() {
 
     const gapi = (window as any).gapi;
     gapi.load("picker", () => {
+      const docsView = new (window as any).google.picker.DocsView()
+        .setIncludeFolders(true) // Mostrar carpetas
+        .setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.google-apps.document,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.presentation") // Tipos permitidos
+        .setSelectableMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.google-apps.document,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.presentation"); // Solo archivos son seleccionables
+
       const picker = new (window as any).google.picker.PickerBuilder()
-        .addView(new (window as any).google.picker.DocsView().setParent('root')) // Ver archivos del usuario
+        .addView(docsView)
+        .addView((window as any).google.picker.ViewId.RECENTLY_USED) // Añadir vista de recientes para comodidad
         .setOAuthToken(token)
         .setDeveloperKey(API_KEY)
         .setAppId(APP_ID)
