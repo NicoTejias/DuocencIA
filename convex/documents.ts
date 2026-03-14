@@ -6,8 +6,17 @@ import { requireAuth } from "./withUser";
 export const generateUploadUrl = mutation({
     args: {},
     handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            console.error("DEBUG: generateUploadUrl - No identity found");
+            throw new Error("Sesión de Convex no válida. Por favor, recarga la página.");
+        }
+
         const user = await requireAuth(ctx);
-        if (user.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
+        if (user.role !== "teacher") {
+            console.error(`DEBUG: generateUploadUrl - Insufficient permissions. User: ${user.email}, Role: ${user.role}`);
+            throw new Error(`Permisos insuficientes: Tu perfil está registrado como "${user.role || 'sin rol'}"`);
+        }
 
         return await ctx.storage.generateUploadUrl();
     },
@@ -24,8 +33,11 @@ export const saveDocument = mutation({
         content_text: v.string(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Sesión expirada al intentar guardar el archivo.");
+
         const user = await requireAuth(ctx);
-        if (user.role !== "teacher") throw new Error("Solo docentes pueden subir archivos");
+        if (user.role !== "teacher") throw new Error("Solo docentes pueden guardar archivos de material.");
 
         // Verificar que el curso pertenece al docente
         const course = await ctx.db.get(args.course_id);

@@ -20,12 +20,18 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx) {
             .first();
         
         if (userByEmail) {
-            // Vincular el clerkId al usuario existente
-            // Solo posible en mutaciones, en queries fallará pero storeUser lo arreglará
+            // Vincular el clerkId al usuario existente de forma silenciosa si es posible
+            if ((ctx as any).db.patch) {
+                try {
+                    await (ctx as any).db.patch(userByEmail._id, { clerkId: identity.subject });
+                } catch (e) {
+                    // Fallar silenciosamente si es una query (no permite patch)
+                }
+            }
             return userByEmail;
         }
         
-        throw new Error("Usuario no vinculado en la base de datos");
+        throw new Error(`Usuario no encontrado en la base de datos para el correo: ${identity.email || 'desconocido'}`);
     }
     
     return user;
