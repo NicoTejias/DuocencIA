@@ -71,15 +71,11 @@ export function useGooglePicker() {
     const gapi = (window as any).gapi;
     gapi.load("picker", () => {
       const pickerWindow = (window as any).google.picker;
-      const docsView = new pickerWindow.DocsView(pickerWindow.ViewId.DOCS);
       
-      try {
-        docsView.setIncludeFolders(true);
-        // Filtramos para mostrar archivos compatibles
-        docsView.setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.google-apps.document,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.presentation");
-      } catch (e) {
-        console.warn("🔍 Picker View configuration failed (non-critical):", e);
-      }
+      // La vista de documentos estándar
+      const docsView = new pickerWindow.DocsView();
+      docsView.setIncludeFolders(true);
+      docsView.setMimeTypes("application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.google-apps.document,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.presentation");
 
       const picker = new pickerWindow.PickerBuilder()
         .addView(docsView)
@@ -87,8 +83,8 @@ export function useGooglePicker() {
         .setOAuthToken(token)
         .setDeveloperKey(API_KEY)
         .setAppId(APP_ID)
-        .setCallback(async (data: any) => {
-          if (data.action === (window as any).google.picker.Action.PICKED) {
+        .setCallback((data: any) => {
+          if (data.action === pickerWindow.Action.PICKED) {
             const file = data.docs[0];
             onFileSelected(file, token!);
           }
