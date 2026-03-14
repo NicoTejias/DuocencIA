@@ -6,19 +6,21 @@ import { requireAuth } from "./withUser";
 export const generateUploadUrl = mutation({
     args: {},
     handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            console.error("DEBUG: generateUploadUrl - No identity found");
-            throw new Error("Sesión de Convex no válida. Por favor, recarga la página.");
-        }
+        try {
+            const identity = await ctx.auth.getUserIdentity();
+            if (!identity) throw new Error("No se detectó identidad de usuario. Por favor relogea.");
 
-        const user = await requireAuth(ctx);
-        if (user.role !== "teacher") {
-            console.error(`DEBUG: generateUploadUrl - Insufficient permissions. User: ${user.email}, Role: ${user.role}`);
-            throw new Error(`Permisos insuficientes: Tu perfil está registrado como "${user.role || 'sin rol'}"`);
-        }
+            const user = await requireAuth(ctx);
+            if (user.role !== "teacher") {
+                throw new Error(`Acceso denegado: El usuario ${user.email} tiene rol "${user.role}"`);
+            }
 
-        return await ctx.storage.generateUploadUrl();
+            return await ctx.storage.generateUploadUrl();
+        } catch (err: any) {
+            console.error("Critical error in generateUploadUrl:", err);
+            // Si el error es de Convex (Server Error), intentamos devolver el mensaje real
+            throw new Error(err.message || "Error interno del servidor al generar URL de subida");
+        }
     },
 });
 

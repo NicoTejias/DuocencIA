@@ -13,25 +13,27 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx) {
         .first();
 
     if (!user) {
-        // Podríamos intentar buscar por email si el clerkId no existe aún (migración)
+        if (!identity.email) {
+            throw new Error("El perfil de Clerk no contiene un correo electrónico válido.");
+        }
+
+        // Buscar por email
         const userByEmail = await ctx.db
             .query("users")
             .withIndex("email", (q) => q.eq("email", identity.email))
             .first();
         
         if (userByEmail) {
-            // Vincular el clerkId al usuario existente de forma silenciosa si es posible
+            // Intentar vincular clerkId si estamos en una mutación
             if ((ctx as any).db.patch) {
                 try {
                     await (ctx as any).db.patch(userByEmail._id, { clerkId: identity.subject });
-                } catch (e) {
-                    // Fallar silenciosamente si es una query (no permite patch)
-                }
+                } catch (e) { /* ignore */ }
             }
             return userByEmail;
         }
         
-        throw new Error(`Usuario no encontrado en la base de datos para el correo: ${identity.email || 'desconocido'}`);
+        throw new Error(`No se encontró registro para ${identity.email}. Verifica que estés registrado.`);
     }
     
     return user;
