@@ -28,7 +28,7 @@ export default function LoginPage() {
                     <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30">
                         <Rocket className="w-10 h-10 text-white" />
                     </div>
-                    <h2 className="text-4xl font-bold text-white mb-4">GestiónDocente</h2>
+                    <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">Quest</h2>
                     <p className="text-slate-400 text-lg leading-relaxed">
                         Transforma tu clase en una experiencia gamificada donde aprender es la mejor aventura.
                     </p>
@@ -41,7 +41,7 @@ export default function LoginPage() {
                     <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
                         <Rocket className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-xl font-bold text-white">GestiónDocente</span>
+                    <span className="text-xl font-bold text-white tracking-tight">Quest</span>
                 </div>
 
                 <div className="clerk-auth-container">
@@ -70,7 +70,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="mt-8 text-slate-500 text-xs text-center max-w-xs">
-                    Solo se permiten correos institucionales de Duoc UC para acceder a la plataforma.
+                    Inicia sesión con tu correo institucional para acceder a tus ramos y misiones.
                 </p>
             </div>
         </div>

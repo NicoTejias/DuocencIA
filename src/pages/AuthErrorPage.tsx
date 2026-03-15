@@ -25,9 +25,9 @@ export default function AuthErrorPage() {
     let details = error || "Error desconocido";
 
     if (details.includes("Solo se permiten correos institucionales")) {
-        title = "Correo No Institucional";
-        message = "Para ingresar a DuocencIA, es obligatorio utilizar tu cuenta de Google Duoc UC.";
-        details = "Asegúrate de seleccionar tu cuenta @duocuc.cl o @profesor.duoc.cl.";
+        title = "Correo No Admitido";
+        message = "Para ingresar a Quest, es obligatorio utilizar tu cuenta institucional autorizada.";
+        details = "Asegúrate de seleccionar el correo de tu institución.";
     }
 
     return (
@@ -64,10 +64,11 @@ export default function AuthErrorPage() {
                     <div className="pt-8 border-t border-white/5 flex items-center justify-center gap-2">
                         <Rocket className="w-4 h-4 text-slate-600" />
                         <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">
-                            Plataforma DuocencIA • Seguridad Blindada
+                            Plataforma Quest • Seguridad Avanzada
                         </span>
                     </div>
                 </div>
+
             </div>
         </div>
     );

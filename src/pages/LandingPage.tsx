@@ -68,7 +68,7 @@ export default function LandingPage() {
                         <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
                             <Rocket className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-white">GestiónDocente</span>
+                        <span className="text-xl font-bold text-white tracking-tight">Quest</span>
                     </div>
                     <div className="flex items-center gap-4">
                         {!isLoading && isAuthenticated ? (
@@ -184,7 +184,7 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
                             <Rocket className="w-4 h-4 text-white" />
                         </div>
-                        <span className="text-sm text-slate-500">© 2026 GestiónDocente. Todos los derechos reservados.</span>
+                        <span className="text-sm text-slate-500">© 2026 Quest. Todos los derechos reservados.</span>
                     </div>
                     <div className="flex gap-6 text-sm text-slate-500">
                         <a href="#" className="hover:text-white transition-colors">Privacidad</a>

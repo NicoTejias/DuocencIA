@@ -41,7 +41,7 @@ export default function DashboardSidebar({
                         <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                             <BookOpen className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-lg font-bold text-white tracking-tight">GestiónDocente</span>
+                        <span className="text-lg font-bold text-white tracking-tight">Quest</span>
                     </div>
                     <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white" title="Cerrar panel de navegación">
                         <X className="w-6 h-6" />

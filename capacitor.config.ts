@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.duocencia.app',
-  appName: 'DuocencIA',
+  appId: 'com.quest.app',
+  appName: 'Quest',
   webDir: 'dist',
   server: {
-    url: 'https://duocenc-ia.vercel.app',
+    url: 'https://quest-ed.vercel.app',
     cleartext: true
   }
 };

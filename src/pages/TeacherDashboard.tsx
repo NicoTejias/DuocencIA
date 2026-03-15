@@ -80,8 +80,8 @@ export default function TeacherDashboard() {
                                 <Settings className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <span className="text-lg font-bold text-white block">Panel Docente</span>
-                                <span className="text-xs text-slate-500">GestiónDocente</span>
+                                <span className="text-lg font-bold text-white block tracking-tight">Quest</span>
+                                <span className="text-xs text-slate-500">Panel Docente</span>
                             </div>
                         </div>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white" aria-label="Cerrar panel de navegación" title="Cerrar panel de navegación">

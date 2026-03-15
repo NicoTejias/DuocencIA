@@ -132,6 +132,16 @@ export const getLeaderboard = query({
                 .order("desc")
                 .paginate(args.paginationOpts);
 
+            // Mapa de secciones desde la whitelist
+            const whitelists = await ctx.db
+                .query("whitelists")
+                .withIndex("by_course", q => q.eq("course_id", args.course_id))
+                .collect();
+            const sectionMap = new Map();
+            whitelists.forEach(w => {
+                if (w.section) sectionMap.set(w.student_identifier.toLowerCase().trim(), w.section);
+            });
+
             // Let the mapping below handle empty pages
             const userIds = enrollmentsPaged.page.map(e => e.user_id);
             const users = await Promise.all(userIds.map(id => ctx.db.get(id)));
@@ -139,11 +149,18 @@ export const getLeaderboard = query({
 
             const page = enrollmentsPaged.page.map(en => {
                 const user = userMap.get(en.user_id);
+                let section = en.section;
+                if (!section && user) {
+                    const idEN = (user.student_id || "").toLowerCase().trim();
+                    const emailEN = (user.email || "").toLowerCase().trim();
+                    section = sectionMap.get(idEN) || sectionMap.get(emailEN);
+                }
                 return {
                     userId: en.user_id,
                     name: user?.name || "Anónimo",
                     points: en.ranking_points ?? en.total_points ?? 0,
                     belbin: user?.belbin_profile?.role_dominant || "Sin determinar",
+                    section: section || "S/S",
                 };
             });
 

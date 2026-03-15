@@ -22,7 +22,7 @@ export default function RegisterPage() {
                     <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
                         <Rocket className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-white">GestiónDocente</span>
+                    <span className="text-2xl font-bold text-white tracking-tight">Quest</span>
                 </div>
 
                 <div className="clerk-auth-container scale-95 sm:scale-100">

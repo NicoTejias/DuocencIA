@@ -107,7 +107,7 @@ export default function CompleteProfileModal({ user, onComplete }: CompleteProfi
                     </form>
 
                     <p className="mt-8 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
-                        Plataforma de Seguridad DuocencIA
+                        Plataforma Educativa Quest
                     </p>
                 </div>
             </div>

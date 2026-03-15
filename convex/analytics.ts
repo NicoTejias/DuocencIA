@@ -274,7 +274,7 @@ export const exportCourseData = query({
         }
 
         // De-duplicate users across sections if necessary (keep highest points or sum?)
-        // Usually, in DuocencIA, one user per section. Sum is safer.
+        // Usually, in Quest, one user per section. Sum is safer.
         const userMap = new Map<string, any>();
 
         for (const en of enrollments) {

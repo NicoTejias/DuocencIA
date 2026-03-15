@@ -562,16 +562,43 @@ export const getGlobalRanking = query({
                 allEnrollments.push(...ens);
             }
 
-            // 3. Cruzar con usuarios y ordenar
+            // 3. Obtener todas las whitelists para recuperar secciones perdidas
+            const allWhitelists = [];
+            for (const cId of courseIds) {
+                const whs = await ctx.db
+                    .query("whitelists")
+                    .withIndex("by_course", q => q.eq("course_id", cId))
+                    .collect();
+                allWhitelists.push(...whs);
+            }
+
+            // Mapa de [courseId_iden] -> section
+            const sectionMap = new Map();
+            allWhitelists.forEach(w => {
+                if (w.section) {
+                    sectionMap.set(`${w.course_id}_${w.student_identifier.toLowerCase().trim()}`, w.section);
+                }
+            });
+
+            // 4. Cruzar con usuarios y ordenar
             const results = await Promise.all(allEnrollments.map(async (en) => {
                 const user = await ctx.db.get(en.user_id);
                 const course = courseMap.get(en.course_id);
+
+                let section = en.section;
+                if (!section && user) {
+                    // Intentar recuperar de whitelist por RUT o Email
+                    const idEN = (user.student_id || "").toLowerCase().trim();
+                    const emailEN = (user.email || "").toLowerCase().trim();
+                    section = sectionMap.get(`${en.course_id}_${idEN}`) || sectionMap.get(`${en.course_id}_${emailEN}`);
+                }
+
                 return {
                     _id: en._id,
                     name: user?.name || "Sin nombre",
                     student_id: user?.student_id,
                     ranking_points: en.ranking_points || en.total_points || 0,
-                    section: en.section || "S/S",
+                    section: section || "S/S",
                     courseName: course?.name,
                     teacherName: teacherMap.get(course?.teacher_id) || "Docente"
                 };
@@ -584,4 +611,3 @@ export const getGlobalRanking = query({
         }
     },
 });
-

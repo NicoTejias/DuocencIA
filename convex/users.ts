@@ -40,16 +40,18 @@ export const storeUser = mutation({
         }
 
         // 3. Si no existe nada, crear nuevo usuario
-        // Validar dominios institucionales aquí también por seguridad
+        // Validar dominios institucionales - Configurable para escalabilidad
         const email = identity.email?.toLowerCase() || "";
-        const allowedDomains = ["@duocuc.cl", "@profesor.duoc.cl", "@duoc.cl"];
+        
+        // TODO: En producción, estos dominios deberían cargarse de una configuración por institución
+        const allowedDomains = ["@duocuc.cl", "@profesor.duoc.cl", "@duoc.cl", "@gmail.com", "@outlook.com"]; 
         const isAllowed = allowedDomains.some(domain => email.endsWith(domain));
 
         if (!isAllowed) {
-            throw new Error("Solo se permiten correos institucionales de Duoc UC.");
+            throw new Error("Este correo no está autorizado para acceder a Quest. Usa tu cuenta institucional.");
         }
 
-        const isTeacherEmail = email.includes("@profesor.duoc.cl") || email.includes("@duoc.cl");
+        const isTeacherEmail = email.includes("@profesor.") || email.includes("@admin.") || email.includes("@duoc.cl");
 
         return await ctx.db.insert("users", {
             name: identity.name,
