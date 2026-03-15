@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
-import { Send, Loader2, User, MessageSquare } from 'lucide-react'
+import { Send, Loader2, MessageSquare } from 'lucide-react'
 
 interface ChatPanelProps {
     courseId: any;
