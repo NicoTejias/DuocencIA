@@ -9,8 +9,11 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as admin_fix from "../admin_fix.js";
 import type * as ai_feedback from "../ai_feedback.js";
 import type * as analytics from "../analytics.js";
+import type * as app_config from "../app_config.js";
+import type * as attendance from "../attendance.js";
 import type * as auth from "../auth.js";
 import type * as backup_system from "../backup_system.js";
 import type * as courses from "../courses.js";
@@ -45,8 +48,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  admin_fix: typeof admin_fix;
   ai_feedback: typeof ai_feedback;
   analytics: typeof analytics;
+  app_config: typeof app_config;
+  attendance: typeof attendance;
   auth: typeof auth;
   backup_system: typeof backup_system;
   courses: typeof courses;

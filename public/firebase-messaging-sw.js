@@ -6,7 +6,7 @@ importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compa
 // your app's Firebase config object.
 // https://firebase.google.com/docs/web/setup#config-object
 firebase.initializeApp({
-  apiKey: "AIzaSyDdRuBm_vzTe3TtSynUFIlqyWYBWVhPM6Y",
+  apiKey: "AIzaSyBUYl4Qy0LiO1z888lufgKnmZo8rdZUVM4",
   authDomain: "duocencia-3904a.firebaseapp.com",
   projectId: "duocencia-3904a",
   storageBucket: "duocencia-3904a.firebasestorage.app",
