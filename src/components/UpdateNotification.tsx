@@ -1,11 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, type ReactNode } from 'react';
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { NATIVE_VERSION } from "../version";
 import { Download, AlertCircle } from "lucide-react";
 import { Capacitor } from '@capacitor/core';
 
-export default function UpdateNotification() {
+// Error Boundary para capturar errores de Convex queries sin romper toda la app
+class UpdateErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error) {
+        console.warn("⚠️ UpdateNotification error (non-critical):", error.message);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return null; // Si falla, simplemente no mostramos nada
+        }
+        return this.props.children;
+    }
+}
+
+function UpdateNotificationInner() {
     const config = useQuery(api.app_config.getLatestConfig);
     const [showModal, setShowModal] = useState(false);
 
@@ -67,5 +90,14 @@ export default function UpdateNotification() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// Exportamos envuelto en el Error Boundary
+export default function UpdateNotification() {
+    return (
+        <UpdateErrorBoundary>
+            <UpdateNotificationInner />
+        </UpdateErrorBoundary>
     );
 }
