@@ -2,7 +2,7 @@ import { query } from "./_generated/server";
 
 export const getLatestConfig = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async (_ctx) => {
     try {
       // En el futuro esto podría venir de una tabla 'config'
       return {
