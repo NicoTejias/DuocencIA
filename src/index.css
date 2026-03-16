@@ -36,16 +36,27 @@
     /* Evitar que el scroll rebote pero permitir scroll normal */
     overscroll-behavior-y: contain;
     /* Bloqueo estricto de scroll horizontal */
-    overflow-x: hidden;
+    overflow-x: hidden !important;
     width: 100%;
     min-height: 100%;
     position: relative;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   html {
     /* Altura que respeta las barras de herramientas móviles */
     height: 100%;
+    width: 100%;
+    overflow-x: hidden !important;
+    position: fixed; /* Previene scroll horizontal accidental en algunos navegadores móviles */
+  }
+
+  #root {
+    width: 100%;
+    height: 100%;
     overflow-x: hidden;
+    position: relative;
   }
 
   :root {

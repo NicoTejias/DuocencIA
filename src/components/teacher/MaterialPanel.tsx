@@ -155,7 +155,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
     }, {})
 
     return (
-        <div className="space-y-6 overflow-x-hidden">
+        <div className="space-y-6 max-w-full overflow-x-hidden pb-10">
             <p className="text-slate-400 text-sm md:text-base leading-relaxed">Sube documentos de tus ramos (PDF, DOCX, PPTX, XLSX). El sistema extraerá automáticamente el contenido para que la IA pueda generar actividades gamificadas.</p>
 
             {/* Mensajes de estado */}

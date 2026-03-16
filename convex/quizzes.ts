@@ -290,7 +290,7 @@ export const getQuizzesByDocument = query({
                 const submission = await ctx.db
                     .query("quiz_submissions")
                     .withIndex("by_quiz_user", (q) => q.eq("quiz_id", quiz._id).eq("user_id", user._id))
-                    .unique();
+                    .first(); // Usar first() para mayor resiliencia
                 return {
                     ...quiz,
                     completed: !!submission,
@@ -365,15 +365,32 @@ export const getOrCreateAttempt = mutation({
         const quiz = await ctx.db.get(args.quiz_id);
         if (!quiz) throw new Error("Quiz no encontrado");
 
+        const questions = quiz.questions || [];
+
         // Buscar si ya hay un intento en progreso
-        const existingAttempt = await ctx.db
+        const existingAttempts = await ctx.db
             .query("quiz_attempts")
             .withIndex("by_quiz_user", (q) => q.eq("quiz_id", args.quiz_id).eq("user_id", user._id))
             .filter((q) => q.eq(q.field("status"), "in_progress"))
-            .unique();
+            .collect();
 
-        if (existingAttempt) {
-            return existingAttempt;
+        if (existingAttempts.length > 0) {
+            // Si hay varios (por error/race condition), devolvemos el más reciente para evitar bloqueos
+            const attempt = existingAttempts.sort((a, b) => b.last_updated - a.last_updated)[0];
+            
+            // Verificación de integridad: si el número de preguntas cambió, actualizamos el array de respuestas
+            if (attempt.selected_options.length !== questions.length) {
+                const newSelected = new Array(questions.length).fill(null);
+                attempt.selected_options.forEach((opt, idx) => {
+                    if (idx < newSelected.length) newSelected[idx] = opt;
+                });
+                await ctx.db.patch(attempt._id, { 
+                    selected_options: newSelected,
+                    last_updated: Date.now()
+                });
+                return { ...attempt, selected_options: newSelected };
+            }
+            return attempt;
         }
 
         // Crear nuevo intento
@@ -381,7 +398,7 @@ export const getOrCreateAttempt = mutation({
             quiz_id: args.quiz_id,
             user_id: user._id,
             current_question_index: 0,
-            selected_options: new Array(quiz.questions.length).fill(null),
+            selected_options: new Array(questions.length).fill(null),
             status: "in_progress",
             last_updated: Date.now(),
         });
@@ -430,11 +447,13 @@ export const submitQuiz = mutation({
         if (!quiz) throw new Error("Quiz no encontrado");
 
         // Buscar el intento en progreso
-        const attempt = await ctx.db
+        const attempts = await ctx.db
             .query("quiz_attempts")
             .withIndex("by_quiz_user", (q) => q.eq("quiz_id", args.quiz_id).eq("user_id", user._id))
             .filter((q) => q.eq(q.field("status"), "in_progress"))
-            .unique();
+            .collect();
+
+        const attempt = attempts.sort((a, b) => b.last_updated - a.last_updated)[0];
 
         if (!attempt) throw new Error("No hay un intento activo para este quiz");
 

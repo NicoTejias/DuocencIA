@@ -4,8 +4,9 @@ const config: CapacitorConfig = {
   appId: 'com.quest.app',
   appName: 'Quest',
   webDir: 'dist',
+  backgroundColor: '#0f172a',
   server: {
-    url: 'https://quest-ed.vercel.app',
+    androidScheme: 'https',
     cleartext: true
   }
 };

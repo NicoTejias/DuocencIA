@@ -36,8 +36,11 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     const isMultipleChoice = !isMatch && !isFlashcard
     const questions = quiz.questions || []
 
+    const [retryCount, setRetryCount] = useState(0)
+
     useEffect(() => {
         async function initAttempt() {
+            setLoadingAttempt(true)
             try {
                 const attempt = await getOrCreateAttempt({ quiz_id: quiz._id })
                 if (attempt) {
@@ -45,24 +48,38 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                     setCurrentIdx(attempt.current_question_index)
                     setSelectedOptions(attempt.selected_options)
                 } else {
-                    toast.error("No se pudo iniciar el intento")
-                    onClose()
+                    throw new Error("Respuesta de servidor vacía")
                 }
-            } catch (err) {
-                console.error(err)
-                toast.error("Error al cargar progreso del quiz")
-                onClose()
+            } catch (err: any) {
+                console.error("❌ Error en QuizPlayer init:", err)
+                toast.error(`No se pudo cargar el progreso: ${err.message || 'Error desconocido'}`)
             } finally {
                 setLoadingAttempt(false)
             }
         }
         initAttempt()
-    }, [quiz._id, getOrCreateAttempt, onClose])
+    }, [quiz._id, getOrCreateAttempt, retryCount])
 
     if (loadingAttempt) {
         return (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <Loader2 className="w-12 h-12 text-accent animate-spin" />
+            </div>
+        )
+    }
+
+    if (!attemptId && !loadingAttempt) {
+        return (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-surface border border-white/10 p-8 rounded-[2rem] max-w-md w-full text-center">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">Error al iniciar</h2>
+                    <p className="text-slate-400 mb-6">No pudimos sincronizar tu progreso con el servidor.</p>
+                    <div className="flex gap-3">
+                        <button onClick={() => setRetryCount(c => c + 1)} className="flex-1 bg-accent text-white font-bold py-3 rounded-xl">Reintentar</button>
+                        <button onClick={onClose} className="flex-1 bg-slate-800 text-white font-bold py-3 rounded-xl">Cerrar</button>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -73,7 +90,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                 <div className="bg-surface border border-white/10 p-8 rounded-[2rem] max-w-md w-full text-center">
                     <AlertCircle className="w-16 h-16 text-slate-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-white mb-2">Quiz Vacío</h2>
-                    <p className="text-slate-400 mb-6">Este quiz no tiene preguntas asignadas.</p>
+                    <p className="text-slate-400 mb-6">Este quiz no tiene preguntas asignadas por el docente.</p>
                     <button onClick={onClose} className="w-full bg-slate-800 text-white font-bold py-3 rounded-xl">Cerrar</button>
                 </div>
             </div>
