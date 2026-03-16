@@ -193,7 +193,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {currentQ.options?.map((opt: string, i: number) => {
                                         const isSelected = selectedOptions[currentIdx] === i
-                                        let btnCls = isSelected 
+                                        const btnCls = isSelected 
                                             ? "bg-accent/20 border-accent text-white" 
                                             : "bg-white/5 border-white/10 text-slate-300 hover:border-accent/40"
                                         

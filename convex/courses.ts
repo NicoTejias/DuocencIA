@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
 import { requireAuth, requireTeacher } from "./withUser";
+import { paginationOptsValidator } from "convex/server";
 
 // Crear un nuevo ramo
 export const createCourse = mutation({
@@ -250,8 +251,6 @@ export const getEnrollmentStatus = query({
     },
 });
 
-import { paginationOptsValidator } from "convex/server";
-
 // Obtener alumnos de un ramo (para docentes) incluyendo whitelist
 export const getCourseStudents = query({
     args: {
@@ -276,11 +275,6 @@ export const getCourseStudents = query({
             // Mapeamos los identificadores normalizados para buscar inscritos
             const identifiers = whitelistPaged.page.map(w => w.student_identifier.toLowerCase().trim());
 
-            // Para evitar N+1 al buscar enrolamientos, obtenemos todos los enrolamientos del curso
-            // Idealmente enrolments tendría un índice por identificador, pero si no, 
-            // buscaremos los usuarios primero.
-            // En nuestra app, el usuario tiene un student_id.
-
             // Paso A: Buscar usuarios que tengan estos IDs
             const users = await Promise.all(
                 identifiers.map(async (id) => {
@@ -295,7 +289,7 @@ export const getCourseStudents = query({
 
                     if (userByNormalized) return userByNormalized;
 
-                    // 2. Intentar buscar por correo electrónico (muy común si la whitelist tiene emails)
+                    // 2. Intentar buscar por correo electrónico
                     const userByEmail = await ctx.db
                         .query("users")
                         .withIndex("email", q => q.eq("email", id))
@@ -303,7 +297,7 @@ export const getCourseStudents = query({
                     
                     if (userByEmail) return userByEmail;
 
-                    // 3. Intentar por ID limpio (sin puntos ni guion)
+                    // 3. Intentar por ID limpio
                     const clean = normalized.replace(/[^\dkK]/g, '').toUpperCase();
                     const userByClean = await ctx.db
                         .query("users")
@@ -312,7 +306,7 @@ export const getCourseStudents = query({
 
                     if (userByClean) return userByClean;
 
-                    // 4. Si el ID original era limpio, intentar match literal
+                    // 4. Match literal
                     const userByRaw = await ctx.db
                         .query("users")
                         .withIndex("by_student_id", q => q.eq("student_id", id.toUpperCase()))
@@ -362,7 +356,7 @@ export const getCourseStudents = query({
                         student_id: userDoc.student_id,
                         spendable_points: enDoc.spendable_points || enDoc.total_points || 0,
                         ranking_points: enDoc.ranking_points || enDoc.total_points || 0,
-                        total_points: enDoc.ranking_points || enDoc.total_points || 0, // Aliased to ranking_points for display accuracy
+                        total_points: enDoc.ranking_points || enDoc.total_points || 0,
                         belbin: userDoc.belbin_profile?.role_dominant || "Sin determinar",
                         section: enDoc.section || item.section || undefined,
                         daily_streak: userDoc.daily_streak || 0,
@@ -404,7 +398,8 @@ export const getCourseById = query({
         };
     },
 });
-// Actualizar un ramo (solo docente, con validación de ownership)
+
+// Actualizar un ramo
 export const updateCourse = mutation({
     args: {
         course_id: v.id("courses"),
@@ -427,7 +422,7 @@ export const updateCourse = mutation({
     },
 });
 
-// Eliminar un ramo (solo docente, con validación de ownership)
+// Eliminar un ramo
 export const deleteCourse = mutation({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
@@ -437,37 +432,29 @@ export const deleteCourse = mutation({
         if (!course || course.teacher_id !== user._id)
             throw new Error("No autorizado para eliminar este ramo");
 
-        // ELIMINACIÓN EN CASCADA MANUAL
-        // 1. Matricular (enrollments)
         const enrollments = await ctx.db.query("enrollments").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const e of enrollments) await ctx.db.delete(e._id);
 
-        // 2. Misiones
         const missions = await ctx.db.query("missions").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const m of missions) await ctx.db.delete(m._id);
 
-        // 3. Recompensas
         const rewards = await ctx.db.query("rewards").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const r of rewards) await ctx.db.delete(r._id);
 
-        // 4. Whitelist
         const whitelists = await ctx.db.query("whitelists").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const w of whitelists) await ctx.db.delete(w._id);
 
-        // 5. Documentos
         const documents = await ctx.db.query("course_documents").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const d of documents) await ctx.db.delete(d._id);
 
-        // 6. Quizzes
         const quizzes = await ctx.db.query("quizzes").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         for (const q of quizzes) await ctx.db.delete(q._id);
 
-        // Finalmente el ramo
         await ctx.db.delete(args.course_id);
     },
 });
 
-// Reiniciar todos los puntos de un ramo (Solo docente)
+// Reiniciar todos los puntos de un ramo
 export const resetCoursePoints = mutation({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
@@ -478,7 +465,6 @@ export const resetCoursePoints = mutation({
             throw new Error("No autorizado para reiniciar este ramo");
         }
 
-        // 1. Resetear puntos en Enrollments
         const enrollments = await ctx.db
             .query("enrollments")
             .withIndex("by_course", q => q.eq("course_id", args.course_id))
@@ -494,11 +480,8 @@ export const resetCoursePoints = mutation({
             studentsReset++;
         }
 
-        // 2. Borrar las misiones completadas (submissions) de este curso
-        // Primero necesitamos los IDs de las misiones de este curso
         const missions = await ctx.db.query("missions").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         let missionsReset = 0;
-
         for (const m of missions) {
             const submissions = await ctx.db.query("mission_submissions").withIndex("by_mission", q => q.eq("mission_id", m._id)).collect();
             for (const sub of submissions) {
@@ -507,10 +490,8 @@ export const resetCoursePoints = mutation({
             }
         }
 
-        // 3. Borrar los quizzes completados (submissions) de este curso
         const quizzes = await ctx.db.query("quizzes").withIndex("by_course", q => q.eq("course_id", args.course_id)).collect();
         let quizzesReset = 0;
-
         for (const quiz of quizzes) {
             const submissions = await ctx.db.query("quiz_submissions").withIndex("by_quiz", q => q.eq("quiz_id", quiz._id)).collect();
             for (const sub of submissions) {
@@ -528,7 +509,7 @@ export const resetCoursePoints = mutation({
     }
 });
 
-// Obtener ranking global de todas las secciones de un ramo (mismo código)
+// Obtener ranking global
 export const getGlobalRanking = query({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
@@ -537,7 +518,6 @@ export const getGlobalRanking = query({
             const refCourse = await ctx.db.get(args.course_id);
             if (!refCourse) return [];
 
-            // 1. Encontrar todos los ramos con el mismo nombre (fusión multicarreara)
             const relatedCourses = await ctx.db
                 .query("courses")
                 .withIndex("by_name", q => q.eq("name", refCourse.name))
@@ -547,13 +527,11 @@ export const getGlobalRanking = query({
             const courseMap = new Map();
             relatedCourses.forEach(c => courseMap.set(c._id, c));
 
-            // Obtener todos los docentes (para cachear nombres)
             const teachers = await Promise.all(relatedCourses.map(c => ctx.db.get(c.teacher_id)));
             const teacherMap = new Map();
             teachers.forEach(t => { if (t) teacherMap.set(t._id, t.name); });
 
-            // 2. Obtener inscripciones de todos esos ramos
-            let allEnrollments = [];
+            const allEnrollments = [];
             for (const cId of courseIds) {
                 const ens = await ctx.db
                     .query("enrollments")
@@ -562,7 +540,6 @@ export const getGlobalRanking = query({
                 allEnrollments.push(...ens);
             }
 
-            // 3. Obtener todas las whitelists para recuperar secciones perdidas
             const allWhitelists = [];
             for (const cId of courseIds) {
                 const whs = await ctx.db
@@ -572,7 +549,6 @@ export const getGlobalRanking = query({
                 allWhitelists.push(...whs);
             }
 
-            // Mapa de [courseId_iden] -> section
             const sectionMap = new Map();
             allWhitelists.forEach(w => {
                 if (w.section) {
@@ -580,14 +556,12 @@ export const getGlobalRanking = query({
                 }
             });
 
-            // 4. Cruzar con usuarios y ordenar
             const results = await Promise.all(allEnrollments.map(async (en) => {
                 const user = await ctx.db.get(en.user_id);
                 const course = courseMap.get(en.course_id);
 
                 let section = en.section;
                 if (!section && user) {
-                    // Intentar recuperar de whitelist por RUT o Email
                     const idEN = (user.student_id || "").toLowerCase().trim();
                     const emailEN = (user.email || "").toLowerCase().trim();
                     section = sectionMap.get(`${en.course_id}_${idEN}`) || sectionMap.get(`${en.course_id}_${emailEN}`);
@@ -604,8 +578,7 @@ export const getGlobalRanking = query({
                 };
             }));
 
-            // Ordenar por puntos de ranking DESC
-            return results.sort((a, b) => b.ranking_points - a.ranking_points).slice(0, 100); // Top 100 para no sobrecargar
+            return results.sort((a, b) => b.ranking_points - a.ranking_points).slice(0, 100);
         } catch {
             return [];
         }

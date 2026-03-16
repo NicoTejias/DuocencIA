@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import { User, Mail, Shield, Key, Save, Loader2, ArrowLeft, BadgeCheck, IdCard } from 'lucide-react'
@@ -18,9 +18,16 @@ export default function ProfilePage() {
     const [saving, setSaving] = useState(false)
     const [name, setName] = useState('')
     const [studentId, setStudentId] = useState('')
-
-    // Inicializar estados cuando carga el usuario
     const [initialPopulated, setInitialPopulated] = useState(false)
+    const [uploading, setUploading] = useState(false)
+
+    useEffect(() => {
+        if (user && !initialPopulated) {
+            setName(user.name || '')
+            setStudentId(user.student_id || '')
+            setInitialPopulated(true)
+        }
+    }, [user, initialPopulated])
 
     if (user === undefined) {
         return (
@@ -43,11 +50,6 @@ export default function ProfilePage() {
         )
     }
 
-    if (!initialPopulated) {
-        setName(user.name || '')
-        setStudentId(user.student_id || '')
-        setInitialPopulated(true)
-    }
 
     const handleSave = async () => {
         setSaving(true)
@@ -68,7 +70,6 @@ export default function ProfilePage() {
         })
     }
 
-    const [uploading, setUploading] = useState(false)
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
