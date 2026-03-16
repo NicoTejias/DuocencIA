@@ -75,7 +75,7 @@ export default function TeacherDashboard() {
     });
 
     return (
-        <div className="min-h-screen-dvh bg-surface flex overflow-hidden relative">
+        <div className="h-screen-dvh bg-surface flex overflow-hidden relative">
 
             {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-light border-r border-white/5 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -147,7 +147,7 @@ export default function TeacherDashboard() {
             {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
             {/* Main */}
-            <main className="flex-1 min-h-screen-dvh flex flex-col overflow-hidden">
+            <main className="flex-1 h-screen-dvh flex flex-col overflow-hidden">
                 <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 pt-safe flex flex-col shrink-0">
                     <div className="flex items-center justify-between py-4 md:py-6">
 

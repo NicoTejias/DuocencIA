@@ -33,17 +33,18 @@
 @layer base {
   body {
     @apply bg-surface text-slate-100 font-sans antialiased;
-    /* Evitar que el scroll rebote y oculte barras en iOS/Android WebView */
-    overscroll-behavior-y: none;
+    /* Evitar que el scroll rebote pero permitir scroll normal */
+    overscroll-behavior-y: contain;
     /* Bloqueo estricto de scroll horizontal */
     overflow-x: hidden;
     width: 100%;
+    min-height: 100%;
     position: relative;
   }
 
   html {
-    /* Usar altura dinámica de pantalla para móviles */
-    height: -webkit-fill-available;
+    /* Altura que respeta las barras de herramientas móviles */
+    height: 100%;
     overflow-x: hidden;
   }
 

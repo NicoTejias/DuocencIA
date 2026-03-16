@@ -87,7 +87,7 @@ export default function StudentDashboard() {
     ]
 
     return (
-        <div className="min-h-screen-dvh bg-surface flex text-slate-200 overflow-hidden relative">
+        <div className="h-screen-dvh bg-surface flex text-slate-200 overflow-hidden relative">
 
             {showCompleteProfile && (
                 <CompleteProfileModal 
@@ -116,7 +116,7 @@ export default function StudentDashboard() {
             {sidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
             {/* Main Content */}
-            <main className="flex-1 min-h-screen-dvh flex flex-col overflow-hidden">
+            <main className="flex-1 h-screen-dvh flex flex-col overflow-hidden">
                 <DashboardHeader 
                     setSidebarOpen={setSidebarOpen}
                     activeTab={activeTab}
