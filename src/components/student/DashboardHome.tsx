@@ -38,10 +38,10 @@ export default function DashboardHome({
                     </div>
                     <div className="flex flex-col items-center p-5 md:p-6 bg-white/5 backdrop-blur-md rounded-2xl md:rounded-[2rem] border border-white/10 shadow-2xl shrink-0">
                         <div className="relative mb-3 md:mb-4">
-                            <svg className="w-24 h-24 md:w-32 md:h-32 transform -rotate-90">
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5 md:hidden" />
+                            <svg className="w-20 h-20 md:w-32 md:h-32 transform -rotate-90">
+                                <circle cx="40" cy="40" r="34" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 md:hidden" />
                                 <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5 hidden md:block" />
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="251" strokeDashoffset={251 - (251 * 0.75)} className="text-primary transition-all duration-1000 md:hidden" />
+                                <circle cx="40" cy="40" r="34" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="213" strokeDashoffset={213 - (213 * 0.75)} className="text-primary transition-all duration-1000 md:hidden" />
                                 <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="364" strokeDashoffset={364 - (364 * 0.75)} className="text-primary transition-all duration-1000 hidden md:block" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">

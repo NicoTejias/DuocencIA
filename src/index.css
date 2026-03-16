@@ -33,8 +33,18 @@
 @layer base {
   body {
     @apply bg-surface text-slate-100 font-sans antialiased;
-    /* Evitar que el scroll rebote y oculte barras en iOS */
+    /* Evitar que el scroll rebote y oculte barras en iOS/Android WebView */
     overscroll-behavior-y: none;
+    /* Bloqueo estricto de scroll horizontal */
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+
+  html {
+    /* Usar altura dinámica de pantalla para móviles */
+    height: -webkit-fill-available;
+    overflow-x: hidden;
   }
 
   :root {
@@ -44,16 +54,24 @@
 
   /* Clases de utilidad para áreas seguras */
   .pt-safe {
-    padding-top: var(--safe-area-top);
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .pb-safe {
-    padding-bottom: var(--safe-area-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mt-safe {
-    margin-top: var(--safe-area-top);
+    margin-top: env(safe-area-inset-top, 0px);
   }
   .mb-safe {
-    margin-bottom: var(--safe-area-bottom);
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Altura de pantalla dinámica (soporta barras de navegación móviles) */
+  .min-h-screen-dvh {
+    min-height: 100dvh;
+  }
+  .h-screen-dvh {
+    height: 100dvh;
   }
 
   ::-webkit-scrollbar {

@@ -48,8 +48,8 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <div className="bg-slate-900 border border-white/10 w-full max-w-xl rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-md">
+            <div className="bg-slate-900 border border-white/10 w-full max-w-xl rounded-t-[2rem] md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 animate-in slide-in-from-bottom md:zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto pb-safe">
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h2 className="text-2xl font-black text-white">Transferir Puntos</h2>

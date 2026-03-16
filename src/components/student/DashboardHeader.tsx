@@ -18,7 +18,8 @@ export default function DashboardHeader({
     totalSpendablePoints
 }: DashboardHeaderProps) {
     return (
-        <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between pt-safe">
+        <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 pt-safe flex flex-col shrink-0">
+            <div className="flex items-center justify-between py-3 md:py-4">
 
             <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
                 <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white shrink-0" title="Abrir panel de navegación">
@@ -45,6 +46,7 @@ export default function DashboardHeader({
                     <div className="w-6 h-6 md:w-8 md:h-8 bg-gold/20 rounded-lg flex items-center justify-center">
                         <Coins className="w-3.5 h-3.5 md:w-4 md:h-4 text-gold" />
                     </div>
+                </div>
                 </div>
             </div>
         </header>

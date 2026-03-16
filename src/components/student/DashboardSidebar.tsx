@@ -34,7 +34,7 @@ export default function DashboardSidebar({
     handleLogout
 }: DashboardSidebarProps) {
     return (
-        <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-light border-r border-white/5 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-light border-r border-white/5 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-auto pt-safe ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="p-6 border-b border-white/5">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export default function DashboardSidebar({
                 </div>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/5">
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/5 pb-safe">
                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all font-medium">
                     <LogOut className="w-5 h-5" />
                     Cerrar Sesión

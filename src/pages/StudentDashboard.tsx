@@ -86,7 +86,7 @@ export default function StudentDashboard() {
     ]
 
     return (
-        <div className="min-h-screen bg-surface flex text-slate-200 pb-safe">
+        <div className="min-h-screen-dvh bg-surface flex text-slate-200 overflow-hidden relative">
 
             {showCompleteProfile && (
                 <CompleteProfileModal 
@@ -115,7 +115,7 @@ export default function StudentDashboard() {
             {sidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
             {/* Main Content */}
-            <main className="flex-1 min-h-screen flex flex-col">
+            <main className="flex-1 min-h-screen-dvh flex flex-col overflow-hidden">
                 <DashboardHeader 
                     setSidebarOpen={setSidebarOpen}
                     activeTab={activeTab}
@@ -124,7 +124,7 @@ export default function StudentDashboard() {
                     totalSpendablePoints={totalSpendablePoints}
                 />
 
-                <div className="p-6 flex-1 overflow-y-auto">
+                <div className="p-4 md:p-6 flex-1 overflow-y-auto pb-safe">
                     {selectedCourseId ? (
                         <CourseDetailView
                             courseId={selectedCourseId as any}
