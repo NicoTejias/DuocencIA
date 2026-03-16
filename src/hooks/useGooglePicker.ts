@@ -15,13 +15,20 @@ export function useGooglePicker() {
 
   // Debug logs (Safe & Detailed)
   useEffect(() => {
-    if (CLIENT_ID) {
-      const fullEnd = CLIENT_ID.slice(-25);
-      console.log("🔍 Google Client ID Status:", {
-        exists: true,
-        length: CLIENT_ID.length,
-        endsWithCorrectDomain: CLIENT_ID.endsWith('.apps.googleusercontent.com'),
-        fullEnd: fullEnd
+    if (CLIENT_ID || API_KEY) {
+      console.log("🔍 Google API Configuration Status:", {
+        clientId: {
+          exists: !!CLIENT_ID,
+          length: CLIENT_ID.length,
+          endsWithCorrectDomain: CLIENT_ID.endsWith('.apps.googleusercontent.com'),
+        },
+        apiKey: {
+          exists: !!API_KEY,
+          length: API_KEY.length,
+          start: API_KEY.slice(0, 7) + "...", // Mostrar inicio para verificar
+          end: "..." + API_KEY.slice(-4)
+        },
+        origin: window.location.origin
       });
     }
   }, []);
