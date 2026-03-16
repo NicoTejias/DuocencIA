@@ -88,6 +88,7 @@ export function useGooglePicker() {
         .addView(docsView)
         .setOAuthToken(token)
         .setDeveloperKey(API_KEY)
+        .setOrigin(window.location.origin)
         .setCallback((data: any) => {
           if (data.action === pickerWindow.Action.PICKED) {
             onFileSelected(data.docs[0], token!);
