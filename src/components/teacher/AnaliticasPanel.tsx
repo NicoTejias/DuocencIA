@@ -11,6 +11,8 @@ export default function AnaliticasPanel() {
     const [exporting, setExporting] = useState<string | null>(null)
     const [unifying, setUnifying] = useState(false)
     const unifyUsers = useMutation(api.admin_fix.unifyUsersByRut)
+    const [cleaning, setCleaning] = useState(false)
+    const cleanAllWhitelists = useMutation(api.courses.cleanAllMyWhitelists)
 
     if (!stats) {
         return (
@@ -68,9 +70,6 @@ export default function AnaliticasPanel() {
     }
 
     const maxBelbin = Math.max(...(Object.values(stats.belbinDistribution) as number[]), 1)
-
-    const [cleaning, setCleaning] = useState(false)
-    const cleanAllWhitelists = useMutation(api.courses.cleanAllMyWhitelists)
 
     return (
         <div className="space-y-8">

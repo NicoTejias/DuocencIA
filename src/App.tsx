@@ -16,6 +16,9 @@ import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthErrorPage from './pages/AuthErrorPage'
 import { Toaster } from 'sonner'
+import PushNotificationManager from './components/PushNotificationManager'
+import UpdateNotification from './components/UpdateNotification'
+import FeedbackButton from './components/FeedbackButton'
 
 function LoadingScreen() {
   return (
@@ -155,9 +158,6 @@ function DashboardRedirect() {
 
 
 
-import PushNotificationManager from './components/PushNotificationManager'
-import UpdateNotification from './components/UpdateNotification'
-import FeedbackButton from './components/FeedbackButton'
 
 function App() {
 
