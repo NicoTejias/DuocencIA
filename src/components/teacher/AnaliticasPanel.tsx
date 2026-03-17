@@ -1,6 +1,6 @@
 import { useQuery, useConvex, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { BarChart3, Loader2, Sparkles, Download, Trash2, FileText, TrendingUp, Users, Calendar, Award, BookOpen, Target } from 'lucide-react'
+import { BarChart3, Loader2, Sparkles, Download, Trash2 } from 'lucide-react'
 import { useState } from "react"
 import { exportToExcel } from "../../utils/ExportData"
 import { toast } from "sonner"
