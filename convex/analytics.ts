@@ -189,7 +189,8 @@ export const getTeacherStats = query({
             const courseStats = Array.from(statsByName.values());
 
             return {
-                totalStudents, // Total registros en whitelist
+                totalStudents: totalUniqueStudents, // Total alumnos físicos únicos (RUTs)
+                totalEnrollments: totalStudents, // Total de registros en todas las listas
                 totalRegistered, // Registros con cuenta
                 totalUniqueStudents, // Alumnos físicos únicos (RUTs)
                 totalRegisteredUniqueUsers, // Usuarios registrados únicos

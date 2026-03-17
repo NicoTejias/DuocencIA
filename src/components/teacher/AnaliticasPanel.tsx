@@ -122,8 +122,14 @@ export default function AnaliticasPanel() {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Registros Totales', value: stats.totalStudents, color: 'text-accent-light', icon: '👥', detail: `${stats.totalUniqueStudents} alumnos reales (RUT únicos)` },
-                    { label: 'Misiones Completadas', value: stats.totalMissionsCompleted, color: 'text-primary-light', icon: '🎯', detail: `${stats.totalMissionsCreated} creadas` },
+                    { 
+                        label: 'Adopción (Alumnos)', 
+                        value: `${stats.totalRegisteredUniqueUsers ?? 0} / ${stats.totalUniqueStudents ?? 0}`, 
+                        color: 'text-primary-light', 
+                        icon: '✅', 
+                        detail: `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}% ya tienen cuenta` 
+                    },
+                    { label: 'Misiones Completadas', value: stats.totalMissionsCompleted, color: 'text-accent-light', icon: '🎯', detail: `${stats.totalMissionsCreated} creadas` },
                     { label: 'Rendimiento Promedio', value: `${Math.round(stats.avgQuizScore)}%`, color: 'text-gold', icon: '📈', detail: 'En quizzes IA' },
                     { label: 'Material de Apoyo', value: stats.totalDocuments, color: 'text-emerald-400', icon: '📄', detail: `${stats.totalMasterDocs} Docs Maestros` },
                 ].map((s, i) => (

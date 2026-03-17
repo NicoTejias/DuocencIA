@@ -209,7 +209,7 @@ export default function TeacherDashboard() {
 function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { firstName: string, coursesCount: number, courses: any[], onSelectCourse: (c: any) => void }) {
     const stats = useQuery(api.analytics.getTeacherStats)
     const missionsValue = stats ? `${stats.totalMissionsCreated}` : '...'
-    const studentsValue = stats ? `${stats.totalStudents}` : '...'
+    const adoptionValue = stats ? `${stats.totalRegisteredUniqueUsers ?? 0} / ${stats.totalUniqueStudents ?? 0}` : '...'
 
     return (
         <div className="space-y-8">
@@ -233,7 +233,7 @@ function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { f
                 {[
                     { label: 'Ramos Activos', value: `${coursesCount}`, color: 'text-accent-light', bg: 'bg-accent/10', icon: <BookOpen className="w-6 h-6" /> },
                     { label: 'Misiones Creadas', value: missionsValue, color: 'text-primary-light', bg: 'bg-primary/10', icon: <Target className="w-6 h-6" /> },
-                    { label: 'Alumnos Inscritos', value: studentsValue, color: 'text-gold', bg: 'bg-gold/10', icon: <Users className="w-6 h-6" />, detail: stats ? `${stats.totalUniqueStudents} únicos` : '' },
+                    { label: 'Alumnos Activos', value: adoptionValue, color: 'text-gold', bg: 'bg-gold/10', icon: <Users className="w-6 h-6" />, detail: stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}% de adopción` : '' },
                 ].map((stat: any, i) => (
                     <div key={i} className="bg-surface-light border border-white/5 rounded-2xl p-5 transition-all hover:border-white/10">
                         <div className="flex items-center justify-between mb-3">
