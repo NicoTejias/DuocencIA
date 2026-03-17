@@ -46,3 +46,11 @@ export async function requireTeacher(ctx: QueryCtx | MutationCtx) {
     }
     return user;
 }
+
+export async function requireAdmin(ctx: QueryCtx | MutationCtx) {
+    const user = await requireAuth(ctx);
+    if (user.role !== "admin") {
+        throw new Error("Acceso denegado: Se requiere rol de Administrador");
+    }
+    return user;
+}

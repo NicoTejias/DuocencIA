@@ -15,6 +15,7 @@ import {
     UserCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
+import FAQManager from '../admin/FAQManager'
 
 export default function AdminPanel() {
     const stats = useQuery(api.admin.getGlobalStats)
@@ -116,6 +117,11 @@ export default function AdminPanel() {
                     </h3>
                     <RecentUsersList />
                 </div>
+            </div>
+
+            {/* Gestión de FAQ */}
+            <div className="pt-10 border-t border-white/5">
+                <FAQManager />
             </div>
         </div>
     )

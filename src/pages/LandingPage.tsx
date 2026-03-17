@@ -5,6 +5,7 @@ import { useClerk } from "@clerk/clerk-react"
 import { api } from "../../convex/_generated/api"
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import FAQSection from '../components/FAQSection'
 
 const features = [
     {
@@ -176,6 +177,9 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+
+            {/* FAQ Section */}
+            <FAQSection />
 
             {/* Footer */}
             <footer className="border-t border-white/5 py-12 px-6">

@@ -3,7 +3,8 @@ import { useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
-import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, ClipboardCheck, ShieldAlert } from 'lucide-react'
+import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, ClipboardCheck, ShieldAlert, HelpCircle } from 'lucide-react'
+import FAQSection from '../components/FAQSection'
 import { useMutation } from "convex/react"
 import { toast } from 'sonner'
 import RamosPanel from '../components/teacher/RamosPanel'
@@ -61,6 +62,7 @@ export default function TeacherDashboard() {
         { id: 'traspasos', label: 'Gestión de Traspasos', icon: <ArrowRightLeft className="w-5 h-5" /> },
         { id: 'analiticas', label: 'Analíticas', icon: <BarChart3 className="w-5 h-5" /> },
         { id: 'evaluacion', label: 'Evaluador IA', icon: <ClipboardCheck className="w-5 h-5 text-green-400" /> },
+        { id: 'ayuda', label: 'Ayuda / FAQ', icon: <HelpCircle className="w-5 h-5" /> },
         { id: 'perfil', label: 'Mi Perfil', icon: <User className="w-5 h-5" /> },
         ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Panel Admin', icon: <ShieldCheck className="w-5 h-5 text-red-500" /> }] : []),
     ]
@@ -193,6 +195,7 @@ export default function TeacherDashboard() {
                     {activeTab === 'perfil' && <PerfilPanel user={user} coursesCount={coursesCount} />}
                     {activeTab === 'admin' && user?.role === 'admin' && <AdminPanel />}
                     {activeTab === 'evaluacion' && <EvaluadorIAPanel courses={courses || []} />}
+                    {activeTab === 'ayuda' && <FAQSection category="docente" />}
                 </div>
             </main>
         </div>

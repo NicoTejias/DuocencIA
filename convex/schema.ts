@@ -294,4 +294,12 @@ export default defineSchema({
         score: v.number(), // Nota sugerida (1-7 o 0-100)
         created_at: v.number(),
     }).index("by_rubric", ["rubric_id"]),
+
+    faqs: defineTable({
+        question: v.string(),
+        answer: v.string(),
+        order: v.number(), // Para ordenar las preguntas
+        category: v.optional(v.string()), // "general", "alumno", "docente", etc.
+        created_at: v.number(),
+    }).index("by_order", ["order"]),
 });

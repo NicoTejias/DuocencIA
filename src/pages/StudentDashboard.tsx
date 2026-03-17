@@ -20,6 +20,7 @@ import TransferModal from '../components/student/TransferModal'
 import CompleteProfileModal from '../components/student/CompleteProfileModal'
 import BartlePopup from '../components/student/BartlePopup'
 import { BartleProfileDisplay } from '../components/student/BartleTest'
+import FAQSection from '../components/FAQSection'
 
 // Utilidades
 import { getFirstName } from '../utils/dashboardUtils'
@@ -84,6 +85,7 @@ export default function StudentDashboard() {
         { id: 'ranking', label: 'Ranking', icon: '🏆' },
         { id: 'tienda', label: 'Tienda', icon: '🎁' },
         { id: 'perfil', label: 'Mi Perfil', icon: '👤' },
+        { id: 'ayuda', label: 'Ayuda', icon: '❓' },
     ]
 
     return (
@@ -156,6 +158,7 @@ export default function StudentDashboard() {
                             {activeTab === 'ranking' && <RankingPanel courses={courses || []} />}
                             {activeTab === 'tienda' && <TiendaPanel courses={courses || []} />}
                             {activeTab === 'perfil' && <PerfilPanel user={user} totalPoints={totalRankingPoints} belbinRole={belbinRole} />}
+                            {activeTab === 'ayuda' && <FAQSection category="alumno" />}
                         </>
                     )}
                 </div>
