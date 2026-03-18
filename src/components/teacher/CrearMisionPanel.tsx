@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { Target, Loader2, CheckCircle, Flame, Sparkles, AlertTriangle, BookOpen, Star } from 'lucide-react'
+import { Target, Loader2, CheckCircle, Flame, Sparkles, AlertTriangle, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { getFileIcon, formatFileSize } from '../../utils/documentParser'
 
@@ -180,14 +180,10 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                         {selectedDoc && (
                             <div>
                                 <label className="text-sm font-medium text-slate-300 mb-2 block">3. Tipo de Juego</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <button onClick={() => setQuizType('multiple_choice')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'multiple_choice' ? 'bg-accent/20 border-accent text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`} title="Seleccionar Quiz Clásico">
                                         <div className="font-semibold text-sm flex items-center gap-2"><Sparkles className="w-4 h-4" /> Quiz Clásico</div>
                                         <div className="text-xs opacity-70 mt-1">Opción múltiple con 4 alternativas</div>
-                                    </button>
-                                    <button onClick={() => setQuizType('flashcard')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'flashcard' ? 'bg-blue-500/20 border-blue-500 text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`} title="Seleccionar Flashcards">
-                                        <div className="font-semibold text-sm flex items-center gap-2"><BookOpen className="w-4 h-4" /> Flashcards</div>
-                                        <div className="text-xs opacity-70 mt-1">Tarjetas de memoria (concepto/definición)</div>
                                     </button>
                                     <button onClick={() => setQuizType('match')} className={`p-4 rounded-xl border transition-all text-left ${quizType === 'match' ? 'bg-purple-500/20 border-purple-500 text-white' : 'bg-surface border-white/10 text-slate-400 hover:text-white'}`} title="Seleccionar Relacionar Parejas">
                                         <div className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> Relacionar Parejas</div>

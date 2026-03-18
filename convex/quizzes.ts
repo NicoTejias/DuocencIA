@@ -95,15 +95,14 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con est
     }
   ]
 }`;
-        } else if (type === "flashcard" || type === "match") {
-            const isMatch = type === "match";
+        } else if (type === "match") {
             prompt = `Eres un generador de material educativo para educación superior en Chile. 
 Extrae EXACTAMENTE ${args.num_questions} pares de conceptos y sus definiciones desde el siguiente contenido académico.
-Esto se usará para un juego de ${isMatch ? 'relacionar columnas (Match)' : 'tarjetas de memoria (Flashcards)'}.
+Esto se usará para un juego de relacionar columnas (Match).
 
 REGLAS:
-- El concepto de frente ("front") debe ser corto (1 a 4 palabras).
-- La definición ("back") debe ser concisa y clara, fácil de leer.
+- El concepto de un lado debe ser corto (1 a 4 palabras).
+- La definición del otro lado debe ser concisa y clara, fácil de leer.
 - Nivel de profundidad: ${difficultyMap[args.difficulty] || "medio"}
 - Escribe en español.
 
@@ -114,7 +113,7 @@ ${masterContext}
 
 RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con esta estructura:
 {
-  "title": "${isMatch ? 'Relacionar Conceptos' : 'Flashcards'}: [nombre temático]",
+  "title": "Relacionar Conceptos: [nombre temático]",
   "questions": [
     {
       "front": "Nombre del Concepto Clave",

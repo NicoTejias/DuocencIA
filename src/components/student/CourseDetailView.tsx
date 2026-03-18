@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { Loader2, X, PlayCircle, Brain, Target, Star, Flame } from 'lucide-react'
+import { Loader2, X, PlayCircle, Target, Star, Flame } from 'lucide-react'
 import { toast } from "sonner"
 import AttendanceCard from "./AttendanceCard"
 
@@ -79,7 +79,7 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                             <div key={q._id} className="group bg-surface-light border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 hover:bg-white/5 hover:border-accent/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0 flex items-center gap-4 md:gap-5">
                                     <div className="w-12 h-12 md:w-14 md:h-14 bg-accent/10 rounded-xl md:rounded-2xl flex items-center justify-center text-accent-light group-hover:bg-accent/20 transition-colors shrink-0">
-                                        {q.quiz_type === 'flashcard' ? <Brain className="w-6 h-6 md:w-7 md:h-7" /> : <PlayCircle className="w-6 h-6 md:w-7 md:h-7" />}
+                                        <PlayCircle className="w-6 h-6 md:w-7 md:h-7" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-white group-hover:text-accent-light transition-colors text-sm md:text-base truncate md:line-clamp-2 md:whitespace-normal">

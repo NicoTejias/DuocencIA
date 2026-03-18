@@ -28,12 +28,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     const [selectedA, setSelectedA] = useState<number | null>(null)
     const [matchedPairs, setMatchedPairs] = useState<number[]>([])
 
-    // For Flashcards
-    const [flipped, setFlipped] = useState(false)
-
     const isMatch = quiz.quiz_type === 'match'
-    const isFlashcard = quiz.quiz_type === 'flashcard'
-    const isMultipleChoice = !isMatch && !isFlashcard
+    const isMultipleChoice = !isMatch
     const questions = quiz.questions || []
 
     const [retryCount, setRetryCount] = useState(0)
@@ -165,19 +161,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         }
     }
 
-    const nextFlashcard = () => {
-        setFlipped(false)
-        const newSelected = [...selectedOptions]
-        newSelected[currentIdx] = 1 // Marked as "viewed/correct"
-        setSelectedOptions(newSelected)
-
-        if (currentIdx < questions.length - 1) {
-            setCurrentIdx(prev => prev + 1)
-        } else {
-            saveResult()
-        }
-    }
-
     const progressWidth = `${((currentIdx + 1) / questions.length) * 100}%`
     return (
         <div className="fixed inset-0 z-50 bg-surface md:bg-black/80 md:backdrop-blur-md flex items-stretch md:items-center justify-center md:p-4 overflow-hidden">
@@ -230,28 +213,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                                 </button>
                                             )
                                         })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {isFlashcard && (
-                                <div className="flex flex-col items-center justify-center min-h-[250px] md:min-h-[300px] animate-in zoom-in-95 duration-300">
-                                    <div
-                                        onClick={() => setFlipped(!flipped)}
-                                        className="w-full max-w-xl aspect-[3/2] cursor-pointer group perspective-1000"
-                                    >
-                                        <div className={`relative w-full h-full transition-transform duration-500 preserve-3d ${flipped ? 'rotate-y-180' : ''}`}>
-                                            <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/30 rounded-2xl md:rounded-3xl p-6 md:p-10 flex items-center justify-center text-center shadow-xl group-hover:border-indigo-400/50 transition-colors">
-                                                <h3 className="text-xl md:text-3xl font-black text-white">{currentQ.front || currentQ.term || currentQ.question || currentQ.concept}</h3>
-                                            </div>
-                                            <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-tl from-emerald-900 to-slate-900 border-2 border-emerald-500/30 rounded-2xl md:rounded-3xl p-6 md:p-10 flex items-center justify-center text-center shadow-xl">
-                                                <h3 className="text-lg md:text-2xl font-semibold text-emerald-100">{currentQ.back || currentQ.definition || currentQ.answer}</h3>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mt-6 md:mt-8 flex gap-4">
-                                        <button onClick={() => setFlipped(!flipped)} className="px-5 md:px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">Voltear</button>
-                                        <button onClick={nextFlashcard} className="px-5 md:px-6 py-3 bg-accent hover:bg-accent-light text-white font-black rounded-xl shadow-lg transition-all">Siguiente</button>
                                     </div>
                                 </div>
                             )}
