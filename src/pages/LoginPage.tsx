@@ -7,11 +7,9 @@ export default function LoginPage() {
     const navigate = useNavigate()
     const { isSignedIn } = useUser()
 
-    // Si ya estamos logueados y no hay errores, vamos al dashboard
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (isSignedIn && !params.get("error")) {
-            navigate('/dashboard')
+        if (isSignedIn) {
+            navigate('/dashboard', { replace: true })
         }
     }, [isSignedIn, navigate])
 

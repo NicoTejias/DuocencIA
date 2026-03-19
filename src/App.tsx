@@ -100,20 +100,13 @@ function DashboardRedirect() {
     return () => clearTimeout(timer)
   }, [isAuthLoading, isAuthenticated, user])
 
-  console.log("🛠️ DashboardRedirect State:", { isAuthLoading, isAuthenticated, userExists: user !== undefined, userProfile: user });
-
-  // 1. Esperar estado de auth
   if (isAuthLoading) return <LoadingScreen />
   
-  // 2. Si definitivamente no hay sesión, al login
   if (!isAuthenticated) {
-    console.warn("DashboardRedirect: No auth session, redirecting to login");
     return <Navigate to="/login" replace />
   }
 
-  // 3. Si hay sesión, esperar perfil de DB
   if (user === undefined) {
-    console.log("DashboardRedirect: Waiting for user profile from Convex...");
     if (isStuck) {
         return (
             <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
@@ -143,16 +136,13 @@ function DashboardRedirect() {
     return <LoadingScreen />
   }
   
-  // 4. Si autenticado pero perfil es null (error de DB)
   if (user === null) {
-      console.error("DashboardRedirect: Auth OK but Profile NULL - Verification failure");
       return <Navigate to="/auth-error?error=Perfil no encontrado o correo no institucional" replace />
   }
 
   const userRole = (user as any)?.role || 'student';
   const target = (userRole === 'teacher' || userRole === 'admin') ? '/docente' : '/alumno'
   
-  console.log("✅ DashboardRedirect: Success! Target:", target);
   return <Navigate to={target} replace />
 }
 
@@ -160,13 +150,6 @@ function DashboardRedirect() {
 
 
 function App() {
-
-  const { isLoading, isAuthenticated } = useConvexAuth()
-  
-  useEffect(() => {
-    console.log("🚀 QuestIA v1.0.11 - Auth State:", { isLoading, isAuthenticated });
-  }, [isLoading, isAuthenticated]);
-
   return (
     <>
       <PushNotificationManager />
