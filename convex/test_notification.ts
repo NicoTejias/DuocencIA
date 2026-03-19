@@ -20,7 +20,7 @@ export const sendTestPushByEmail = action({
     // 2. Enviar notificación
     await ctx.runAction(api.fcm.sendPushNotification, {
       token: users.push_token,
-      title: "Prueba de Quest 🚀",
+      title: "Prueba de QuestIA 🚀",
       body: "¡Hola! Esta es una notificación de prueba para verificar que el sistema funciona correctamente.",
     });
 

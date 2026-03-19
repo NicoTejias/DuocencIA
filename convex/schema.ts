@@ -4,6 +4,30 @@ import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
     ...authTables,
+    
+    admins: defineTable({
+        email: v.string(),
+        created_at: v.number(),
+        created_by: v.id("users"),
+    })
+        .index("by_email", ["email"]),
+        
+    course_groups: defineTable({
+        course_id: v.id("courses"),
+        name: v.string(),
+        created_at: v.number(),
+        created_by: v.id("users"),
+        expires_at: v.optional(v.number()),
+    })
+        .index("by_course", ["course_id"]),
+        
+    rate_limits: defineTable({
+        user_id: v.id("users"),
+        action: v.string(), // "quiz_submit", "auto_enroll", "feedback_submit"
+        last_action_at: v.number(),
+    })
+        .index("by_user_action", ["user_id", "action"]),
+        
     // Override the users table to include our custom fields
     users: defineTable({
         // Campos requeridos por Convex Auth / Clerk Sync
@@ -147,30 +171,26 @@ export default defineSchema({
         document_id: v.id("course_documents"),
         teacher_id: v.id("users"),
         title: v.string(),
-        quiz_type: v.optional(v.string()), // "multiple_choice" | "flashcard" | "match"
+        quiz_type: v.union(v.literal("multiple_choice"), v.literal("match")),
         questions: v.array(v.union(
             v.object({
                 question: v.string(),
                 options: v.array(v.string()),
                 correct: v.number(),
                 explanation: v.optional(v.string()),
-                bloom_level: v.optional(v.string()), // ej: "Recordar", "Analizar"
-                dok_level: v.optional(v.number()), // 1, 2, 3, 4
+                bloom_level: v.optional(v.string()),
+                dok_level: v.optional(v.number()),
             }),
             v.object({
                 front: v.string(),
                 back: v.string()
-            }),
-            v.object({
-                concept: v.string(),
-                definition: v.string()
             })
-        )), // Array de { question... } o { front, back } o { concept, definition }
-        difficulty: v.string(), // "facil" | "medio" | "dificil"
+        )),
+        difficulty: v.string(),
         num_questions: v.number(),
         created_at: v.number(),
         is_active: v.boolean(),
-        max_attempts: v.optional(v.number()), // Si es null o no existe, asumimos ilimitado o 1. Por defecto pondremos 1.
+        max_attempts: v.optional(v.number()),
     })
         .index("by_course", ["course_id"])
         .index("by_document", ["document_id"]),

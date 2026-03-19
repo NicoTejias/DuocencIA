@@ -3,15 +3,16 @@ import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 
 // Generar grupos inteligentes basados en perfiles Belbin
+// Los grupos persisten hasta el fin del semestre (expires_at)
 export const generateGroups = mutation({
     args: {
         course_id: v.id("courses"),
-        group_size: v.number(), // Tamaño deseado por grupo (3-6)
+        group_size: v.number(),
+        semester_end: v.optional(v.number()), // Timestamp fin de semestre
     },
     handler: async (ctx, args) => {
         const user = await requireTeacher(ctx);
 
-        // Verificar que el curso pertenezca al docente
         const course = await ctx.db.get(args.course_id);
         if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
             throw new Error("No autorizado para este ramo");
@@ -21,7 +22,7 @@ export const generateGroups = mutation({
             throw new Error("El tamaño del grupo debe ser entre 2 y 8");
         }
 
-        // Obtener todos los alumnos inscritos en el ramo
+        // Obtener alumnos inscritos
         const enrollments = await ctx.db
             .query("enrollments")
             .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
@@ -31,7 +32,7 @@ export const generateGroups = mutation({
             throw new Error("Se necesitan al menos 2 alumnos inscritos para generar grupos");
         }
 
-        // Obtener datos completos de los alumnos (con Belbin)
+        // Obtener datos de alumnos
         const userIds = new Set(enrollments.map(e => e.user_id));
         const users = await Promise.all(Array.from(userIds).map(id => ctx.db.get(id)));
         const userMap = new Map(users.filter(u => u !== null).map(u => [u._id, u]));
@@ -50,16 +51,12 @@ export const generateGroups = mutation({
             }
         }
 
-        // === ALGORITMO DE BALANCEO BELBIN ===
-        // Categorías: Mental (Cerebro, Monitor), Social (Coordinador, Investigador, Cohesionador), Acción (Impulsor, Implementador, Finalizador)
-
-        // Separar por categoría
+        // Algoritmo de balanceo Belbin
         const mental = students.filter(s => s.belbinCategory === "Mental");
         const social = students.filter(s => s.belbinCategory === "Social");
         const accion = students.filter(s => s.belbinCategory === "Acción");
         const sinCategoria = students.filter(s => s.belbinCategory === "Sin categoría");
 
-        // Shuffle cada grupo para aleatoriedad
         const shuffle = <T,>(arr: T[]): T[] => {
             const a = [...arr];
             for (let i = a.length - 1; i > 0; i--) {
@@ -74,7 +71,6 @@ export const generateGroups = mutation({
         const shuffledAccion = shuffle(accion);
         const shuffledSin = shuffle(sinCategoria);
 
-        // Pool combinado con round-robin por categoría
         const pool: typeof students = [];
         const maxLen = Math.max(shuffledMental.length, shuffledSocial.length, shuffledAccion.length, shuffledSin.length);
 
@@ -85,7 +81,6 @@ export const generateGroups = mutation({
             if (i < shuffledSin.length) pool.push(shuffledSin[i]);
         }
 
-        // Dividir en grupos
         const numGroups = Math.ceil(pool.length / args.group_size);
         const groups: (typeof students)[] = Array.from({ length: numGroups }, () => []);
 
@@ -93,22 +88,37 @@ export const generateGroups = mutation({
             groups[index % numGroups].push(student);
         });
 
-        // Guardar la asignación en los enrollments
+        // Crear grupos en la tabla course_groups y asignar a enrollments
+        const expiresAt = args.semester_end || (Date.now() + 180 * 24 * 60 * 60 * 1000); // 180 días por defecto
+        const createdGroups: { id: any, name: string }[] = [];
+
         for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
             const groupName = `Grupo ${groupIdx + 1}`;
+            
+            const groupId = await ctx.db.insert("course_groups", {
+                course_id: args.course_id,
+                name: groupName,
+                created_at: Date.now(),
+                created_by: user._id,
+                expires_at: expiresAt,
+            });
+
+            createdGroups.push({ id: groupId, name: groupName });
+
             for (const student of groups[groupIdx]) {
                 await ctx.db.patch(student.enrollmentId, {
-                    group_id: groupName,
+                    group_id: groupId,
                 });
             }
         }
 
-        // Retornar los grupos generados
         return {
             total_students: students.length,
             total_groups: groups.length,
+            expires_at: expiresAt,
             groups: groups.map((members, i) => ({
-                name: `Grupo ${i + 1}`,
+                id: createdGroups[i].id,
+                name: createdGroups[i].name,
                 members: members.map(m => ({
                     name: m.name,
                     belbinRole: m.belbinRole,
@@ -125,52 +135,120 @@ export const generateGroups = mutation({
     },
 });
 
-// Obtener los grupos de un ramo
+// Obtener grupos de un ramo
 export const getGroups = query({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
         try {
             await requireAuth(ctx);
 
+            const courseGroups = await ctx.db
+                .query("course_groups")
+                .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+                .collect();
+
             const enrollments = await ctx.db
                 .query("enrollments")
                 .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
                 .collect();
 
-            // Agrupar por group_id
-            const groups: Record<string, { name: string; belbinRole: string; belbinCategory: string; points: number }[]> = {};
-
             const userIds = new Set(enrollments.map(e => e.user_id));
             const users = await Promise.all(Array.from(userIds).map(id => ctx.db.get(id)));
             const userMap = new Map(users.filter(u => u !== null).map(u => [u._id, u]));
 
-            for (const en of enrollments) {
-                const groupName = en.group_id || "Sin grupo";
-                if (!groups[groupName]) groups[groupName] = [];
-
-                const student = userMap.get(en.user_id);
-                if (student) {
-                    groups[groupName].push({
-                        name: student.name || "Sin nombre",
-                        belbinRole: student.belbin_profile?.role_dominant || "Sin determinar",
-                        belbinCategory: student.belbin_profile?.category || "Sin categoría",
-                        points: en.ranking_points ?? en.total_points ?? 0,
+            const result = courseGroups.map(group => {
+                const members = enrollments
+                    .filter(en => en.group_id === group._id)
+                    .map(en => {
+                        const student = userMap.get(en.user_id);
+                        return {
+                            name: student?.name || "Sin nombre",
+                            belbinRole: student?.belbin_profile?.role_dominant || "Sin determinar",
+                            belbinCategory: student?.belbin_profile?.category || "Sin categoría",
+                            points: en.ranking_points ?? en.total_points ?? 0,
+                        };
                     });
-                }
-            }
 
-            return Object.entries(groups).map(([name, members]) => ({
-                name,
-                members,
-                stats: {
-                    mental: members.filter(m => m.belbinCategory === "Mental").length,
-                    social: members.filter(m => m.belbinCategory === "Social").length,
-                    accion: members.filter(m => m.belbinCategory === "Acción").length,
-                    total: members.length,
-                },
-            }));
+                return {
+                    id: group._id,
+                    name: group.name,
+                    created_at: group.created_at,
+                    expires_at: group.expires_at,
+                    members,
+                    stats: {
+                        mental: members.filter(m => m.belbinCategory === "Mental").length,
+                        social: members.filter(m => m.belbinCategory === "Social").length,
+                        accion: members.filter(m => m.belbinCategory === "Acción").length,
+                        total: members.length,
+                    },
+                };
+            });
+
+            return result;
         } catch {
             return [];
         }
+    },
+});
+
+// Eliminar grupos de un curso
+export const deleteGroups = mutation({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+
+        const course = await ctx.db.get(args.course_id);
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
+            throw new Error("No autorizado para este ramo");
+        }
+
+        const groups = await ctx.db
+            .query("course_groups")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+
+        const enrollments = await ctx.db
+            .query("enrollments")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+
+        for (const group of groups) {
+            await ctx.db.delete(group._id);
+        }
+
+        for (const en of enrollments) {
+            if (en.group_id) {
+                await ctx.db.patch(en._id, { group_id: undefined });
+            }
+        }
+
+        return { deleted: groups.length };
+    },
+});
+
+// Extender fecha de expiración de grupos
+export const extendGroups = mutation({
+    args: {
+        course_id: v.id("courses"),
+        new_expiry: v.number(),
+    },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+
+        const course = await ctx.db.get(args.course_id);
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
+            throw new Error("No autorizado para este ramo");
+        }
+
+        const groups = await ctx.db
+            .query("course_groups")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+
+        for (const group of groups) {
+            await ctx.db.patch(group._id, { expires_at: args.new_expiry });
+        }
+
+        return { extended: groups.length };
     },
 });

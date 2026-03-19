@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
 import { requireAuth } from "./withUser";
+import { checkRateLimit } from "./rateLimit";
 
 // Sincroniza el usuario de Clerk con nuestra tabla de users
 export const storeUser = mutation({
@@ -48,7 +49,7 @@ export const storeUser = mutation({
         const isAllowed = allowedDomains.some(domain => email.endsWith(domain));
 
         if (!isAllowed) {
-            throw new Error("Este correo no está autorizado para acceder a Quest. Usa tu cuenta institucional.");
+            throw new Error("Este correo no está autorizado para acceder a QuestIA. Usa tu cuenta institucional.");
         }
 
         const isTeacherEmail = email.includes("@profesor.") || email.includes("@admin.") || email.includes("@duoc.cl");
@@ -171,6 +172,8 @@ export const autoEnroll = mutation({
     handler: async (ctx) => {
         const user = await requireAuth(ctx);
         if (!user || !user.student_id) return { enrolled: 0 };
+
+        await checkRateLimit(ctx, user._id, "auto_enroll");
 
         // Normalizar el RUT del alumno para que matchee con la whitelist
         const normalizedId = normalizeRut(user.student_id);

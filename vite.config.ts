@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'vite.svg', 'icon-512.png'],
       manifest: {
-        name: 'Quest - Gestión Docente',
-        short_name: 'Quest',
+        name: 'QuestIA - Gestión Docente',
+        short_name: 'QuestIA',
         description: 'Plataforma educativa gamificada para la gestión docente.',
         theme_color: '#0f172a',
         background_color: '#0f172a',

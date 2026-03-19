@@ -71,7 +71,7 @@ function UpdateNotificationInner() {
             setError(null);
             setProgress(5); // Inicio visual
 
-            const fileName = `Quest_v${config.latestVersion}.apk`;
+            const fileName = `QuestIA_v${config.latestVersion}.apk`;
 
             // 1. Descargar el archivo
             const downloadResult = await Filesystem.downloadFile({

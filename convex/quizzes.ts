@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 import { api } from "./_generated/api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { checkRateLimit } from "./rateLimit";
 
 // Generar quiz con IA a partir del contenido de un documento
 export const generateQuiz = action({
@@ -182,10 +183,6 @@ export const saveQuiz = mutation({
             v.object({
                 front: v.string(),
                 back: v.string()
-            }),
-            v.object({
-                concept: v.string(),
-                definition: v.string()
             })
         )),
         difficulty: v.string(),
@@ -199,12 +196,14 @@ export const saveQuiz = mutation({
         if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
             throw new Error("No tienes permiso para agregar quizzes a este curso");
 
+        const quizType = args.quiz_type as "multiple_choice" | "match" || "multiple_choice";
+        
         const quizId = await ctx.db.insert("quizzes", {
             course_id: args.course_id,
             document_id: args.document_id,
             teacher_id: user._id,
             title: args.title,
-            quiz_type: args.quiz_type || "multiple_choice",
+            quiz_type: quizType,
             questions: args.questions,
             difficulty: args.difficulty,
             num_questions: args.num_questions,
@@ -476,10 +475,11 @@ export const updateAttemptProgress = mutation({
 export const submitQuiz = mutation({
     args: {
         quiz_id: v.id("quizzes"),
-        // El score ya no se envía desde el frontend para evitar trampas
     },
     handler: async (ctx, args) => {
         const user = await requireAuth(ctx);
+
+        await checkRateLimit(ctx, user._id, "quiz_submit");
 
         const quiz = await ctx.db.get(args.quiz_id);
         if (!quiz) throw new Error("Quiz no encontrado");

@@ -43,9 +43,9 @@ export const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      // Nota: Aquí se suele requerir una VAPID key para web push
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
       const token = await getToken(messaging, {
-        vapidKey: undefined // El usuario debe obtenerla de la consola de Firebase
+        vapidKey: vapidKey || undefined
       });
       return token;
     }

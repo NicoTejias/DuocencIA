@@ -119,7 +119,7 @@ function DashboardRedirect() {
             <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
                 <ShieldAlert className="w-16 h-16 text-amber-500 mb-4" />
                 <h1 className="text-xl font-bold text-white mb-2">Conexión Lenta o Error de Perfil</h1>
-                <p className="text-slate-400 text-sm mb-6">Estamos teniendo problemas para cargar tu perfil de Quest. Prueba cerrando sesión e ingresando de nuevo.</p>
+                <p className="text-slate-400 text-sm mb-6">Estamos teniendo problemas para cargar tu perfil de QuestIA. Prueba cerrando sesión e ingresando de nuevo.</p>
                 <div className="space-y-3 w-full max-w-xs">
                     <button 
                         onClick={() => window.location.reload()}
@@ -164,7 +164,7 @@ function App() {
   const { isLoading, isAuthenticated } = useConvexAuth()
   
   useEffect(() => {
-    console.log("🚀 Quest v1.0.11 - Auth State:", { isLoading, isAuthenticated });
+    console.log("🚀 QuestIA v1.0.11 - Auth State:", { isLoading, isAuthenticated });
   }, [isLoading, isAuthenticated]);
 
   return (

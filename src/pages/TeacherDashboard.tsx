@@ -3,9 +3,8 @@ import { useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
-import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, ClipboardCheck, ShieldAlert, HelpCircle } from 'lucide-react'
+import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, ClipboardCheck, HelpCircle } from 'lucide-react'
 import FAQSection from '../components/FAQSection'
-import { useMutation } from "convex/react"
 import { toast } from 'sonner'
 import RamosPanel from '../components/teacher/RamosPanel'
 import CrearMisionPanel from '../components/teacher/CrearMisionPanel'
@@ -274,7 +273,6 @@ function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { f
 
 function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }) {
     const navigate = useNavigate()
-    const makeMeAdmin = useMutation(api.admin_fix.makeMeAdmin)
 
     return (
         <div className="max-w-4xl mx-auto py-10 space-y-8">
@@ -332,25 +330,6 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                         <User className="w-4 h-4" />
                         {localStorage.getItem('quest_simulate_student') === 'true' ? 'Salir Modo Alumno' : 'Probar como Alumno'}
                     </button>
-
-                    {user.role !== 'admin' && user.email === 'ni.tejias@profesor.duoc.cl' && (
-                        <button
-                            onClick={async () => {
-                                if (window.confirm("¿Activar Modo Super Admin? Esta acción es irreversible.")) {
-                                    try {
-                                        await makeMeAdmin();
-                                        toast.success("¡Bienvenido, Administrador!");
-                                    } catch(e: any) {
-                                        toast.error(e.message);
-                                    }
-                                }
-                            }}
-                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold px-6 py-3 rounded-xl border border-red-500/20 transition-all flex items-center gap-2"
-                        >
-                            <ShieldAlert className="w-4 h-4" />
-                            MODO DIOS (ADMIN)
-                        </button>
-                    )}
                 </div>
             </div>
 

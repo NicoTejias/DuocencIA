@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as admin_fix from "../admin_fix.js";
+import type * as admins from "../admins.js";
 import type * as ai_feedback from "../ai_feedback.js";
 import type * as analytics from "../analytics.js";
 import type * as app_config from "../app_config.js";
@@ -18,11 +19,6 @@ import type * as auth from "../auth.js";
 import type * as backup_system from "../backup_system.js";
 import type * as courses from "../courses.js";
 import type * as crons from "../crons.js";
-import type * as debug from "../debug.js";
-import type * as debug_David from "../debug_David.js";
-import type * as debug_attempts from "../debug_attempts.js";
-import type * as debug_find_user from "../debug_find_user.js";
-import type * as debug_student from "../debug_student.js";
 import type * as documents from "../documents.js";
 import type * as evaluator from "../evaluator.js";
 import type * as faq from "../faq.js";
@@ -35,6 +31,7 @@ import type * as missions from "../missions.js";
 import type * as notifications from "../notifications.js";
 import type * as point_transfers from "../point_transfers.js";
 import type * as quizzes from "../quizzes.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as repair from "../repair.js";
 import type * as rewards from "../rewards.js";
 import type * as rutUtils from "../rutUtils.js";
@@ -53,6 +50,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   admin_fix: typeof admin_fix;
+  admins: typeof admins;
   ai_feedback: typeof ai_feedback;
   analytics: typeof analytics;
   app_config: typeof app_config;
@@ -61,11 +59,6 @@ declare const fullApi: ApiFromModules<{
   backup_system: typeof backup_system;
   courses: typeof courses;
   crons: typeof crons;
-  debug: typeof debug;
-  debug_David: typeof debug_David;
-  debug_attempts: typeof debug_attempts;
-  debug_find_user: typeof debug_find_user;
-  debug_student: typeof debug_student;
   documents: typeof documents;
   evaluator: typeof evaluator;
   faq: typeof faq;
@@ -78,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   point_transfers: typeof point_transfers;
   quizzes: typeof quizzes;
+  rateLimit: typeof rateLimit;
   repair: typeof repair;
   rewards: typeof rewards;
   rutUtils: typeof rutUtils;
