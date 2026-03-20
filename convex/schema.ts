@@ -171,7 +171,7 @@ export default defineSchema({
         document_id: v.id("course_documents"),
         teacher_id: v.id("users"),
         title: v.string(),
-        quiz_type: v.union(v.literal("multiple_choice"), v.literal("match")),
+        quiz_type: v.union(v.literal("multiple_choice"), v.literal("match"), v.literal("flashcard")),
         questions: v.array(v.union(
             v.object({
                 question: v.string(),
