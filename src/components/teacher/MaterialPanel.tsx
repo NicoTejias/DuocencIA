@@ -25,7 +25,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
     const [uploadType, setUploadType] = useState<string>('none')
 
     const ACCEPTED_TYPES = '.pdf,.docx,.pptx,.xlsx,.xls'
-    const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+    const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
     const autoDetectType = (fileName: string, content: string): 'PDA' | 'PIA' | 'PA' | 'none' => {
         const text = (fileName + " " + content.substring(0, 3000)).toUpperCase();
@@ -49,8 +49,8 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
             throw new Error(`Archivo no soportado: ${file.name}. Usa PDF, DOCX, PPTX o XLSX.`)
         }
 
-        if (file.size > MAX_FILE_SIZE && file.size > 0) { // Google Drive native docs might have size 0 before export
-            throw new Error(`El archivo "${file.name}" excede el límite de 20MB.`)
+        if (file.size > MAX_FILE_SIZE && file.size > 0) {
+            throw new Error(`El archivo "${file.name}" excede el límite de 50MB.`)
         }
 
         // Paso 1: Extraer texto del documento
@@ -251,7 +251,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                                 <span className="text-3xl">📗</span>
                             </div>
                             <p className="text-white font-medium mb-1">Arrastra archivos aquí o haz clic para seleccionar</p>
-                            <p className="text-slate-500 text-sm">PDF, DOCX, PPTX, XLSX — Máximo 20MB</p>
+                            <p className="text-slate-500 text-sm">PDF, DOCX, PPTX, XLSX — Máximo 50MB</p>
                         </>
                     )}
                     <input

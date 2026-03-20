@@ -12,23 +12,20 @@ export function useGooglePicker() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Debug logs (Safe & Detailed)
   useEffect(() => {
     if (CLIENT_ID || API_KEY) {
-      console.log("🔍 Google API Configuration Status:", {
+      const configStatus = {
         clientId: {
           exists: !!CLIENT_ID,
           length: CLIENT_ID.length,
-          endsWithCorrectDomain: CLIENT_ID.endsWith('.apps.googleusercontent.com'),
         },
         apiKey: {
           exists: !!API_KEY,
           length: API_KEY.length,
-          start: API_KEY.slice(0, 7) + "...", // Mostrar inicio para verificar
-          end: "..." + API_KEY.slice(-4)
         },
-        origin: window.location.origin
-      });
+        origin: window.location.origin,
+      };
+      void configStatus;
     }
   }, []);
 

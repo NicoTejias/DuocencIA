@@ -44,9 +44,18 @@ export const storeUser = mutation({
         // Validar dominios institucionales - Configurable para escalabilidad
         const email = identity.email?.toLowerCase() || "";
         
-        // TODO: En producción, estos dominios deberían cargarse de una configuración por institución
-        const allowedDomains = ["@duocuc.cl", "@profesor.duoc.cl", "@duoc.cl", "@gmail.com", "@outlook.com"]; 
-        const isAllowed = allowedDomains.some(domain => email.endsWith(domain));
+        // Obtener dominios permitidos de la configuración
+        const allowedDomainsConfig = await ctx.db
+            .query("institution_config")
+            .withIndex("by_key", (q: any) => q.eq("key", "allowed_email_domains"))
+            .first();
+        
+        const defaultDomains = "@duocuc.cl,@profesor.duoc.cl,@duoc.cl,@gmail.com,@outlook.com";
+        const allowedDomains = allowedDomainsConfig 
+            ? allowedDomainsConfig.value.split(",").filter(d => d.trim().length > 0)
+            : defaultDomains.split(",");
+        
+        const isAllowed = allowedDomains.some(domain => email.endsWith(domain.toLowerCase()));
 
         if (!isAllowed) {
             throw new Error("Este correo no está autorizado para acceder a QuestIA. Usa tu cuenta institucional.");

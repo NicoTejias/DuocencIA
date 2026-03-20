@@ -2,6 +2,19 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 
+const ALLOWED_FILE_TYPES = ["pdf", "docx", "pptx", "xlsx"];
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+const MAX_TEXT_LENGTH = 500_000; // 500KB de texto
+
+function validateFileType(fileType: string): boolean {
+    const normalized = fileType.toLowerCase().replace(".", "");
+    return ALLOWED_FILE_TYPES.includes(normalized);
+}
+
+function validateFileSize(fileSize: number): boolean {
+    return fileSize > 0 && fileSize <= MAX_FILE_SIZE_BYTES;
+}
+
 // Generar URL de upload para Convex File Storage
 export const generateUploadUrl = mutation({
     args: {},
@@ -14,8 +27,6 @@ export const generateUploadUrl = mutation({
 
             return await ctx.storage.generateUploadUrl();
         } catch (err: any) {
-            console.error("Critical error in generateUploadUrl:", err);
-            // Si el error es de Convex (Server Error), intentamos devolver el mensaje real
             throw new Error(err.message || "Error interno del servidor al generar URL de subida");
         }
     },
@@ -39,16 +50,25 @@ export const saveDocument = mutation({
 
         const user = await requireTeacher(ctx);
 
+        // Validar tipo de archivo
+        if (!validateFileType(args.file_type)) {
+            throw new Error(`Tipo de archivo no permitido. Formatos aceptados: ${ALLOWED_FILE_TYPES.join(", ")}`);
+        }
+
+        // Validar tamaño de archivo
+        if (!validateFileSize(args.file_size)) {
+            throw new Error(`El archivo excede el tamaño máximo permitido de 50MB`);
+        }
+
         // Verificar que el curso pertenece al docente
         const course = await ctx.db.get(args.course_id);
         if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
             throw new Error("No tienes permiso para subir a este ramo");
         }
 
-        // Limitar el content_text a 500KB para no exceder límites
-        const maxTextLength = 500_000;
-        const trimmedContent = args.content_text.length > maxTextLength
-            ? args.content_text.substring(0, maxTextLength) + "\n\n[El documento fue truncado por exceder el límite de texto]"
+        // Limitar el content_text para no exceder límites
+        const trimmedContent = args.content_text.length > MAX_TEXT_LENGTH
+            ? args.content_text.substring(0, MAX_TEXT_LENGTH) + "\n\n[El documento fue truncado por exceder el límite de texto]"
             : args.content_text;
 
         return await ctx.db.insert("course_documents", {

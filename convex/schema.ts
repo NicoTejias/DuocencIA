@@ -322,4 +322,12 @@ export default defineSchema({
         category: v.optional(v.string()), // "general", "alumno", "docente", etc.
         created_at: v.number(),
     }).index("by_order", ["order"]),
+
+    institution_config: defineTable({
+        key: v.string(),
+        value: v.string(),
+        updated_at: v.number(),
+        updated_by: v.optional(v.id("users")),
+    })
+        .index("by_key", ["key"]),
 });

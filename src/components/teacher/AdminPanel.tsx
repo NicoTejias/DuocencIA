@@ -17,7 +17,11 @@ import {
     GraduationCap,
     School,
     Mail,
-    Hash
+    Hash,
+    Globe,
+    Plus,
+    Trash2,
+    Save
 } from 'lucide-react'
 import { toast } from 'sonner'
 import FAQManager from '../admin/FAQManager'
@@ -150,6 +154,11 @@ export default function AdminPanel() {
             {/* Gestión de FAQ */}
             <div className="pt-10 border-t border-white/5">
                 <FAQManager />
+            </div>
+
+            {/* Gestión de Dominios de Email */}
+            <div className="pt-10 border-t border-white/5">
+                <EmailDomainsManager />
             </div>
         </div>
     )
@@ -418,6 +427,166 @@ function RecentUsersList() {
                     </button>
                 </div>
             ))}
+        </div>
+    )
+}
+
+function EmailDomainsManager() {
+    const domains = useQuery(api.app_config.getAllowedDomainsList)
+    const updateDomains = useMutation(api.app_config.updateAllowedDomains)
+    const [localDomains, setLocalDomains] = useState<string[]>([])
+    const [newDomain, setNewDomain] = useState('')
+    const [saving, setSaving] = useState(false)
+    const [hasChanges, setHasChanges] = useState(false)
+
+    useState(() => {
+        if (domains) {
+            setLocalDomains(domains.map(d => d.startsWith('@') ? d.substring(1) : d))
+        }
+    })
+
+    const handleDomainChange = (index: number, value: string) => {
+        const updated = [...localDomains]
+        let domain = value.trim().toLowerCase()
+        if (!domain.endsWith('.cl') && !domain.endsWith('.com') && !domain.endsWith('.edu')) {
+            if (!domain.includes('.')) {
+                domain = domain + '.cl'
+            }
+        }
+        updated[index] = domain
+        setLocalDomains(updated)
+        setHasChanges(true)
+    }
+
+    const addDomain = () => {
+        let domain = newDomain.trim().toLowerCase()
+        if (!domain) return
+        if (!domain.startsWith('@')) {
+            domain = '@' + domain
+        }
+        if (!localDomains.includes(domain) && !localDomains.includes(domain.substring(1))) {
+            setLocalDomains([...localDomains, domain])
+            setNewDomain('')
+            setHasChanges(true)
+        }
+    }
+
+    const removeDomain = (index: number) => {
+        const updated = localDomains.filter((_, i) => i !== index)
+        setLocalDomains(updated)
+        setHasChanges(true)
+    }
+
+    const handleSave = async () => {
+        if (localDomains.length === 0) {
+            toast.error("Debe haber al menos un dominio permitido")
+            return
+        }
+
+        setSaving(true)
+        try {
+            const domainsWithAt = localDomains.map(d => d.startsWith('@') ? d : '@' + d)
+            await updateDomains({ domains: domainsWithAt })
+            toast.success("Dominios actualizados correctamente")
+            setHasChanges(false)
+        } catch (err: any) {
+            toast.error("Error al guardar: " + err.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (!domains) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-accent animate-spin" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent/10 rounded-xl">
+                    <Globe className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-white">Dominios de Email Permitidos</h3>
+                    <p className="text-slate-500 text-xs">Configura qué dominios de email pueden registrarse en la plataforma.</p>
+                </div>
+            </div>
+
+            <div className="bg-surface-light border border-white/5 rounded-3xl p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {localDomains.map((domain, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-black/20 rounded-xl px-4 py-3 border border-white/5">
+                            <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                                <Mail className="w-4 h-4 text-accent" />
+                            </div>
+                            <input
+                                type="text"
+                                value={domain.startsWith('@') ? domain.substring(1) : domain}
+                                onChange={(e) => handleDomainChange(index, e.target.value)}
+                                className="flex-1 bg-transparent text-white text-sm font-mono focus:outline-none"
+                                placeholder="dominio.com"
+                            />
+                            <button
+                                onClick={() => removeDomain(index)}
+                                className="p-1 hover:bg-red-500/20 rounded-lg transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <div className="flex-1 flex items-center gap-2 bg-black/20 rounded-xl px-4 py-3 border border-white/5">
+                        <span className="text-slate-500 text-sm">@</span>
+                        <input
+                            type="text"
+                            value={newDomain}
+                            onChange={(e) => setNewDomain(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addDomain()}
+                            placeholder="Agregar nuevo dominio..."
+                            className="flex-1 bg-transparent text-white text-sm font-mono focus:outline-none"
+                        />
+                    </div>
+                    <button
+                        onClick={addDomain}
+                        className="p-3 bg-accent/20 hover:bg-accent/30 rounded-xl text-accent transition-colors"
+                    >
+                        <Plus className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <p className="text-slate-500 text-xs">
+                        {localDomains.length} dominio(s) configurado(s)
+                    </p>
+                    <button
+                        onClick={handleSave}
+                        disabled={!hasChanges || saving}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                            hasChanges && !saving
+                                ? 'bg-accent hover:bg-accent/80 text-white shadow-lg shadow-accent/20'
+                                : 'bg-white/5 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {saving ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Guardando...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4" />
+                                Guardar Cambios
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }

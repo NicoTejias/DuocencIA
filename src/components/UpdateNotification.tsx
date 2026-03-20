@@ -39,20 +39,13 @@ function UpdateNotificationInner() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Solo verificamos si estamos corriendo como App Nativa (Android/iOS)
         if (!Capacitor.isNativePlatform()) return;
 
         if (config) {
-            console.log("🚀 Update Check:", { 
-                current_app: NATIVE_VERSION, 
-                latest_server: config.latestVersion,
-                has_mismatch: config.latestVersion !== NATIVE_VERSION 
-            });
-
             if (config.latestVersion !== NATIVE_VERSION) {
                 setShowModal(true);
             } else {
-                setShowModal(false); // Si ya se actualizó, ocultar
+                setShowModal(false);
             }
         }
     }, [config]);

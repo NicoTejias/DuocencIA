@@ -13,12 +13,9 @@ export function UserSync() {
     
     if (isAuthenticated && !isLoading && !hasError) {
       storeUser()
-        .then((res) => {
-          console.log("✅ User synchronized successfully:", res);
-        })
+        .then(() => {})
         .catch((err) => {
-          console.error("Sync error:", err);
-          // Si el error es de dominio, redirigir y PARAR el bucle
+          console.error("User sync error:", err.message);
           if (err.message.includes("institucionales") || err.message.includes("permiten")) {
             window.location.replace("/auth-error?error=" + encodeURIComponent(err.message));
           }
