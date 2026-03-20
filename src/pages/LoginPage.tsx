@@ -1,17 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { SignIn, useUser } from "@clerk/clerk-react"
+import { useConvexAuth } from "convex/react"
 import { Rocket } from 'lucide-react'
 import { useEffect } from 'react'
 
 export default function LoginPage() {
     const navigate = useNavigate()
     const { isSignedIn } = useUser()
+    const { isAuthenticated, isLoading: isConvexLoading } = useConvexAuth()
 
     useEffect(() => {
-        if (isSignedIn) {
+        // Break the infinite loop by waiting for Convex Authentication
+        if (isSignedIn && isAuthenticated && !isConvexLoading) {
             navigate('/dashboard', { replace: true })
         }
-    }, [isSignedIn, navigate])
+    }, [isSignedIn, isAuthenticated, isConvexLoading, navigate])
 
     return (
         <div className="min-h-screen bg-surface flex pt-safe pb-safe">
