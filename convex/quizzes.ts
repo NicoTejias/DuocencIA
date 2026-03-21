@@ -761,7 +761,6 @@ export const submitQuiz = mutation({
             } else if (quizType === "memory") {
                 if (Array.isArray(selected)) {
                     const pairs = q.pairs || [];
-                    const matchedCount = selected.length / 2;
                     const correctPairs = pairs.filter((_: any, pi: number) => {
                         return selected.includes(pi * 2) && selected.includes(pi * 2 + 1);
                     }).length;

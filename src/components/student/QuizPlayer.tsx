@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { X, AlertCircle, Trophy, Star, Coins, Sparkles, Loader2, CheckCircle2, XCircle, Eye, BookOpen, ChevronUp, ChevronDown, Clock, RotateCcw, Zap } from 'lucide-react'
+import { X, AlertCircle, Star, Coins, Sparkles, Loader2, CheckCircle2, Eye, ChevronUp, ChevronDown, Clock, RotateCcw, Zap } from 'lucide-react'
 import { toast } from "sonner"
 
 interface QuizPlayerProps {
@@ -56,12 +56,10 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
     // Timer state
     const [timeLeft, setTimeLeft] = useState<number>(0)
-    const [questionTimes, setQuestionTimes] = useState<number[]>([])
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // Word search state
     const [foundWords, setFoundWords] = useState<string[]>([])
-    const [gridSelection, setGridSelection] = useState<{row: number, col: number}[]>([])
 
     // Memory state
     const [flippedCards, setFlippedCards] = useState<number[]>([])
@@ -90,7 +88,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
     const handleAutoAdvance = () => {
         if (currentIdx < questions.length - 1) {
-            setQuestionTimes(t => [...t, timeLeft])
             const nextIdx = currentIdx + 1
             setCurrentIdx(nextIdx)
             updateState(nextIdx, selectedOptions)
@@ -216,7 +213,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
         setTimeout(() => {
             if (currentIdx < questions.length - 1) {
-                setQuestionTimes(t => [...t, timeLeft])
                 const nextIdx = currentIdx + 1
                 setCurrentIdx(nextIdx)
                 updateState(nextIdx, newSelected)
@@ -272,7 +268,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
     const handleStepConfirm = () => {
         if (currentIdx < questions.length - 1) {
-            setQuestionTimes(t => [...t, timeLeft])
             const nextIdx = currentIdx + 1
             setCurrentIdx(nextIdx)
             const nextQ = questions[nextIdx]
@@ -566,7 +561,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
             case "order_steps": {
                 const steps = stepOrder.length > 0 ? stepOrder.map(i => currentQ.steps?.[i] || "") : (currentQ.steps || [])
-                const currentStepOrder = stepOrder.length > 0 ? stepOrder : steps.map((_: any, i: number) => i)
                 return (
                     <div className="animate-in fade-in duration-300">
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">{currentQ.description || "Ordena los pasos correctamente"}</h3>
@@ -630,7 +624,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             }
 
             case "word_search": {
-                const size = currentQ.size || 14
                 const words = currentQ.words || []
                 return (
                     <div className="animate-in fade-in duration-300">
@@ -685,7 +678,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {pairs.length} parejas</h3>
                         <p className="text-slate-500 text-xs text-center mb-4">Toca dos cartas para buscar una pareja (término ↔ definición)</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-                            {allCards.map((card) => {
+                            {allCards.map((card: { idx: number; label: string; type: "term" | "definition" }) => {
                                 const isFlipped = flippedCards.includes(card.idx) || memoryMatched.includes(card.idx)
                                 const isMatched = memoryMatched.includes(card.idx)
                                 return (
@@ -853,7 +846,6 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     }
 
     const colorClass = GAME_TYPE_COLORS[quizType] || GAME_TYPE_COLORS.multiple_choice
-    const colorParts = colorClass.split(" ")
 
     const progressWidth = `${((currentIdx + 1) / questions.length) * 100}%`
 
