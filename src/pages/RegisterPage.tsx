@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import { SignUp, useUser } from "@clerk/clerk-react"
-import { Rocket } from 'lucide-react'
 import { useEffect } from 'react'
 
 export default function RegisterPage() {
@@ -18,11 +17,11 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen bg-surface flex items-center justify-center p-6">
             <div className="max-w-xl w-full flex flex-col items-center">
-                <div className="flex items-center gap-3 mb-10">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
-                        <Rocket className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-2xl font-bold text-white tracking-tight">Quest</span>
+                <div className="flex flex-col items-center gap-4 mb-10">
+                    <img src="/assets/duco_logo.png" alt="Duco" className="h-16 w-auto drop-shadow-lg" />
+                    <span className="text-3xl font-black text-white tracking-tighter uppercase italic">
+                        Duoc<span className="text-primary">encIA</span>
+                    </span>
                 </div>
 
                 <div className="clerk-auth-container scale-95 sm:scale-100">

@@ -1,4 +1,4 @@
-import { BookOpen, X, Trophy, Coins, Flame, LogOut, ArrowRightLeft } from 'lucide-react'
+import { X, Trophy, Coins, Flame, LogOut, ArrowRightLeft } from 'lucide-react'
 
 interface DashboardSidebarProps {
     sidebarOpen: boolean;
@@ -39,10 +39,15 @@ export default function DashboardSidebar({
             <div className="p-6 border-b border-white/5 shrink-0 pt-safe">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                            <BookOpen className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 bg-surface/50 rounded-xl flex items-center justify-center border border-white/5 overflow-hidden p-1.5">
+                            <img src="/assets/duco_logo.png" alt="Duco Logo" className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-lg font-bold text-white tracking-tight">Quest</span>
+                        <div>
+                            <span className="text-lg font-black text-white block tracking-tighter italic leading-none mb-1">
+                                Duoc<span className="text-primary">encIA</span>
+                            </span>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest opacity-80 italic">Panel Alumno</span>
+                        </div>
                     </div>
                     <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white" title="Cerrar panel de navegación">
                         <X className="w-6 h-6" />
@@ -55,16 +60,16 @@ export default function DashboardSidebar({
                 {/* User Mini Card */}
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full flex items-center justify-center text-xl shadow-inner overflow-hidden border border-white/10 shrink-0">
+                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl shadow-inner overflow-hidden border border-white/10 shrink-0">
                             {user.avatarUrl ? (
                                 <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                                <img src="/avatars/duco.png" alt="Duco" className="w-full h-full object-cover" />
+                                <img src="/assets/duco_logo.png" alt="Duco" className="w-full h-full object-contain p-1" />
                             )}
                         </div>
                         <div className="overflow-hidden min-w-0">
                             <p className="text-white font-bold text-sm truncate">{userName}</p>
-                            <p className="text-primary-light text-[10px] font-black uppercase tracking-widest">{belbinRole}</p>
+                            <p className="text-primary-light text-[10px] font-black uppercase tracking-widest italic">{belbinRole}</p>
                         </div>
                     </div>
 
@@ -111,25 +116,25 @@ export default function DashboardSidebar({
                             onClick={() => { setActiveTab(tab.id); setSelectedCourseId(null); setSidebarOpen(false) }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium group
                                 ${activeTab === tab.id && !selectedCourseId
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                                    ? 'bg-primary text-black shadow-lg shadow-primary/25'
                                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
-                            <span className={`text-base ${activeTab === tab.id && !selectedCourseId ? 'text-white' : 'group-hover:text-primary-light'}`}>
+                            <span className={`text-base ${activeTab === tab.id && !selectedCourseId ? 'text-black' : 'group-hover:text-primary-light'}`}>
                                 {tab.icon}
                             </span>
-                            <span className="text-sm">{tab.label}</span>
+                            <span className="text-sm font-bold">{tab.label}</span>
                         </button>
                     ))}
                 </nav>
 
                 <div className="pt-4">
-                    <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 opacity-50">Acciones Rápidas</p>
+                    <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 opacity-50 italic">Acciones Rápidas</p>
                     <button
                         onClick={() => setShowTransferModal(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-accent-light hover:bg-accent/5 transition-all font-medium group"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 transition-all font-medium group"
                     >
-                        <ArrowRightLeft className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                        <ArrowRightLeft className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500 text-primary" />
                         <span className="text-sm text-slate-400 group-hover:text-white transition-colors">Transferir Puntos</span>
                     </button>
                 </div>
@@ -142,8 +147,8 @@ export default function DashboardSidebar({
                     Cerrar Sesión
                 </button>
                 <div className="px-4 py-1 flex items-center justify-between opacity-30 transition-opacity">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">v1.0.11</span>
-                    <span className="text-[9px] font-medium text-slate-600">Quest</span>
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Duocencia v1.1.0</span>
+                    <span className="text-[9px] font-medium text-slate-600">DuocUC Identity</span>
                 </div>
             </div>
         </aside>

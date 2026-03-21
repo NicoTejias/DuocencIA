@@ -29,8 +29,8 @@ export default function DashboardHeader({
                     <h1 className="text-base md:text-xl font-bold text-white capitalize leading-none mb-1 truncate">
                         {selectedCourseId ? 'Detalle del Ramo' : tabs.find(t => t.id === activeTab)?.label}
                     </h1>
-                    <p className="hidden xs:block text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">
-                        {selectedCourseId ? 'Contenido y Desafíos' : 'Panel de Control'}
+                    <p className="hidden xs:block text-[8px] md:text-[10px] text-primary font-black uppercase tracking-widest truncate italic">
+                        {selectedCourseId ? 'Contenido y Desafíos • DuocencIA' : 'Identidad Duoc UC'}
                     </p>
                 </div>
             </div>

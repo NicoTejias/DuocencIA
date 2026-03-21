@@ -63,8 +63,8 @@ export default function BartlePopup({ user, onComplete }: BartlePopupProps) {
                                     <span className="text-[10px] font-black text-primary-light uppercase tracking-[0.2em]">Misión de Perfil</span>
                                 </div>
 
-                                <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
-                                    ¡Descubre tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-accent-light">Sello Quest</span>! 🚀
+                                <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight italic">
+                                    ¡Descubre tu <span className="text-primary tracking-tighter italic">Sello DuocencIA</span>! 🎓
                                 </h2>
 
                                 <p className="text-slate-400 text-lg md:text-xl mb-10 leading-relaxed max-w-lg mx-auto">

@@ -34,39 +34,49 @@ export default function DashboardHome({
             )}
 
             {/* Hero Card */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border border-white/10 rounded-2xl md:rounded-[2rem] p-6 md:p-10">
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-primary/20 rounded-full blur-[80px]"></div>
+            <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-surface-light to-transparent border border-primary/20 rounded-2xl md:rounded-[2rem] p-6 md:p-10">
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
+                
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 text-center md:text-left">
+                    <div className="shrink-0 hidden md:block group">
+                        <img 
+                            src="/assets/duco_full.png" 
+                            alt="Duco" 
+                            className="w-40 h-auto drop-shadow-2xl group-hover:scale-110 transition-transform duration-500 filter contrast-125"
+                        />
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                            <div className="px-3 py-1 bg-primary/20 rounded-full text-[10px] md:text-xs font-black text-primary-light uppercase tracking-widest border border-primary/20">
+                            <div className="px-3 py-1 bg-primary/20 rounded-full text-[10px] md:text-xs font-black text-primary uppercase tracking-widest border border-primary/20 italic">
                                 {getGreeting()}
                             </div>
                         </div>
-                        <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-[1.1] break-words">
-                            ¡Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-accent-light">{firstName}</span>!
+                        <h2 className="text-4xl md:text-6xl font-black text-white mb-4 leading-none tracking-tighter italic">
+                            ¡Hola, <span className="text-primary">{firstName}</span>!
                         </h2>
-                        <p className="text-slate-400 text-base md:text-lg max-w-md leading-relaxed mx-auto md:mx-0">
+                        <p className="text-slate-400 text-lg md:text-xl max-w-md leading-relaxed mx-auto md:mx-0 font-medium tracking-tight">
                             {courses.length === 0
-                                ? 'Tu aventura está por comenzar. Espera a que tu docente te inscriba en un ramo.'
-                                : `Hoy es un gran día para aprender. Tienes ${totalRanking.toLocaleString()} puntos acumulados.`
+                                ? 'Bienvenido a DuocencIA. Tu aventura está por comenzar. Espera a que tu docente te inscriba en un ramo.'
+                                : `Bienvenido a la aventura. Llevas ¹${totalRanking.toLocaleString()} puntos de identidad acumulados en DuocencIA.`
                             }
                         </p>
                     </div>
-                    <div className="flex flex-col items-center p-5 md:p-6 bg-white/5 backdrop-blur-md rounded-2xl md:rounded-[2rem] border border-white/10 shadow-2xl shrink-0">
-                        <div className="relative mb-3 md:mb-4">
-                            <svg className="w-20 h-20 md:w-32 md:h-32 transform -rotate-90">
-                                <circle cx="40" cy="40" r="34" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 md:hidden" />
-                                <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5 hidden md:block" />
-                                <circle cx="40" cy="40" r="34" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="213" strokeDashoffset={213 - (213 * 0.75)} className="text-primary transition-all duration-1000 md:hidden" />
-                                <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="364" strokeDashoffset={364 - (364 * 0.75)} className="text-primary transition-all duration-1000 hidden md:block" />
+
+                    <div className="flex flex-col items-center p-6 md:p-8 bg-black/40 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-3xl shrink-0 group hover:border-primary/50 transition-all duration-500">
+                        <div className="relative mb-4">
+                            <svg className="w-24 h-24 md:w-36 md:h-36 transform -rotate-90">
+                                <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 md:hidden" />
+                                <circle cx="72" cy="72" r="66" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5 hidden md:block" />
+                                <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="264" strokeDashoffset={264 - (264 * 0.75)} className="text-primary transition-all duration-1000 md:hidden" />
+                                <circle cx="72" cy="72" r="66" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="414" strokeDashoffset={414 - (414 * 0.75)} className="text-primary transition-all duration-1000 hidden md:block" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <Trophy className="w-6 h-6 md:w-8 md:h-8 text-gold mb-1" />
-                                <span className="text-xl md:text-2xl font-black text-white leading-none">#2</span>
+                                <Trophy className="w-8 h-8 md:w-10 md:h-10 text-primary mb-1 drop-shadow-[0_0_10px_rgba(255,214,51,0.5)]" />
+                                <span className="text-2xl md:text-3xl font-black text-white leading-none tracking-tighter">#2</span>
                             </div>
                         </div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nivel 14</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic opacity-50">Nivel de Identidad 14</p>
                     </div>
                 </div>
             </div>

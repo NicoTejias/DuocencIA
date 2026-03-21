@@ -91,12 +91,14 @@ export default function TeacherDashboard() {
                 <div className="p-6 border-b border-white/5 shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
-                                <Settings className="w-5 h-5 text-white" />
+                            <div className="w-10 h-10 bg-surface/50 rounded-xl flex items-center justify-center border border-white/5 overflow-hidden p-1.5">
+                                <img src="/assets/duco_logo.png" alt="Duco Logo" className="w-full h-full object-contain" />
                             </div>
                             <div>
-                                <span className="text-lg font-bold text-white block tracking-tight leading-none mb-1">Quest</span>
-                                <span className="text-[10px] font-black text-accent-light uppercase tracking-widest opacity-80">Panel Docente</span>
+                                <span className="text-lg font-black text-white block tracking-tighter italic leading-none mb-1">
+                                    Duoc<span className="text-primary">encIA</span>
+                                </span>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-widest opacity-80 italic">Panel Docente</span>
                             </div>
                         </div>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white" aria-label="Cerrar panel de navegación" title="Cerrar panel de navegación">
@@ -148,8 +150,8 @@ export default function TeacherDashboard() {
                         Cerrar Sesión
                     </button>
                     <div className="px-4 py-1 flex items-center justify-between opacity-30 transition-opacity">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Quest v1.0.12</span>
-                        <span className="text-[9px] font-medium text-slate-600">Quest Platform</span>
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Duocencia v1.1.0</span>
+                        <span className="text-[9px] font-medium text-slate-600">DuocUC Identity</span>
                     </div>
                 </div>
             </aside>
@@ -238,20 +240,35 @@ function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { f
 
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-r from-accent/10 via-primary/5 to-surface-light border border-accent/20 rounded-2xl md:rounded-3xl p-6 md:p-8">
-                <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent-light" />
-                    <span className="text-accent-light text-[10px] md:text-sm font-medium">{getGreeting()}</span>
+            <div className="bg-gradient-to-r from-primary/10 via-surface-light to-surface-light border border-primary/20 rounded-2xl md:rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-full translate-x-12 opacity-10 pointer-events-none">
+                    <img src="/assets/duco_logo.png" alt="Duco BG" className="w-full h-full object-contain" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-black text-white mb-2">
-                    Hola {firstName} 👋
-                </h2>
-                <p className="text-slate-400 text-base md:text-lg">
-                    {coursesCount === 0
-                        ? 'Comienza creando tu primer ramo para empezar a gamificar tus clases.'
-                        : `Tienes ${coursesCount} ${coursesCount === 1 ? 'ramo activo' : 'ramos activos'}. ¿Listo para inspirar hoy?`
-                    }
-                </p>
+                
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                    <div className="shrink-0 hidden md:block group">
+                        <img 
+                            src="/assets/duco_full.png" 
+                            alt="Duco" 
+                            className="w-32 h-auto drop-shadow-xl group-hover:scale-110 transition-transform duration-500"
+                        />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                            <span className="text-primary text-[10px] md:text-sm font-black uppercase tracking-widest">{getGreeting()}</span>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter italic">
+                            ¡Hola <span className="text-primary">{firstName}</span>!
+                        </h2>
+                        <p className="text-slate-400 text-base md:text-lg max-w-xl">
+                            {coursesCount === 0
+                                ? 'Dale la bienvenida a DuocencIA. Comienza creando tu primer ramo para gamificar tus clases.'
+                                : `Tienes ${coursesCount} ${coursesCount === 1 ? 'ramo activo' : 'ramos activos'} en DuocencIA. ¡Inspiramos el futuro juntos!`
+                            }
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/10 rounded-2xl p-5">
@@ -371,26 +388,26 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                     </button>
                     <button
                         onClick={() => {
-                            const isSimulating = localStorage.getItem('quest_simulate_student') === 'true';
+                            const isSimulating = localStorage.getItem('duocencia_simulate_student') === 'true';
                             if (isSimulating) {
-                                localStorage.removeItem('quest_simulate_student');
+                                localStorage.removeItem('duocencia_simulate_student');
                                 toast.success("Modo Docente restaurado");
                                 navigate('/docente');
                             } else {
-                                localStorage.setItem('quest_simulate_student', 'true');
+                                localStorage.setItem('duocencia_simulate_student', 'true');
                                 toast.success("Simulación de Alumno Activa");
                                 navigate('/alumno');
                             }
                             window.location.reload();
                         }}
                         className={`font-bold px-6 py-3 rounded-xl border transition-all flex items-center gap-2 ${
-                            localStorage.getItem('quest_simulate_student') === 'true'
+                            localStorage.getItem('duocencia_simulate_student') === 'true'
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
                             : 'bg-accent/10 text-accent-light border-accent/20 hover:bg-accent/20'
                         }`}
                     >
                         <User className="w-4 h-4" />
-                        {localStorage.getItem('quest_simulate_student') === 'true' ? 'Salir Modo Alumno' : 'Probar como Alumno'}
+                        {localStorage.getItem('duocencia_simulate_student') === 'true' ? 'Salir Modo Alumno' : 'Probar como Alumno'}
                     </button>
                 </div>
             </div>

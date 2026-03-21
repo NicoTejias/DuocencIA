@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Rocket, Trophy, BookOpen, Shield, ChevronRight, Sparkles, Target, Gift, BarChart3, LogOut } from 'lucide-react'
+import { Trophy, Users, BookOpen, Shield, ChevronRight, Sparkles, Target, Gift, BarChart3, LogOut } from 'lucide-react'
 import { useConvexAuth, useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
 import { api } from "../../convex/_generated/api"
@@ -10,13 +10,13 @@ import FAQSection from '../components/FAQSection'
 const features = [
     {
         icon: <Target className="w-7 h-7" />,
-        title: "Desafíos con IA",
-        description: "Genera quizzes automáticos con IA a partir de tus materiales. Soporta múltiples tipos de juegos."
+        title: "Misiones Gamificadas",
+        description: "Transforma tareas en misiones épicas. Los alumnos ganan puntos al completar desafíos académicos."
     },
     {
         icon: <Trophy className="w-7 h-7" />,
         title: "Ranking en Tiempo Real",
-        description: "Leaderboard reactivo que se actualiza al instante. Cada ramo tiene su propio ranking y puede verse por sección o global."
+        description: "Leaderboard reactivo que se actualiza al instante. Fomenta la competencia sana entre compañeros."
     },
     {
         icon: <Gift className="w-7 h-7" />,
@@ -24,14 +24,14 @@ const features = [
         description: "Los alumnos canjean sus puntos por beneficios reales: puntos extra, extensiones de plazo y más."
     },
     {
-        icon: <Sparkles className="w-7 h-7" />,
-        title: "Múltiples Tipos de Juegos",
-        description: "Quiz clásico, relacionar, verdadero/falso, completar, ordenar pasos, trivia relámpago y más."
+        icon: <Users className="w-7 h-7" />,
+        title: "Grupos Inteligentes",
+        description: "Algoritmo basado en Belbin que genera equipos equilibrados mezclando perfiles complementarios."
     },
     {
         icon: <BarChart3 className="w-7 h-7" />,
         title: "Analíticas del Curso",
-        description: "Visualiza el progreso de tus alumnos con gráficos de rendimiento y participación en tiempo real."
+        description: "Visualiza el progreso de tus alumnos con gráficos de rendimiento y participación."
     },
     {
         icon: <Shield className="w-7 h-7" />,
@@ -67,10 +67,12 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
-                            <Rocket className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 bg-surface/50 rounded-xl flex items-center justify-center border border-white/5 overflow-hidden p-1.5">
+                            <img src="/assets/duco_logo.png" alt="Duco Logo" className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-xl font-bold text-white tracking-tight">Quest</span>
+                        <span className="text-xl font-black text-white tracking-tighter italic">
+                            Duoc<span className="text-primary">encIA</span>
+                        </span>
                     </div>
                     <div className="flex items-center gap-4">
                         {!isLoading && isAuthenticated ? (
@@ -109,8 +111,8 @@ export default function LandingPage() {
                     <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-8">
                         Gestiona tus ramos.{' '}
                         <br className="hidden sm:block" />
-                        <span className="bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
-                            Motiva a tus alumnos.
+                        <span className="bg-gradient-to-r from-primary via-primary-light to-white bg-clip-text text-transparent italic">
+                            Identidad Duoc UC.
                         </span>
                     </h1>
 
@@ -130,60 +132,6 @@ export default function LandingPage() {
                         <a href="#features" className="text-slate-400 hover:text-white font-medium px-8 py-4 rounded-2xl border border-white/10 hover:border-white/20 transition-all">
                             Ver Características
                         </a>
-                    </div>
-                </div>
-            </section>
-
-            {/* Video Demo Section */}
-            <section className="py-16 px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-white mb-3">Mira cómo funciona Quest</h2>
-                        <p className="text-slate-400 text-base max-w-lg mx-auto">Descubre en segundos cómo un docente crea desafíos gamificados y cómo un alumno los resuelve, todo en una misma plataforma.</p>
-                    </div>
-                    <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
-                        <div className="aspect-video bg-surface-light flex items-center justify-center relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10" />
-                            <div className="text-center z-10 px-8">
-                                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 cursor-pointer hover:bg-primary/30 transition-colors group">
-                                    <svg className="w-8 h-8 text-primary-light ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-white font-bold text-xl mb-2">Video Demostrativo</h3>
-                                <p className="text-slate-400 text-sm max-w-sm mx-auto">Presentación de la plataforma Quest: desde la perspectiva del docente y del alumno.</p>
-                                <p className="text-slate-600 text-xs mt-3">Para activar, reemplaza el <code className="bg-white/5 px-2 py-1 rounded text-primary-light">VIDEO_URL</code> con un embed de YouTube o Vimeo</p>
-                            </div>
-                            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-slate-500">
-                                <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                    Demostración interactiva
-                                </span>
-                                <span>~2 min</span>
-                            </div>
-                        </div>
-                        {/* Para activar el video real, descomenta y reemplaza VIDEO_URL:
-                        <iframe 
-                            src="VIDEO_URL" 
-                            title="Quest Demo"
-                            className="w-full aspect-video"
-                            allowFullScreen
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        /> */}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-                        {[
-                            { emoji: '👨‍🏫', title: 'Para Docentes', desc: 'Crea quizzes con IA, revisa rankings y gestiona recompensas en segundos.' },
-                            { emoji: '👨‍🎓', title: 'Para Alumnos', desc: 'Resuelve desafíos, gana puntos y canjealos por recompensas.' },
-                            { emoji: '📊', title: 'Analíticas', desc: 'Visualiza el progreso y participación de cada ramo en tiempo real.' },
-                        ].map((item, i) => (
-                            <div key={i} className="bg-surface-light border border-white/5 rounded-2xl p-5 text-center hover:border-white/10 transition-all">
-                                <span className="text-3xl mb-3 block">{item.emoji}</span>
-                                <h4 className="text-white font-bold text-sm mb-1">{item.title}</h4>
-                                <p className="text-slate-500 text-xs leading-relaxed">{item.desc}</p>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </section>
@@ -240,10 +188,10 @@ export default function LandingPage() {
             <footer className="border-t border-white/5 py-12 px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                            <Rocket className="w-4 h-4 text-white" />
+                        <div className="w-8 h-8 bg-surface/50 rounded-lg flex items-center justify-center border border-white/5 overflow-hidden p-1">
+                            <img src="/assets/duco_logo.png" alt="Duco Logo" className="w-full h-full object-contain" />
                         </div>
-                        <span className="text-sm text-slate-500">© 2026 Quest. Todos los derechos reservados.</span>
+                        <span className="text-sm text-slate-500 font-bold italic tracking-tighter">Duoc<span className="text-primary">encIA</span> © 2026.</span>
                     </div>
                     <div className="flex gap-6 text-sm text-slate-500">
                         <a href="#" className="hover:text-white transition-colors">Privacidad</a>
