@@ -112,7 +112,7 @@ ${content}
 
 ${masterContext}
 
-RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con esta estructura:
+            RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con esta estructura:
 {
   "title": "Relacionar Conceptos: [nombre temático]",
   "questions": [
@@ -122,6 +122,205 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con est
     }
   ]
 }`;
+        } else if (type === 'true_false') {
+            prompt = `Eres un generador de preguntas de verdadero o falso para educación superior en Chile.
+Genera EXACTAMENTE ${args.num_questions} afirmaciones basadas en el siguiente contenido académico.
+
+REGLAS:
+- Las afirmaciones deben ser verdaderas o falsas según el contenido.
+- Deben ser frases completas y claras.
+- La propiedad "correct" indica si es verdadera (true) o falsa (false).
+- Si es falsa, incluye "falsify" con la versión corregida.
+- Nivel: ${difficultyMap[args.difficulty] || "medio"}
+- Idioma: Español chileno formal
+
+CONTENIDO:
+${content}
+
+${masterContext}
+
+RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+{
+  "title": "Verdadero o Falso: [tema]",
+  "questions": [
+    {
+      "statement": "Afirmación completa que debe evaluarse como verdadera o falsa",
+      "correct": true,
+      "falsify": "Versión corregida si fuera falsa (opcional)"
+    }
+  ]
+}`;
+        } else if (type === 'fill_blank') {
+            prompt = `Eres un generador de ejercicios de completar oraciones para educación superior en Chile.
+Genera EXACTAMENTE ${args.num_questions} oraciones con un espacio en blanco basadas en el siguiente contenido.
+
+REGLAS:
+- Cada oración debe tener UN espacio en blanco marcado con "__".
+- La respuesta correcta va en "answer".
+- Las opciones incorrectas deben ser plausibles.
+- Debe haber exactamente 4 opciones (1 correcta + 3 incorrectas).
+- Nivel: ${difficultyMap[args.difficulty] || "medio"}
+- Idioma: Español chileno formal
+
+CONTENIDO:
+${content}
+
+${masterContext}
+
+RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+{
+  "title": "Completar: [tema]",
+  "questions": [
+    {
+      "question": "La fotosíntesis es el proceso por el cual las plantas convierten la luz en energía química.",
+      "answer": "luz",
+      "options": ["luz", "agua", "suelo", "dióxido de carbono"],
+      "explanation": "La fotosíntesis utiliza luz solar para convertir CO2 y agua en glucosa."
+    }
+  ]
+}`;
+        } else if (type === 'order_steps') {
+            prompt = `Eres un generador de ejercicios de ordenamiento de pasos para educación superior en Chile.
+Genera EXACTAMENTE ${args.num_questions} secuencias de pasos ordenados basadas en el siguiente contenido.
+
+REGLAS:
+- Cada ejercicio debe tener entre 4 y 6 pasos en orden correcto.
+- Los pasos deben ser claros y numerados en el texto original.
+- La propiedad "correctOrder" debe tener los índices originales de los pasos en orden correcto (0-indexed).
+- Nivel: ${difficultyMap[args.difficulty] || "medio"}
+- Idioma: Español chileno formal
+
+CONTENIDO:
+${content}
+
+${masterContext}
+
+RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+{
+  "title": "Ordenar Pasos: [tema]",
+  "questions": [
+    {
+      "description": "Ordena los pasos del proceso de mitosis",
+      "steps": ["La célula se divide en dos células hija", "Los cromosomas se alinean en el ecuador", "Los cromosomas se condensan", "La célula se prepara para dividirse"],
+      "correctOrder": [2, 3, 1, 0]
+    }
+  ]
+}`;
+        } else if (type === 'trivia') {
+            prompt = `Eres un generador de trivia relámpago para educación superior en Chile.
+ Genera EXACTAMENTE ${args.num_questions} preguntas de respuesta rápida basadas en el siguiente contenido.
+
+ REGLAS:
+ - Preguntas cortas y directas (máximo 15 palabras).
+ - Respuesta única y corta (máximo 5 palabras).
+ - 4 opciones de respuesta (1 correcta, 3 incorrectas).
+ - La respuesta correcta va en "correct".
+ - Incluir "fun_fact" como dato curioso educativo.
+ - Nivel: ${difficultyMap[args.difficulty] || "medio"}
+ - Idioma: Español chileno formal
+
+ CONTENIDO:
+ ${content}
+
+ ${masterContext}
+
+ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+ {
+   "title": "Trivia Relámpago: [tema]",
+   "questions": [
+     {
+       "question": "¿Cuántos protones tiene el hidrógeno?",
+       "options": ["1", "2", "0", "3"],
+       "correct": 0,
+       "fun_fact": "El hidrógeno es el elemento más abundante del universo."
+     }
+   ]
+ }`;
+        } else if (type === 'word_search') {
+            prompt = `Eres un generador de sopas de letras educativas para educación superior en Chile.
+ Genera EXACTAMENTE ${args.num_questions} palabras clave basadas en el siguiente contenido académico.
+
+ REGLAS:
+ - Palabras entre 4 y 12 letras.
+ - Incluir términos técnicos importantes del contenido.
+ - La propiedad "size" define el tamaño de la grilla (recomendado 12-16).
+ - Incluir las palabras en español formal.
+ - Nivel: ${difficultyMap[args.difficulty] || "medio"}
+ - Idioma: Español chileno formal
+
+ CONTENIDO:
+ ${content}
+
+ ${masterContext}
+
+ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+ {
+   "title": "Sopa de Letras: [tema]",
+   "questions": [
+     {
+       "words": ["fotossíntesis", "clorofila", "glucosa", "oxígeno", "mitochondria", "ATP", "respiración", "célula", "enzima", "metabolismo"],
+       "size": 14
+     }
+   ]
+ }`;
+        } else if (type === 'quiz_sprint') {
+            prompt = `Eres un generador de quiz sprint (carrera de preguntas) para educación superior en Chile.
+ Genera EXACTAMENTE ${args.num_questions} preguntas de respuesta rápida basadas en el siguiente contenido.
+
+ REGLAS:
+ - Preguntas muy cortas y directas (máximo 12 palabras).
+ - 4 opciones por pregunta (1 correcta, 3 plausibles).
+ - La respuesta correcta va en "correct".
+ - "time_limit" en segundos (default 15 para nivel fácil, 10 para difícil).
+ - Diseñadas para responderse muy rápido bajo presión de tiempo.
+ - Nivel: ${difficultyMap[args.difficulty] || "medio"}
+ - Idioma: Español chileno formal
+
+ CONTENIDO:
+ ${content}
+
+ ${masterContext}
+
+ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+ {
+   "title": "Quiz Sprint: [tema]",
+   "questions": [
+     {
+       "question": "¿Qué gas liberan las plantas en la fotosíntesis?",
+       "options": ["Oxígeno", "Nitrógeno", "Dióxido de carbono", "Hidrógeno"],
+       "correct": 0,
+       "time_limit": 15
+     }
+   ]
+ }`;
+        } else if (type === 'memory') {
+            prompt = `Eres un generador de juegos de memoria (matching) para educación superior en Chile.
+ Genera EXACTAMENTE ${args.num_questions} pares de términos y definiciones basadas en el siguiente contenido.
+
+ REGLAS:
+ - Cada par tiene un "term" (concepto breve, 1-5 palabras) y una "definition" (definición de 1-2 oraciones).
+ - Los términos deben ser conceptos clave del contenido.
+ - Diseñado para el juego de memoria donde el jugador debe encontrar la pareja.
+ - Nivel: ${difficultyMap[args.difficulty] || "medio"}
+ - Idioma: Español chileno formal
+
+ CONTENIDO:
+ ${content}
+
+ ${masterContext}
+
+ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
+ {
+   "title": "Memory: [tema]",
+   "questions": [
+     {
+       "pairs": [
+         { "term": "Mitocondria", "definition": "Orgánulo que produce energía en la célula mediante respiración aeróbica." },
+         { "term": "Ribosoma", "definition": "Estructura celular responsable de la síntesis de proteínas." }
+       ]
+     }
+   ]
+ }`;
         }
 
         const result = await model.generateContent(prompt);
@@ -160,6 +359,7 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks, con est
             title: quizData.title,
             numQuestions: quizData.questions.length,
             questions: quizData.questions,
+            quiz_type: type,
         };
     },
 });
@@ -183,6 +383,44 @@ export const saveQuiz = mutation({
             v.object({
                 front: v.string(),
                 back: v.string()
+            }),
+            v.object({
+                statement: v.string(),
+                correct: v.boolean(),
+                falsify: v.optional(v.string()),
+            }),
+            v.object({
+                question: v.string(),
+                answer: v.string(),
+                options: v.array(v.string()),
+                explanation: v.optional(v.string()),
+            }),
+            v.object({
+                description: v.string(),
+                steps: v.array(v.string()),
+                correctOrder: v.array(v.number()),
+            }),
+            v.object({
+                question: v.string(),
+                options: v.array(v.string()),
+                correct: v.number(),
+                fun_fact: v.optional(v.string()),
+            }),
+            v.object({
+                words: v.array(v.string()),
+                size: v.optional(v.number()),
+            }),
+            v.object({
+                question: v.string(),
+                options: v.array(v.string()),
+                correct: v.number(),
+                time_limit: v.optional(v.number()),
+            }),
+            v.object({
+                pairs: v.array(v.object({
+                    term: v.string(),
+                    definition: v.string(),
+                })),
             })
         )),
         difficulty: v.string(),
@@ -196,7 +434,7 @@ export const saveQuiz = mutation({
         if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
             throw new Error("No tienes permiso para agregar quizzes a este curso");
 
-        const quizType = args.quiz_type as "multiple_choice" | "match" || "multiple_choice";
+        const quizType = (args.quiz_type || "multiple_choice") as "multiple_choice" | "match" | "flashcard" | "true_false" | "fill_blank" | "order_steps" | "trivia" | "word_search" | "quiz_sprint" | "memory";
         
         const quizId = await ctx.db.insert("quizzes", {
             course_id: args.course_id,
@@ -484,7 +722,6 @@ export const submitQuiz = mutation({
         const quiz = await ctx.db.get(args.quiz_id);
         if (!quiz) throw new Error("Quiz no encontrado");
 
-        // Buscar el intento en progreso
         const attempts = await ctx.db
             .query("quiz_attempts")
             .withIndex("by_quiz_user", (q) => q.eq("quiz_id", args.quiz_id).eq("user_id", user._id))
@@ -492,27 +729,56 @@ export const submitQuiz = mutation({
             .collect();
 
         const attempt = attempts.sort((a, b) => b.last_updated - a.last_updated)[0];
-
         if (!attempt) throw new Error("No hay un intento activo para este quiz");
 
-        // Calcular puntaje
         let correctCount = 0;
         const totalQuestions = quiz.questions.length;
+        const quizType = quiz.quiz_type || "multiple_choice";
 
         quiz.questions.forEach((q: any, idx: number) => {
             const selected = attempt.selected_options[idx];
-            const correct = q.correct ?? q.correctAnswerIndex;
-            if (selected !== null && selected === correct) {
-                correctCount++;
+
+            if (quizType === "order_steps") {
+                if (Array.isArray(selected) && selected.length === (q.steps?.length || 0)) {
+                    selected.forEach((s: number, i: number) => {
+                        if (s === q.correctOrder[i]) correctCount += 1 / totalQuestions;
+                    });
+                }
+            } else if (quizType === "match") {
+                if (selected !== null && Array.isArray(selected) && selected[0] !== undefined && selected[1] !== undefined) {
+                    if (selected[0] === selected[1]) correctCount++;
+                }
+            } else if (quizType === "true_false") {
+                if (selected !== null) {
+                    const expected = q.correct === true ? 1 : 0;
+                    if (selected === expected) correctCount++;
+                }
+            } else if (quizType === "word_search") {
+                if (Array.isArray(selected)) {
+                    const found = selected.filter((w: string) => q.words?.includes(w)).length;
+                    correctCount += found / (q.words?.length || 1);
+                }
+            } else if (quizType === "memory") {
+                if (Array.isArray(selected)) {
+                    const pairs = q.pairs || [];
+                    const matchedCount = selected.length / 2;
+                    const correctPairs = pairs.filter((_: any, pi: number) => {
+                        return selected.includes(pi * 2) && selected.includes(pi * 2 + 1);
+                    }).length;
+                    correctCount += correctPairs / (pairs.length || 1);
+                }
+            } else if (quizType === "quiz_sprint") {
+                if (selected !== null && selected === (q.correct ?? q.correctAnswerIndex)) {
+                    correctCount++;
+                }
+            } else {
+                const correct = q.correct ?? q.correctAnswerIndex;
+                if (selected !== null && selected === correct) correctCount++;
             }
-            // Para flashcards y match, la lógica de guardado de selected_options 
-            // puede variar, pero por ahora asumimos que el frontend marca 
-            // correctamente lo que se considere "acierto".
         });
 
         const scorePct = Math.round((correctCount / totalQuestions) * 100);
 
-        // Obtener historial de intentos previos (excluyendo este que vamos a cerrar)
         const submissions = await ctx.db
             .query("quiz_submissions")
             .withIndex("by_quiz_user", (q) => q.eq("quiz_id", args.quiz_id).eq("user_id", user._id))
@@ -521,40 +787,51 @@ export const submitQuiz = mutation({
         const currentAttemptsCount = submissions.length;
         const maxAttempts = quiz.max_attempts ?? 1;
 
-        if (currentAttemptsCount >= maxAttempts) {
-            throw new Error(`Has alcanzado el límite de ${maxAttempts} intentos permitido para este quiz.`);
+        if (maxAttempts !== 99 && currentAttemptsCount >= maxAttempts) {
+            throw new Error(`Has alcanzado el límite de ${maxAttempts} intentos.`);
         }
 
-        // Marcar intento como completado
-        await ctx.db.patch(attempt._id, {
-            status: "completed",
-            last_updated: Date.now(),
-        });
+        await ctx.db.patch(attempt._id, { status: "completed", last_updated: Date.now() });
 
-        // --- MODO SIMULACIÓN (DOCENTE/ADMIN) ---
-        // Si el usuario es docente o admin, devolvemos el resultado pero NO guardamos nada más
-        // ni afectamos rachas ni puntos reales.
         if (user.role === "teacher" || user.role === "admin") {
             const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
             const potentialEarned = Math.round((scorePct / 100) * basePoints);
-            
+            const remainingAttempts = maxAttempts === 99 ? 999 : Math.max(0, maxAttempts - currentAttemptsCount - 1);
             return {
-                success: true,
-                score: scorePct,
-                earned: potentialEarned,
-                is_simulation: true,
-                message: `MODO PRUEBA: Hubieras ganado ${potentialEarned} puntos. No se han guardado registros.`,
-                selected_options: attempt.selected_options
+                success: true, score: scorePct, earned: potentialEarned,
+                is_simulation: true, remaining_attempts: remainingAttempts,
+                message: `MODO PRUEBA: ${potentialEarned} puntos.`,
+                selected_options: attempt.selected_options, attempts_used: currentAttemptsCount + 1
             };
         }
 
-        // --- Lógica de Bono Diario por Racha ---
+        const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
+        const earnedPointsThisAttempt = Math.round((scorePct / 100) * basePoints);
+
+        await ctx.db.insert("quiz_submissions", {
+            quiz_id: args.quiz_id,
+            user_id: user._id,
+            score: scorePct,
+            earned_points: earnedPointsThisAttempt,
+            completed_at: Date.now(),
+        });
+
+        const allSubmissions = await ctx.db
+            .query("quiz_submissions")
+            .withIndex("by_quiz_user", (q) => q.eq("quiz_id", args.quiz_id).eq("user_id", user._id))
+            .collect();
+
+        const totalScore = allSubmissions.reduce((sum, s) => sum + s.score, 0);
+        const averageScore = Math.round(totalScore / allSubmissions.length);
+        const averageEarned = Math.round((averageScore / 100) * basePoints);
+
+        const previouslyPaid = allSubmissions.slice(0, -1).reduce((sum, s) => sum + s.earned_points, 0);
+        const pointsToAward = Math.max(0, averageEarned - previouslyPaid);
+
         const now = Date.now();
         const lastBonus = user.last_daily_bonus_at || 0;
         const currentStreak = user.daily_streak || 0;
         const currentIceCubes = user.ice_cubes || 0;
-
-        // Validar rachas usando la zona horaria chilena
         const todayDateStr = new Date(now).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
         const lastBonusDateStr = lastBonus ? new Date(lastBonus).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' }) : "";
         const yesterdayDateStr = new Date(now - 1000 * 60 * 60 * 24).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
@@ -564,36 +841,19 @@ export const submitQuiz = mutation({
         let usedFreeze = false;
 
         if (lastBonusDateStr !== todayDateStr) {
-            if (lastBonusDateStr === yesterdayDateStr || lastBonus === 0) {
-                newStreak += 1;
-            } else {
-                if (currentIceCubes > 0) {
-                    newStreak += 1;
-                    usedFreeze = true;
-                } else {
-                    newStreak = 1;
-                }
-            }
-            
+            if (lastBonusDateStr === yesterdayDateStr || lastBonus === 0) newStreak += 1;
+            else if (currentIceCubes > 0) { newStreak += 1; usedFreeze = true; }
+            else newStreak = 1;
             dailyBonus = Math.min(newStreak * 5, 50);
-            
-            await ctx.db.patch(user._id, { 
+            await ctx.db.patch(user._id, {
                 last_daily_bonus_at: now,
                 daily_streak: newStreak,
                 ice_cubes: usedFreeze ? currentIceCubes - 1 : currentIceCubes
             });
         }
-        // ----------------------------------------
 
-        // Cálculo de puntos base según dificultad
-        const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
-        const currentEarnedPoints = Math.round((scorePct / 100) * basePoints);
-
-        const bestPreviousPoints = submissions.length > 0
-            ? Math.max(...submissions.map(s => s.earned_points))
-            : 0;
-
-        const pointsToAward = Math.max(0, currentEarnedPoints - bestPreviousPoints) + dailyBonus;
+        const finalPointsToAward = Math.max(0, pointsToAward) + dailyBonus;
+        const remainingAttempts = maxAttempts === 99 ? 999 : Math.max(0, maxAttempts - allSubmissions.length);
 
         const enrollment = await ctx.db
             .query("enrollments")
@@ -602,46 +862,29 @@ export const submitQuiz = mutation({
             .first();
 
         if (!enrollment) throw new Error("No inscrito");
-        
-        const multiplier = enrollment.active_multiplier || 1;
 
-        // Registrar el intento en submissions
-        await ctx.db.insert("quiz_submissions", {
-            quiz_id: args.quiz_id,
-            user_id: user._id,
-            score: scorePct,
-            earned_points: Math.round(currentEarnedPoints * multiplier),
-            completed_at: Date.now(),
-        });
-
-        if (pointsToAward > 0) {
-            const finalPointsToAward = Math.round(pointsToAward * multiplier);
-            const newRankingPoints = (enrollment.ranking_points ?? enrollment.total_points ?? 0) + finalPointsToAward;
-            const newSpendablePoints = (enrollment.spendable_points ?? enrollment.total_points ?? 0) + finalPointsToAward;
-
+        if (finalPointsToAward > 0) {
+            const newRankingPoints = (enrollment.ranking_points ?? 0) + finalPointsToAward;
+            const newSpendablePoints = (enrollment.spendable_points ?? 0) + finalPointsToAward;
             await ctx.db.patch(enrollment._id, {
                 ranking_points: newRankingPoints,
                 spendable_points: newSpendablePoints,
                 total_points: (enrollment.total_points ?? 0) + finalPointsToAward,
                 active_multiplier: undefined,
             });
-
             return {
-                success: true,
-                score: scorePct,
-                earned: finalPointsToAward,
-                is_improvement: pointsToAward > dailyBonus,
-                total_earned_now: Math.round(currentEarnedPoints * multiplier),
-                new_rank: newRankingPoints,
+                success: true, score: scorePct, earned: finalPointsToAward,
+                average_score: averageScore, attempts_used: allSubmissions.length,
+                remaining_attempts: remainingAttempts, max_attempts: maxAttempts,
+                is_final_attempt: remainingAttempts === 0 || maxAttempts === 99,
+                daily_bonus_applied: dailyBonus > 0, daily_bonus: dailyBonus,
+                new_streak: newStreak, new_rank: newRankingPoints,
                 new_spendable: newSpendablePoints,
-                daily_bonus_applied: dailyBonus > 0,
-                daily_bonus: dailyBonus,
-                new_streak: newStreak,
-                selected_options: attempt.selected_options // Devolvemos esto para que el frontend muestre revisión
+                selected_options: attempt.selected_options
             };
         }
 
-        if (dailyBonus > 0 || multiplier > 1) {
+        if (dailyBonus > 0) {
             const newPoints = (enrollment.ranking_points ?? 0) + dailyBonus;
             const newSpendable = (enrollment.spendable_points ?? 0) + dailyBonus;
             await ctx.db.patch(enrollment._id, {
@@ -651,27 +894,25 @@ export const submitQuiz = mutation({
                 active_multiplier: undefined,
             });
             return {
-                success: true,
-                score: scorePct,
-                earned: dailyBonus,
-                is_improvement: false,
-                daily_bonus_applied: true,
-                daily_bonus: dailyBonus,
-                new_streak: newStreak,
-                new_rank: newPoints,
+                success: true, score: scorePct, earned: dailyBonus,
+                average_score: averageScore, attempts_used: allSubmissions.length,
+                remaining_attempts: remainingAttempts, max_attempts: maxAttempts,
+                is_final_attempt: remainingAttempts === 0 || maxAttempts === 99,
+                daily_bonus_applied: true, daily_bonus: dailyBonus,
+                new_streak: newStreak, new_rank: newPoints,
                 new_spendable: newSpendable,
                 selected_options: attempt.selected_options
             };
         }
 
         return {
-            success: true,
-            score: scorePct,
-            earned: 0,
-            is_improvement: false,
-            total_earned_best: bestPreviousPoints,
+            success: true, score: scorePct, earned: 0,
+            average_score: averageScore, attempts_used: allSubmissions.length,
+            remaining_attempts: remainingAttempts, max_attempts: maxAttempts,
+            is_final_attempt: remainingAttempts === 0 || maxAttempts === 99,
             new_streak: currentStreak,
             selected_options: attempt.selected_options
         };
     },
 });
+

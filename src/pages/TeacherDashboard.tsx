@@ -3,22 +3,17 @@ import { useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
-import { BookOpen, Target, Trophy, Gift, Users, BarChart3, LogOut, Menu, X, Settings, FileSpreadsheet, ArrowRightLeft, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, ClipboardCheck, HelpCircle } from 'lucide-react'
+import { BookOpen, Target, Trophy, Gift, BarChart3, LogOut, Menu, X, Settings, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, HelpCircle, ArrowRightLeft } from 'lucide-react'
 import FAQSection from '../components/FAQSection'
 import { toast } from 'sonner'
 import RamosPanel from '../components/teacher/RamosPanel'
 import CrearMisionPanel from '../components/teacher/CrearMisionPanel'
 import CrearRecompensaPanel from '../components/teacher/CrearRecompensaPanel'
-import WhitelistPanel from '../components/teacher/WhitelistPanel'
 import MaterialPanel from '../components/teacher/MaterialPanel'
-import AnaliticasPanel from '../components/teacher/AnaliticasPanel'
 import RankingDocentePanel from '../components/teacher/RankingDocentePanel'
-import TraspasosPanel from '../components/teacher/TraspasosPanel'
-import GruposPanel from '../components/teacher/GruposPanel'
 import NotificationBell from '../components/NotificationBell'
 import BetaBanner from '../components/BetaBanner'
 import AdminPanel from '../components/teacher/AdminPanel'
-import EvaluadorIAPanel from '../components/teacher/EvaluadorIAPanel'
 
 function getGreeting(): string {
     const h = new Date().getHours()
@@ -32,6 +27,27 @@ function getFirstName(fullName?: string): string {
     return fullName.split(' ')[0]
 }
 
+const EFEMERIDES = [
+    { date: "16-09", text: "En 1810 se inició la independencia de Chile con la Primera Junta Nacional de Gobierno." },
+    { date: "21-05", text: "En 1818 se firmó el Decreto de Ablución, que abolió la esclavitud en Chile." },
+    { date: "05-04", text: "En 1818, Bernardo O'Higgins proclamó la independencia de Chile en Concepción." },
+    { date: "02-04", text: "En 1982 se promulgó la Ley Orgánica Constitucional de Enseñanza en Chile." },
+    { date: "11-03", text: "En 1818, Arturo Prat nació en Santiago, convirtiéndose en héroe de la Patria." },
+    { date: "21-11", text: "En 1830 se fundó la Universidad de Chile, la primera institución de educación superior del país." },
+    { date: "07-06", text: "En 1945, la UNESCO fue fundada para promover la paz y la educación a nivel mundial." },
+    { date: "15-05", text: "En 1807 se fundó el Instituto Nacional, el primer establecimiento de educación pública de Chile." },
+    { date: "27-02", text: "Cada 27 de febrero se recuerda el terremoto más fuerte registrado: 9.5° Richter en 1960." },
+    { date: "10-08", text: "En 1811 se instaló la primera Junta de Gobierno en Chile, dando paso al período patrio." },
+    { date: "18-10", text: "En 1816, Bernardo O'Higgins firmaba los Pactos de familia con Argentina para apoyo militar." },
+    { date: "25-01", text: "En 1818, el combate de Chacabuco selló la independencia de Chile del dominio español." },
+]
+
+function getTodayEphemeris(): string {
+    const monthDay = new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago', month: '2-digit', day: '2-digit' }).replace('/', '-')
+    const found = EFEMERIDES.find(e => e.date === monthDay)
+    return found ? found.text : EFEMERIDES[Math.floor(Math.random() * EFEMERIDES.length)].text
+}
+
 export default function TeacherDashboard() {
     const { signOut } = useClerk()
     const navigate = useNavigate()
@@ -40,6 +56,7 @@ export default function TeacherDashboard() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('inicio')
     const [selectedCourse, setSelectedCourse] = useState<any>(null)
+    const [showHelp, setShowHelp] = useState(false)
 
     const handleLogout = async () => {
         await signOut()
@@ -53,15 +70,9 @@ export default function TeacherDashboard() {
         { id: 'inicio', label: 'Inicio', icon: <BarChart3 className="w-5 h-5" /> },
         { id: 'ramos', label: 'Mis Ramos', icon: <BookOpen className="w-5 h-5" /> },
         { id: 'material', label: 'Material', icon: <FileText className="w-5 h-5" /> },
-        { id: 'misiones', label: 'Misiones', icon: <Target className="w-5 h-5" /> },
+        { id: 'desafios', label: 'Desafíos', icon: <Target className="w-5 h-5" /> },
         { id: 'ranking', label: 'Ranking', icon: <Trophy className="w-5 h-5" /> },
         { id: 'recompensas', label: 'Recompensas', icon: <Gift className="w-5 h-5" /> },
-        { id: 'grupos', label: 'Grupos Inteligentes', icon: <Users className="w-5 h-5" /> },
-        { id: 'whitelist', label: 'Whitelist (CSV)', icon: <FileSpreadsheet className="w-5 h-5" /> },
-        { id: 'traspasos', label: 'Gestión de Traspasos', icon: <ArrowRightLeft className="w-5 h-5" /> },
-        { id: 'analiticas', label: 'Analíticas', icon: <BarChart3 className="w-5 h-5" /> },
-        { id: 'evaluacion', label: 'Evaluador IA', icon: <ClipboardCheck className="w-5 h-5 text-green-400" /> },
-        { id: 'ayuda', label: 'Ayuda / FAQ', icon: <HelpCircle className="w-5 h-5" /> },
         { id: 'perfil', label: 'Mi Perfil', icon: <User className="w-5 h-5" /> },
         ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Panel Admin', icon: <ShieldCheck className="w-5 h-5 text-red-500" /> }] : []),
     ]
@@ -76,9 +87,7 @@ export default function TeacherDashboard() {
 
     return (
         <div className="h-screen-dvh bg-surface flex overflow-hidden relative">
-            {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-light border-r border-white/5 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-auto flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                {/* Fixed Header */}
                 <div className="p-6 border-b border-white/5 shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -96,9 +105,7 @@ export default function TeacherDashboard() {
                     </div>
                 </div>
 
-                {/* Scrollable Middle Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
-                    {/* Compact Profile Card */}
                     <div className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-2xl p-3">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-lg overflow-hidden border border-white/10 shrink-0">
@@ -135,14 +142,13 @@ export default function TeacherDashboard() {
                     </nav>
                 </div>
 
-                {/* Fixed Footer */}
                 <div className="p-4 border-t border-white/5 shrink-0 bg-surface-light/50 backdrop-blur-sm">
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all font-bold text-xs uppercase tracking-widest mb-1">
                         <LogOut className="w-4 h-4" />
                         Cerrar Sesión
                     </button>
                     <div className="px-4 py-1 flex items-center justify-between opacity-30 transition-opacity">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Quest v1.0.11</span>
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Quest v1.0.12</span>
                         <span className="text-[9px] font-medium text-slate-600">Quest Platform</span>
                     </div>
                 </div>
@@ -150,21 +156,26 @@ export default function TeacherDashboard() {
 
             {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-            {/* Main */}
             <main className="flex-1 h-screen-dvh flex flex-col overflow-hidden">
                 <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 flex flex-col shrink-0">
                     <div className="flex items-center justify-between py-4 md:py-6">
-
-                    <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white shrink-0" aria-label="Abrir panel de navegación" title="Abrir panel de navegación">
-                            <Menu className="w-5 h-5 md:w-6 md:h-6" />
-                        </button>
-                        <h1 className="text-base md:text-xl font-bold text-white truncate">{tabs.find(t => t.id === activeTab)?.label}</h1>
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <BetaBanner className="hidden lg:flex" />
-                        <NotificationBell />
-                    </div>
+                        <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white shrink-0" aria-label="Abrir panel de navegación" title="Abrir panel de navegación">
+                                <Menu className="w-5 h-5 md:w-6 md:h-6" />
+                            </button>
+                            <h1 className="text-base md:text-xl font-bold text-white truncate">{tabs.find(t => t.id === activeTab)?.label}</h1>
+                        </div>
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <button
+                                onClick={() => setShowHelp(true)}
+                                className="p-2 text-slate-400 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+                                title="Ayuda / FAQ"
+                            >
+                                <HelpCircle className="w-5 h-5" />
+                            </button>
+                            <BetaBanner className="hidden lg:flex" />
+                            <NotificationBell />
+                        </div>
                     </div>
                 </header>
 
@@ -188,30 +199,45 @@ export default function TeacherDashboard() {
                         />
                     )}
                     {activeTab === 'material' && <MaterialPanel courses={courses || []} />}
-                    {activeTab === 'misiones' && <CrearMisionPanel courses={courses || []} />}
+                    {activeTab === 'desafios' && <CrearMisionPanel courses={courses || []} />}
                     {activeTab === 'recompensas' && <CrearRecompensaPanel courses={courses || []} />}
-                    {activeTab === 'whitelist' && <WhitelistPanel courses={courses || []} />}
-                    {activeTab === 'grupos' && <GruposPanel />}
-                    {activeTab === 'traspasos' && <TraspasosPanel />}
                     {activeTab === 'ranking' && <RankingDocentePanel />}
-                    {activeTab === 'analiticas' && <AnaliticasPanel />}
                     {activeTab === 'perfil' && <PerfilPanel user={user} coursesCount={coursesCount} />}
                     {activeTab === 'admin' && user?.role === 'admin' && <AdminPanel />}
-                    {activeTab === 'evaluacion' && <EvaluadorIAPanel courses={courses || []} />}
-                    {activeTab === 'ayuda' && <FAQSection category="docente" />}
                 </div>
             </main>
+
+            {showHelp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowHelp(false)}>
+                    <div className="bg-surface-light border border-white/10 rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-6 border-b border-white/5">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <HelpCircle className="w-5 h-5 text-accent-light" />
+                                Ayuda / FAQ
+                            </h2>
+                            <button onClick={() => setShowHelp(false)} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <FAQSection category="docente" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
 
 function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { firstName: string, coursesCount: number, courses: any[], onSelectCourse: (c: any) => void }) {
     const stats = useQuery(api.analytics.getTeacherStats)
-    const missionsValue = stats ? `${stats.totalMissionsCreated}` : '...'
-    const adoptionValue = stats ? `${stats.totalRegisteredUniqueUsers ?? 0} / ${stats.totalUniqueStudents ?? 0}` : '...'
+    const quizzesCompleted = stats ? `${(stats as any).totalQuizzesCompleted ?? 0}` : '...'
+    const avgScore = stats ? `${Math.round((stats as any).avgQuizScore ?? 0)}%` : '...'
+    const participation = stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}%` : '...'
+    const ephemeris = getTodayEphemeris()
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             <div className="bg-gradient-to-r from-accent/10 via-primary/5 to-surface-light border border-accent/20 rounded-2xl md:rounded-3xl p-6 md:p-8">
                 <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent-light" />
@@ -228,44 +254,81 @@ function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { f
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/10 rounded-2xl p-5">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-xl">📅</span>
+                    </div>
+                    <div>
+                        <h3 className="text-amber-300 font-bold text-sm mb-1 flex items-center gap-2">
+                            Efeméride Educativa
+                            <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                                {new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago', day: 'numeric', month: 'long' })}
+                            </span>
+                        </h3>
+                        <p className="text-slate-300 text-sm leading-relaxed">{ephemeris}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { label: 'Ramos Activos', value: `${coursesCount}`, color: 'text-accent-light', bg: 'bg-accent/10', icon: <BookOpen className="w-6 h-6" /> },
-                    { label: 'Misiones Creadas', value: missionsValue, color: 'text-primary-light', bg: 'bg-primary/10', icon: <Target className="w-6 h-6" /> },
-                    { label: 'Alumnos Activos', value: adoptionValue, color: 'text-gold', bg: 'bg-gold/10', icon: <Users className="w-6 h-6" />, detail: stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}% de adopción` : '' },
+                    { label: 'Ramos Activos', value: `${coursesCount}`, color: 'text-accent-light', bg: 'bg-accent/10', icon: '📚' },
+                    { label: 'Quizzes Completados', value: quizzesCompleted, color: 'text-primary-light', bg: 'bg-primary/10', icon: '✅' },
+                    { label: 'Puntaje Promedio', value: avgScore, color: 'text-green-400', bg: 'bg-green-500/10', icon: '📊' },
+                    { label: 'Tasa de Participación', value: participation, color: 'text-gold', bg: 'bg-gold/10', icon: '🎯' },
                 ].map((stat: any, i) => (
-                    <div key={i} className="bg-surface-light border border-white/5 rounded-2xl p-5 transition-all hover:border-white/10">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{stat.label}</span>
-                            <div className={`${stat.bg} p-2 rounded-xl ${stat.color}`}>{stat.icon}</div>
+                    <div key={i} className="bg-surface-light border border-white/5 rounded-2xl p-4 md:p-5 transition-all hover:border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">{stat.label}</span>
+                            <span className="text-xl">{stat.icon}</span>
                         </div>
-                        <p className={`text-3xl font-black ${stat.color}`}>
-                            {stat.value}
-                        </p>
-                        {stat.detail && <p className="text-[10px] text-slate-500 font-medium mt-1">{stat.detail}</p>}
+                        <p className={`text-2xl md:text-3xl font-black ${stat.color}`}>{stat.value}</p>
                     </div>
                 ))}
             </div>
 
-            <div>
-                <h3 className="text-lg font-bold text-white mb-4">Tus Ramos</h3>
-                {courses.length === 0 ? (
-                    <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
-                        <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                        <h4 className="text-white font-semibold mb-2">Sin ramos aún</h4>
-                        <p className="text-slate-400 text-sm">Ve a "Mis Ramos" para crear tu primer ramo.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {courses.map((c: any) => (
-                            <div key={c._id} onClick={() => onSelectCourse(c)} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-accent/30 transition-all group cursor-pointer">
-                                <h4 className="text-lg font-bold text-white group-hover:text-accent-light transition-colors">{c.name}</h4>
-                                <span className="text-xs text-slate-500 font-mono">{c.code}</span>
-                                {c.description && <p className="text-slate-400 text-sm mt-2 line-clamp-2">{c.description}</p>}
+            {stats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(stats as any).totalUniqueStudents != null && [
+                        { label: 'Alumnos Inscritos (Whitelist)', value: (stats as any).totalUniqueStudents ?? 0, color: 'text-slate-300', icon: '👥', sublabel: 'en whitelist' },
+                        { label: 'Alumnos Registrados', value: (stats as any).totalRegisteredUniqueUsers ?? 0, color: (stats as any).totalRegisteredUniqueUsers > 0 ? 'text-green-400' : 'text-slate-500', icon: '✅', sublabel: 'que se han registrado' },
+                        { label: 'Misiones Creadas', value: (stats as any).totalMissionsCreated ?? 0, color: 'text-primary-light', icon: '🎯', sublabel: 'desafíos activos' },
+                        { label: 'Documentos Subidos', value: (stats as any).totalDocumentsUploaded ?? 0, color: 'text-purple-400', icon: '📄', sublabel: 'material disponible' },
+                    ].map((stat: any, i) => (
+                        <div key={i} className="bg-surface-light border border-white/5 rounded-2xl p-5 flex items-center gap-4 transition-all hover:border-white/10">
+                            <span className="text-3xl">{stat.icon}</span>
+                            <div>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{stat.label}</p>
+                                <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+                                <p className="text-[10px] text-slate-600">{stat.sublabel}</p>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="bg-surface-light border border-white/5 rounded-2xl p-6">
+                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-accent-light" />
+                    Acceso Rápido
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                        { label: 'Crear Desafío', icon: '🎯', tab: 'desafios', color: 'from-accent/10 to-primary/5 border-accent/10' },
+                        { label: 'Subir Material', icon: '📄', tab: 'material', color: 'from-purple-500/10 to-pink-500/5 border-purple-500/10' },
+                        { label: 'Ver Ranking', icon: '🏆', tab: 'ranking', color: 'from-gold/10 to-orange-500/5 border-gold/10' },
+                    ].map((item, i) => (
+                        <button
+                            key={i}
+                            onClick={() => onSelectCourse(item.tab === 'ramos' ? courses[0] : null)}
+                            className={`bg-gradient-to-br ${item.color} border rounded-2xl p-4 text-left hover:scale-[1.02] transition-all`}
+                        >
+                            <span className="text-2xl mb-2 block">{item.icon}</span>
+                            <p className="text-white font-bold text-sm">{item.label}</p>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     )
@@ -306,7 +369,6 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                         <Settings className="w-4 h-4" />
                         Configurar Perfil
                     </button>
-                    
                     <button
                         onClick={() => {
                             const isSimulating = localStorage.getItem('quest_simulate_student') === 'true';
@@ -338,9 +400,18 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                     <Sparkles className="w-5 h-5 text-accent" />
                     Panel de Administración
                 </h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                    Como docente, tienes acceso a herramientas avanzadas para la creación de misiones, gestión de recompensas y análisis de desempeño de tus alumnos mediante IA.
+                <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                    Como docente, tienes acceso a herramientas avanzadas para la creación de desafíos, gestión de recompensas y análisis de desempeño de tus alumnos mediante IA.
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a href="mailto:soporte@quest.edu" className="bg-surface border border-white/10 rounded-xl p-4 text-left hover:border-white/20 transition-all group">
+                        <h4 className="text-white font-bold text-sm flex items-center gap-2 mb-1">
+                            <ArrowRightLeft className="w-4 h-4 text-slate-400 group-hover:text-accent-light transition-colors" />
+                            Gestión de Traspasos
+                        </h4>
+                        <p className="text-slate-500 text-xs">Gestiona solicitudes de traspasos de puntos entre ramos.</p>
+                    </a>
+                </div>
             </div>
         </div>
     )

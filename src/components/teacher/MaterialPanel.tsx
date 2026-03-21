@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { FileText, Upload, Trash2, Loader2, X, CheckCircle, Eye, EyeOff, BookOpen, Cloud, Sparkles } from 'lucide-react'
+import { FileText, Upload, Trash2, Loader2, X, CheckCircle, Eye, EyeOff, BookOpen, Cloud, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../../utils/documentParser'
 import { useGooglePicker } from '../../hooks/useGooglePicker'
 
@@ -23,6 +23,8 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
     const [expandedDoc, setExpandedDoc] = useState<string | null>(null)
     const [dragOver, setDragOver] = useState(false)
     const [uploadType, setUploadType] = useState<string>('none')
+    const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
+    const [collapsedMasterVault, setCollapsedMasterVault] = useState(false)
 
     const ACCEPTED_TYPES = '.pdf,.docx,.pptx,.xlsx,.xls'
     const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -328,35 +330,47 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
             {/* Resumen de Bóveda Maestra (IA Context) */}
             {documents && documents.filter((d: any) => d.is_master_doc).length > 0 && (
-                <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-3xl p-6 shadow-xl shadow-primary/5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-white font-black flex items-center gap-2 uppercase tracking-widest text-sm">
+                <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-3xl shadow-xl shadow-primary/5">
+                    <button
+                        onClick={() => setCollapsedMasterVault(!collapsedMasterVault)}
+                        className="w-full flex items-center justify-between p-6"
+                    >
+                        <div className="flex items-center gap-3">
                             <Sparkles className="w-5 h-5 text-primary-light animate-pulse" />
-                            Bóveda Maestra Consolidada
-                        </h3>
-                        <span className="bg-primary/20 text-primary-light px-3 py-1 rounded-full text-[10px] font-black border border-primary/20">
-                            {documents.filter((d: any) => d.is_master_doc).length} DOCUMENTOS DE CONTEXTO IA
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {documents.filter((d: any) => d.is_master_doc).map((doc: any) => {
-                            const course = courses.find((c: any) => c._id === doc.course_id);
-                            return (
-                                <div key={doc._id} className="relative group">
-                                    <div className="absolute -top-2 left-4 z-10 bg-surface px-2 py-0.5 rounded-md border border-white/10 text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
-                                        {course?.name || 'Ramo Desconocido'}
+                            <h3 className="text-white font-black uppercase tracking-widest text-sm">
+                                Bóveda Maestra Consolidada
+                            </h3>
+                            <span className="bg-primary/20 text-primary-light px-3 py-1 rounded-full text-[10px] font-black border border-primary/20">
+                                {documents.filter((d: any) => d.is_master_doc).length} DOCUMENTOS DE CONTEXTO IA
+                            </span>
+                        </div>
+                        {collapsedMasterVault ? (
+                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                        ) : (
+                            <ChevronUp className="w-5 h-5 text-slate-400" />
+                        )}
+                    </button>
+                    {!collapsedMasterVault && (
+                        <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {documents.filter((d: any) => d.is_master_doc).map((doc: any) => {
+                                const course = courses.find((c: any) => c._id === doc.course_id);
+                                return (
+                                    <div key={doc._id} className="relative group">
+                                        <div className="absolute -top-2 left-4 z-10 bg-surface px-2 py-0.5 rounded-md border border-white/10 text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
+                                            {course?.name || 'Ramo Desconocido'}
+                                        </div>
+                                        <DocumentCard 
+                                            doc={doc} 
+                                            expandedDoc={expandedDoc}
+                                            setExpandedDoc={setExpandedDoc}
+                                            handleSetMasterType={handleSetMasterType}
+                                            handleDelete={handleDelete}
+                                        />
                                     </div>
-                                    <DocumentCard 
-                                        doc={doc} 
-                                        expandedDoc={expandedDoc}
-                                        setExpandedDoc={setExpandedDoc}
-                                        handleSetMasterType={handleSetMasterType}
-                                        handleDelete={handleDelete}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -368,31 +382,57 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
             {/* Lista de documentos subidos (Solo material común) */}
             {Object.keys(docsByCourse).length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {Object.entries(docsByCourse).map(([courseId, docs]) => {
                         const course = courses.find((c: any) => c._id === courseId)
                         const regularDocs = (docs as any[]).filter(d => !d.is_master_doc);
+                        const isCollapsed = collapsedCourses.has(courseId);
                         
                         if (regularDocs.length === 0) return null;
 
                         return (
-                            <div key={courseId} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                                    <BookOpen className="w-4 h-4 text-accent-light" />
-                                    {course?.name || 'Material sin clasificar'} <span className="text-slate-500 text-xs font-mono">{course?.code ? `(${course.code})` : ''}</span>
-                                </h3>
-                                <div className="space-y-2">
-                                    {regularDocs.map((doc: any) => (
-                                        <DocumentCard 
-                                            key={doc._id} 
-                                            doc={doc} 
-                                            expandedDoc={expandedDoc}
-                                            setExpandedDoc={setExpandedDoc}
-                                            handleSetMasterType={handleSetMasterType}
-                                            handleDelete={handleDelete}
-                                        />
-                                    ))}
-                                </div>
+                            <div key={courseId} className="bg-surface-light border border-white/5 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <button
+                                    onClick={() => {
+                                        const next = new Set(collapsedCourses);
+                                        if (isCollapsed) next.delete(courseId);
+                                        else next.add(courseId);
+                                        setCollapsedCourses(next);
+                                    }}
+                                    className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <BookOpen className="w-5 h-5 text-accent-light" />
+                                        <div className="text-left">
+                                            <h3 className="text-white font-bold">
+                                                {course?.name || 'Material sin clasificar'}
+                                            </h3>
+                                            <span className="text-slate-500 text-xs font-mono">{course?.code ? `(${course.code})` : ''}</span>
+                                        </div>
+                                        <span className="bg-accent/10 text-accent-light text-[10px] px-2 py-0.5 rounded-full font-black border border-accent/20 ml-2">
+                                            {regularDocs.length} {regularDocs.length === 1 ? 'documento' : 'documentos'}
+                                        </span>
+                                    </div>
+                                    {isCollapsed ? (
+                                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                                    ) : (
+                                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                                    )}
+                                </button>
+                                {!isCollapsed && (
+                                    <div className="px-5 pb-5 space-y-2">
+                                        {regularDocs.map((doc: any) => (
+                                            <DocumentCard 
+                                                key={doc._id} 
+                                                doc={doc} 
+                                                expandedDoc={expandedDoc}
+                                                setExpandedDoc={setExpandedDoc}
+                                                handleSetMasterType={handleSetMasterType}
+                                                handleDelete={handleDelete}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )
                     })}

@@ -24,7 +24,9 @@ export const getTeacherStats = query({
                 return {
                     totalStudents: 0, 
                     totalUniqueStudents: 0,
+                    totalRegisteredUniqueUsers: 0,
                     totalMissionsCompleted: 0, 
+                    totalQuizzesCompleted: 0,
                     totalRedemptions: 0,
                     totalPoints: 0, 
                     totalCourses: 0, 
@@ -32,8 +34,12 @@ export const getTeacherStats = query({
                     avgQuizScore: 0,
                     avgMissionsPerStudent: 0,
                     totalDocuments: 0,
+                    totalDocumentsUploaded: 0,
+                    totalMasterDocs: 0,
                     belbinDistribution: {}, 
-                    courseStats: []
+                    courseStats: [],
+                    topStudents: [],
+                    dailyActivity: []
                 };
             }
 
@@ -191,12 +197,13 @@ export const getTeacherStats = query({
             const courseStats = Array.from(statsByName.values());
 
             return {
-                totalStudents: totalUniqueStudents, // Total alumnos físicos únicos (RUTs)
-                totalEnrollments: totalStudents, // Total de registros en todas las listas
-                totalRegistered, // Registros con cuenta
-                totalUniqueStudents, // Alumnos físicos únicos (RUTs)
-                totalRegisteredUniqueUsers, // Usuarios registrados únicos
+                totalStudents: totalUniqueStudents,
+                totalEnrollments: totalStudents,
+                totalRegistered,
+                totalUniqueStudents,
+                totalRegisteredUniqueUsers,
                 totalMissionsCompleted,
+                totalQuizzesCompleted: quizSubmissions.length,
                 totalRedemptions: totalRedemptionsCount,
                 totalPoints,
                 totalCourses: courses.length,
@@ -204,6 +211,7 @@ export const getTeacherStats = query({
                 avgQuizScore,
                 avgMissionsPerStudent,
                 totalDocuments,
+                totalDocumentsUploaded: documents.length,
                 totalMasterDocs,
                 belbinDistribution,
                 courseStats,

@@ -171,7 +171,7 @@ export default defineSchema({
         document_id: v.id("course_documents"),
         teacher_id: v.id("users"),
         title: v.string(),
-        quiz_type: v.union(v.literal("multiple_choice"), v.literal("match"), v.literal("flashcard")),
+        quiz_type: v.union(v.literal("multiple_choice"), v.literal("match"), v.literal("flashcard"), v.literal("true_false"), v.literal("fill_blank"), v.literal("order_steps"), v.literal("trivia"), v.literal("word_search"), v.literal("quiz_sprint"), v.literal("memory")),
         questions: v.array(v.union(
             v.object({
                 question: v.string(),
@@ -184,6 +184,44 @@ export default defineSchema({
             v.object({
                 front: v.string(),
                 back: v.string()
+            }),
+            v.object({
+                statement: v.string(),
+                correct: v.boolean(),
+                falsify: v.optional(v.string()),
+            }),
+            v.object({
+                question: v.string(),
+                answer: v.string(),
+                options: v.array(v.string()),
+                explanation: v.optional(v.string()),
+            }),
+            v.object({
+                description: v.string(),
+                steps: v.array(v.string()),
+                correctOrder: v.array(v.number()),
+            }),
+            v.object({
+                question: v.string(),
+                options: v.array(v.string()),
+                correct: v.number(),
+                fun_fact: v.optional(v.string()),
+            }),
+            v.object({
+                words: v.array(v.string()),
+                size: v.optional(v.number()),
+            }),
+            v.object({
+                question: v.string(),
+                options: v.array(v.string()),
+                correct: v.number(),
+                time_limit: v.optional(v.number()),
+            }),
+            v.object({
+                pairs: v.array(v.object({
+                    term: v.string(),
+                    definition: v.string(),
+                })),
             })
         )),
         difficulty: v.string(),

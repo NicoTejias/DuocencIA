@@ -1,128 +1,167 @@
 import { useState } from 'react'
 import { useQuery, usePaginatedQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { Trophy } from 'lucide-react'
+import { Trophy, ChevronDown, ChevronUp, Users } from 'lucide-react'
 
 export default function RankingDocentePanel() {
     const courses = useQuery(api.courses.getMyCourses)
-    const [selectedCourse, setSelectedCourse] = useState('')
-    const [isGlobal, setIsGlobal] = useState(false)
+    const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
+    const [selectedCourseView, setSelectedCourseView] = useState<Record<string, { isGlobal: boolean }>>({})
 
-    // Usar paginación para obtener los alumnos del curso (Vista Local)
-    const { results: localStudents, status: localStatus } = usePaginatedQuery(
-        api.courses.getCourseStudents,
-        (selectedCourse && !isGlobal) ? { course_id: selectedCourse as any } : "skip",
-        { initialNumItems: 50 }
+    const toggleCourse = (courseId: string) => {
+        const next = new Set(collapsedCourses)
+        if (next.has(courseId)) next.delete(courseId)
+        else next.add(courseId)
+        setCollapsedCourses(next)
+    }
+
+    const setGlobal = (courseId: string, isGlobal: boolean) => {
+        setSelectedCourseView(prev => ({ ...prev, [courseId]: { isGlobal } }))
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-gradient-to-r from-gold/10 to-orange-500/5 border border-gold/20 rounded-2xl p-5">
+                <p className="text-slate-400 text-sm">Cada caja muestra el ranking de un ramo. Usa el toggle para ver ranking por sección o global del ramo.</p>
+            </div>
+
+            {!courses || courses.length === 0 ? (
+                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
+                    <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                    <h4 className="text-white font-semibold mb-2">Sin ramos creados</h4>
+                    <p className="text-slate-400 text-sm">Crea ramos para ver sus rankings.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {courses.map((course: any) => {
+                        const isCollapsed = collapsedCourses.has(course._id)
+                        const view = selectedCourseView[course._id] || { isGlobal: false }
+                        return (
+                            <RankingCourseBox
+                                key={course._id}
+                                course={course}
+                                isCollapsed={isCollapsed}
+                                isGlobal={view.isGlobal}
+                                onToggle={() => toggleCourse(course._id)}
+                                onSetGlobal={(g) => setGlobal(course._id, g)}
+                            />
+                        )
+                    })}
+                </div>
+            )}
+        </div>
     )
+}
 
-    // Obtener ranking global (Vista de todas las secciones)
-    const globalStudents = useQuery(api.courses.getGlobalRanking, 
-        (selectedCourse && isGlobal) ? { course_id: selectedCourse as any } : "skip"
+function RankingCourseBox({ course, isCollapsed, isGlobal, onToggle, onSetGlobal }: {
+    course: any, isCollapsed: boolean, isGlobal: boolean, onToggle: () => void, onSetGlobal: (g: boolean) => void
+}) {
+    const { results: localStudents } = usePaginatedQuery(
+        api.courses.getCourseStudents,
+        (!isCollapsed && !isGlobal) ? { course_id: course._id } : "skip",
+        { initialNumItems: 500 }
+    )
+    const globalStudents = useQuery(
+        api.courses.getGlobalRanking,
+        (!isCollapsed && isGlobal) ? { course_id: course._id } : "skip"
     )
 
     const students = isGlobal ? globalStudents : localStudents
-    const status = isGlobal ? (globalStudents ? "Loaded" : "LoadingFirstPage") : localStatus
-
-    // Ordenar solo para la vista local (la global ya viene ordenada)
-    const sorted = isGlobal ? (students || []) : [...(students || [])].sort((a: any, b: any) => (b.total_points || 0) - (a.total_points || 0))
+    const sorted = isGlobal
+        ? ((students as any[]) || [])
+        : [...((localStudents as any[]) || [])].sort((a: any, b: any) => (b.total_points || 0) - (a.total_points || 0))
     const medals = ['🥇', '🥈', '🥉']
 
     return (
-        <div>
-            <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-                <div className="flex-1 max-w-md">
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Ramo de referencia</label>
-                    <select
-                        value={selectedCourse}
-                        onChange={e => setSelectedCourse(e.target.value)}
-                        className="w-full bg-surface-light border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
-                        aria-label="Selecciona un ramo para ver el ranking"
-                        title="Seleccionar ramo"
-                    >
-                        <option value="">Selecciona un ramo</option>
-                        {(courses || []).map((c: any) => (
-                            <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="flex bg-surface-light border border-white/10 p-1 rounded-xl">
-                    <button
-                        onClick={() => setIsGlobal(false)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!isGlobal ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                    >
-                        Mi Ramo
-                    </button>
-                    <button
-                        onClick={() => setIsGlobal(true)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isGlobal ? 'bg-accent text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                    >
-                        Ranking Global
-                    </button>
-                </div>
-            </div>
-
-            {isGlobal && (
-                <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 mb-6">
-                    <p className="text-accent-light text-sm flex items-center gap-2">
-                        <Trophy className="w-4 h-4" />
-                        Estás viendo el ranking de **todas las secciones** del ramo (mismo nombre).
-                    </p>
-                </div>
-            )}
-
-            {status === "LoadingFirstPage" ? (
-                <div className="flex flex-col items-center justify-center py-10">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-slate-400 text-sm">Cargando ranking...</p>
-                </div>
-            ) : selectedCourse && sorted.length > 0 ? (
-                <div className="bg-surface-light border border-white/5 rounded-2xl overflow-hidden">
-                    <div className="flex items-center px-6 py-3 bg-white/5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        <span className="w-12 text-center">#</span>
-                        <span className="flex-1">Alumno</span>
-                        {isGlobal ? (
-                            <>
-                                <span className="w-24 text-center">Sección</span>
-                                <span className="w-32 text-center">Docente</span>
-                            </>
-                        ) : (
-                            <span className="w-28 text-center">Belbin</span>
-                        )}
-                        <span className="w-24 text-right">Puntos</span>
+        <div className="bg-surface-light border border-white/5 rounded-2xl overflow-hidden">
+            <button onClick={onToggle} className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
+                    <Trophy className="w-5 h-5 text-gold" />
+                    <div className="text-left">
+                        <h3 className="text-white font-bold">{course.name}</h3>
+                        <span className="text-slate-500 text-xs font-mono">{course.code}</span>
                     </div>
-                    <div className="divide-y divide-white/5">
-                        {sorted.map((s: any, i: number) => (
-                            <div key={s._id} className={`flex items-center px-6 py-4 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
-                                <span className="w-12 text-center text-lg">{medals[i] || <span className="text-slate-500 text-sm">{i + 1}</span>}</span>
-                                <div className="flex-1">
-                                    <p className="text-white font-medium">{s.name}</p>
-                                    <p className="text-slate-500 text-xs">{s.student_id || s.email}</p>
-                                </div>
+                    {!isCollapsed && (sorted as any[]).length > 0 && (
+                        <span className="bg-gold/10 text-gold text-[10px] px-2 py-0.5 rounded-full font-black border border-gold/20 ml-2">
+                            {(sorted as any[]).length} alumnos
+                        </span>
+                    )}
+                </div>
+                {isCollapsed ? (
+                    <ChevronDown className="w-5 h-5 text-slate-400" />
+                ) : (
+                    <ChevronUp className="w-5 h-5 text-slate-400" />
+                )}
+            </button>
+
+            {!isCollapsed && (
+                <div className="px-5 pb-5 space-y-4">
+                    <div className="flex bg-surface border border-white/10 p-1 rounded-xl w-fit">
+                        <button
+                            onClick={() => onSetGlobal(false)}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${!isGlobal ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Mi Sección
+                        </button>
+                        <button
+                            onClick={() => onSetGlobal(true)}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${isGlobal ? 'bg-accent text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Ranking Global
+                        </button>
+                    </div>
+
+                    {isGlobal && (
+                        <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-xs text-accent-light flex items-center gap-2">
+                            <Trophy className="w-4 h-4" />
+                            Estás viendo el ranking de <strong>todas las secciones</strong> del ramo.
+                        </div>
+                    )}
+
+                    {!students ? (
+                        <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+                    ) : (sorted as any[]).length === 0 ? (
+                        <div className="text-center py-8 bg-white/5 rounded-xl border border-dashed border-white/10">
+                            <Users className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                            <p className="text-slate-400 text-sm">No hay alumnos {isGlobal ? 'en este ramo' : 'en esta sección'}.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
+                            <div className="flex items-center px-4 py-2 bg-white/5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                <span className="w-10 text-center">#</span>
+                                <span className="flex-1">Alumno</span>
                                 {isGlobal ? (
                                     <>
-                                        <span className="w-24 text-center text-slate-300 text-xs">{s.section}</span>
-                                        <span className="w-32 text-center text-slate-400 text-xs truncate" title={s.teacherName}>{s.teacherName}</span>
+                                        <span className="w-20 text-center">Sección</span>
+                                        <span className="w-24 text-center">Docente</span>
                                     </>
                                 ) : (
-                                    <span className="w-28 text-center text-primary-light text-xs font-semibold">{s.belbin}</span>
+                                    <span className="w-20 text-center">Belbin</span>
                                 )}
-                                <span className="w-24 text-right text-accent-light font-bold">{(s.ranking_points || s.total_points || 0).toLocaleString()}</span>
+                                <span className="w-20 text-right">Puntos</span>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            ) : selectedCourse ? (
-                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
-                    <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                    <h4 className="text-white font-semibold mb-2">Sin alumnos activos</h4>
-                    <p className="text-slate-400 text-sm">Los alumnos aparecerán aquí a medida que se registren en el curso.</p>
-                </div>
-            ) : (
-                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
-                    <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                    <h4 className="text-white font-semibold mb-2">Selecciona un ramo</h4>
-                    <p className="text-slate-400 text-sm">Elige un ramo para ver el ranking de tus alumnos.</p>
+                            <div className="divide-y divide-white/5">
+                                {(sorted as any[]).map((s: any, i: number) => (
+                                    <div key={s._id} className={`flex items-center px-4 py-3 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
+                                        <span className="w-10 text-center text-lg">{medals[i] || <span className="text-slate-500 text-xs">{i + 1}</span>}</span>
+                                        <div className="flex-1">
+                                            <p className="text-white text-sm font-medium">{s.name}</p>
+                                            <p className="text-slate-500 text-[10px]">{s.student_id || s.email}</p>
+                                        </div>
+                                        {isGlobal ? (
+                                            <>
+                                                <span className="w-20 text-center text-slate-300 text-xs">{s.section}</span>
+                                                <span className="w-24 text-center text-slate-400 text-xs truncate" title={s.teacherName}>{s.teacherName}</span>
+                                            </>
+                                        ) : (
+                                            <span className="w-20 text-center text-primary-light text-xs font-semibold">{s.belbin}</span>
+                                        )}
+                                        <span className="w-20 text-right text-gold font-bold">{(s.ranking_points || s.total_points || 0).toLocaleString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
