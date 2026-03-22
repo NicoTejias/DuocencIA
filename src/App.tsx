@@ -18,6 +18,7 @@ import { Toaster } from 'sonner'
 import PushNotificationManager from './components/PushNotificationManager'
 import UpdateNotification from './components/UpdateNotification'
 import FeedbackButton from './components/FeedbackButton'
+import CookieConsent from './components/CookieConsent'
 
 function LoadingScreen() {
   return (
@@ -232,6 +233,7 @@ function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster position="top-right" theme="dark" richColors />
+      <CookieConsent />
     </>
   )
 }

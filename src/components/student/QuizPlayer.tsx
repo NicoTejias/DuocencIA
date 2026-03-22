@@ -3,6 +3,7 @@ import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { X, AlertCircle, Star, Coins, Sparkles, Loader2, CheckCircle2, Eye, ChevronUp, ChevronDown, Clock, RotateCcw, Zap } from 'lucide-react'
 import { toast } from "sonner"
+import HonorCodeModal from '../HonorCodeModal'
 
 interface QuizPlayerProps {
     quiz: any;
@@ -69,6 +70,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     const quizType = quiz.quiz_type || "multiple_choice"
     const questions = quiz.questions || []
     const [retryCount, setRetryCount] = useState(0)
+    const [showHonorCode, setShowHonorCode] = useState(true)
+    const [honorAccepted, setHonorAccepted] = useState(false)
 
     // --- Timer logic for trivia & quiz_sprint ---
     const startTimer = useCallback((seconds: number) => {
@@ -105,7 +108,18 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             .catch(console.error)
     }
 
+    const handleHonorAccept = () => {
+        setHonorAccepted(true)
+        setShowHonorCode(false)
+    }
+
+    const handleHonorDecline = () => {
+        onClose()
+    }
+
     useEffect(() => {
+        if (!honorAccepted) return
+        
         async function initAttempt() {
             setLoadingAttempt(true)
             try {
@@ -145,7 +159,19 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         }
         initAttempt()
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
-    }, [quiz._id, retryCount]) // eslint-disable-line
+    }, [quiz._id, retryCount, honorAccepted]) // eslint-disable-line
+
+    if (!honorAccepted) {
+        return (
+            <HonorCodeModal
+                isOpen={showHonorCode}
+                onAccept={handleHonorAccept}
+                onDecline={handleHonorDecline}
+                title="Código de Honor"
+                context="quiz"
+            />
+        )
+    }
 
     if (loadingAttempt) {
         return (
