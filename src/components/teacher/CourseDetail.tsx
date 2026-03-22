@@ -5,7 +5,7 @@ import {
     ChevronRight, ChevronDown, ChevronUp, BookOpen, FileText, Gift,
     Trash2, Target, Flame, Sparkles, Loader2, RefreshCw,
     Users, Trophy, Edit3, X, Search, Star,
-    FileSpreadsheet, ClipboardCheck, AlertTriangle
+    FileSpreadsheet, ClipboardCheck, AlertTriangle, Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
@@ -13,9 +13,11 @@ import { EditMissionModal, EditRewardModal } from './EditModals'
 import AttendancePanel from './AttendancePanel'
 import WhitelistPanel from './WhitelistPanel'
 import EvaluadorIAPanel from './EvaluadorIAPanel'
+import AgregarEvaluacionModal from './AgregarEvaluacionModal'
+import EvaluacionesPorCurso from './EvaluacionesPorCurso'
 
 export default function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
-    const [courseSubTab, setCourseSubTab] = useState<'alumnos' | 'evaluacion'>('alumnos')
+    const [courseSubTab, setCourseSubTab] = useState<'alumnos' | 'evaluaciones' | 'evaluacion'>('alumnos')
     const [collapsedDesafios, setCollapsedDesafios] = useState(false)
     const fixAllIds = useMutation(api.users.fixAllStudentIds)
     const documents = useQuery(api.documents.getDocumentsByCourse, { course_id: course._id })
@@ -38,6 +40,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const [viewingQuizResults, setViewingQuizResults] = useState<string | null>(null)
     const [editingMission, setEditingMission] = useState<any>(null)
     const [editingReward, setEditingReward] = useState<any>(null)
+    const [showAgregarEvaluacion, setShowAgregarEvaluacion] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState<{ type: 'reward' | 'mission' | 'quiz' | 'cleanup' | 'reset_points', id: any } | null>(null)
 
     const deleteReward = useMutation(api.rewards.deleteReward)
@@ -267,6 +270,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                 <div className="flex gap-2 mb-6">
                     {[
                         { id: 'alumnos', label: 'Alumnos', icon: <Users className="w-4 h-4" /> },
+                        { id: 'evaluaciones', label: 'Evaluaciones', icon: <FileText className="w-4 h-4" /> },
                         { id: 'evaluacion', label: 'Evaluador IA', icon: <ClipboardCheck className="w-4 h-4" /> },
                     ].map(tab => (
                         <button
@@ -376,6 +380,22 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                     </>
                 )}
 
+                {courseSubTab === 'evaluaciones' && (
+                    <div>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-white">Evaluaciones del Ramo</h3>
+                            <button
+                                onClick={() => setShowAgregarEvaluacion(true)}
+                                className="bg-primary hover:bg-primary/90 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm transition-all"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Agregar Evaluación
+                            </button>
+                        </div>
+                        <EvaluacionesPorCurso courseId={course._id} />
+                    </div>
+                )}
+
                 {courseSubTab === 'evaluacion' && (
                     <EvaluadorIAPanel courses={[course]} />
                 )}
@@ -397,6 +417,14 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                 confirmText={confirmDelete?.type === 'cleanup' ? 'Limpiar' : confirmDelete?.type === 'reset_points' ? 'Reiniciar' : 'Eliminar'}
                 variant={confirmDelete?.type === 'cleanup' ? 'warning' : 'danger'}
             />
+
+            {showAgregarEvaluacion && (
+                <AgregarEvaluacionModal
+                    courseId={course._id}
+                    courseName={course.name}
+                    onClose={() => setShowAgregarEvaluacion(false)}
+                />
+            )}
         </div>
     )
 }

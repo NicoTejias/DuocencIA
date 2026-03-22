@@ -353,13 +353,29 @@ export default defineSchema({
         created_at: v.number(),
     }).index("by_rubric", ["rubric_id"]),
 
-    faqs: defineTable({
+faqs: defineTable({
         question: v.string(),
         answer: v.string(),
-        order: v.number(), // Para ordenar las preguntas
-        category: v.optional(v.string()), // "general", "alumno", "docente", etc.
+        order: v.number(),
+        category: v.optional(v.string()),
         created_at: v.number(),
     }).index("by_order", ["order"]),
+
+    evaluaciones: defineTable({
+        course_id: v.id("courses"),
+        teacher_id: v.id("users"),
+        titulo: v.string(),
+        tipo: v.union(v.literal("prueba"), v.literal("trabajo"), v.literal("informe")),
+        descripcion: v.optional(v.string()),
+        fecha: v.number(),
+        hora: v.optional(v.string()),
+        puntos: v.optional(v.number()),
+        activo: v.boolean(),
+        created_at: v.number(),
+    })
+        .index("by_course", ["course_id"])
+        .index("by_fecha", ["fecha"])
+        .index("by_teacher", ["teacher_id"]),
 
     institution_config: defineTable({
         key: v.string(),

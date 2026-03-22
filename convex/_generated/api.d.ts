@@ -20,6 +20,7 @@ import type * as backup_system from "../backup_system.js";
 import type * as courses from "../courses.js";
 import type * as crons from "../crons.js";
 import type * as documents from "../documents.js";
+import type * as evaluaciones from "../evaluaciones.js";
 import type * as evaluator from "../evaluator.js";
 import type * as faq from "../faq.js";
 import type * as fcm from "../fcm.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   courses: typeof courses;
   crons: typeof crons;
   documents: typeof documents;
+  evaluaciones: typeof evaluaciones;
   evaluator: typeof evaluator;
   faq: typeof faq;
   fcm: typeof fcm;

@@ -1,5 +1,6 @@
 import { BookOpen, Trophy, Coins, ChevronRight, Sparkles } from 'lucide-react'
 import { getGreeting } from '../../utils/dashboardUtils'
+import EvaluacionesPanel from './EvaluacionesPanel'
 
 interface DashboardHomeProps {
     courses: any[];
@@ -78,6 +79,16 @@ export default function DashboardHome({
                     </div>
                 </div>
             </div>
+
+            {/* Evaluaciones Panel */}
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                        📅 Mis Evaluaciones
+                    </h3>
+                </div>
+                <EvaluacionesPanel />
+            </section>
 
             {/* Grid de Ramos */}
             <section>

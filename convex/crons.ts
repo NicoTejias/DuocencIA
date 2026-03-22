@@ -11,4 +11,11 @@ crons.daily(
   api.streak_reminders.checkStreaksAndNotify
 );
 
+// Recordatorio de evaluaciones: Todos los días a las 8:00 AM hora Chile (11:00 UTC)
+crons.daily(
+  "evaluation-reminder-daily",
+  { hourUTC: 11, minuteUTC: 0 },
+  api.evaluaciones.sendEvaluationReminders
+);
+
 export default crons;
