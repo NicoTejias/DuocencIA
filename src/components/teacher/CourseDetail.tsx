@@ -17,7 +17,7 @@ import AgregarEvaluacionModal from './AgregarEvaluacionModal'
 import EvaluacionesPorCurso from './EvaluacionesPorCurso'
 
 export default function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
-    const [courseSubTab, setCourseSubTab] = useState<'alumnos' | 'evaluaciones' | 'evaluacion'>('alumnos')
+    const [courseSubTab, setCourseSubTab] = useState<'evaluaciones' | 'evaluacion'>('evaluaciones')
     const [desafiosTab, setDesafiosTab] = useState<'manuales' | 'ia'>('manuales')
     const fixAllIds = useMutation(api.users.fixAllStudentIds)
     const documents = useQuery(api.documents.getDocumentsByCourse, { course_id: course._id })
@@ -267,7 +267,6 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                 <div className="bg-surface-light border border-white/5 rounded-2xl p-6 flex flex-col max-h-[800px] overflow-y-auto custom-scrollbar">
                 <div className="flex gap-2 mb-6">
                     {[
-                        { id: 'alumnos', label: 'Alumnos', icon: <Users className="w-4 h-4" /> },
                         { id: 'evaluaciones', label: 'Evaluaciones', icon: <FileText className="w-4 h-4" /> },
                         { id: 'evaluacion', label: 'Evaluador IA', icon: <ClipboardCheck className="w-4 h-4" /> },
                     ].map(tab => (
@@ -281,102 +280,6 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         </button>
                     ))}
                 </div>
-
-                {courseSubTab === 'alumnos' && (
-                    <>
-                        <div className="mb-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <FileSpreadsheet className="w-5 h-5 text-green-400" />
-                                <h3 className="text-white font-bold">Lista de Alumnos (CSV / Whitelist)</h3>
-                            </div>
-                            <WhitelistPanel courses={[course]} />
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Users className="w-5 h-5 text-blue-400" />
-                                Alumnos Registrados
-                                <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0}</span>
-                            </h3>
-                            <div className="flex gap-2">
-                                <button onClick={async () => { setProcessing(true); try { const res = await fixAllIds(); toast.success(`Sincronización: ${res.fixed} corregidos`); } catch (e: any) { toast.error("Error"); } finally { setProcessing(false); } }} disabled={processing} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all flex items-center gap-1.5 font-medium uppercase tracking-wider text-[10px]">
-                                    {processing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sincronizar
-                                </button>
-                                <button onClick={() => setConfirmDelete({ type: 'cleanup', id: course._id })} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all uppercase tracking-wider text-[10px]">
-                                    <Sparkles className="w-3 h-3" /> Limpiar
-                                </button>
-                                <button onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all uppercase tracking-wider text-[10px]">
-                                    <Trash2 className="w-3 h-3" /> Reset
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="relative group mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                            <input type="text" placeholder="Buscar alumno por nombre o RUT..." value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-slate-600" />
-                        </div>
-
-                        {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos cargados</p> : (
-                            (() => {
-                                const sectionsEntries = Object.entries(
-                                    students.filter((s: any) =>
-                                        (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
-                                        (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
-                                        (s.section || '').toLowerCase().includes(studentSearch.toLowerCase())
-                                    ).reduce((acc: any, student: any) => {
-                                        const sec = student.section || 'Sin Sección';
-                                        if (!acc[sec]) acc[sec] = [];
-                                        acc[sec].push(student);
-                                        return acc;
-                                    }, {})
-                                ).sort((a: any, b: any) => a[0].localeCompare(b[0]));
-
-                                const gridClass = sectionsEntries.length === 1 ? 'grid-cols-1 xl:w-1/2' : 'grid-cols-1 xl:grid-cols-2';
-
-                                return (
-                                    <div className={`grid ${gridClass} gap-6 items-start`}>
-                                        {sectionsEntries.map(([sectionName, sectionStudents]: [string, any]) => (
-                                            <div key={sectionName} className="bg-surface border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all flex flex-col max-h-[500px]">
-                                                <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4 shrink-0">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                                                    {sectionName}
-                                                    <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full ml-auto">{sectionStudents.length}</span>
-                                                </h3>
-                                                <ul className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                                                    {sectionStudents.map((s: any) => (
-                                                        <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
-                                                            <div className="flex items-center gap-3 truncate">
-                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-gradient-to-br from-accent to-accent-light text-white' : 'bg-slate-700/50 text-slate-400'}`}>
-                                                                    {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
-                                                                </div>
-                                                                <div className="flex flex-col truncate">
-                                                                    <span className="text-white text-sm font-semibold truncate flex items-center gap-2">
-                                                                        {s.name || 'Sin registro'}
-                                                                        {s.daily_streak > 0 && <Flame className="w-3 h-3 fill-orange-500 text-orange-400" />}
-                                                                    </span>
-                                                                    <div className="flex gap-4 mt-1 items-center">
-                                                                        <span className="text-[10px] text-primary-light font-mono font-bold bg-primary/5 px-2 py-0.5 rounded">ID: {s.identifier || s.student_id || 'S/ID'}</span>
-                                                                        <span className="text-[10px] text-slate-400 flex items-center gap-1"><Trophy className="w-3 h-3 text-gold" />: {s.ranking_points || 0}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
-                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${s.status === 'registered' ? 'text-green-400 bg-green-400/10 border border-green-400/20' : 'text-orange-400 bg-orange-400/10 border border-orange-400/20'}`}>
-                                                                    {s.status === 'registered' ? 'OK' : 'Sin registro'}
-                                                                </span>
-                                                                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{s.belbin}</span>
-                                                            </div>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            })()
-                        )}
-                    </>
-                )}
 
                 {courseSubTab === 'evaluaciones' && (
                     <div>
@@ -400,6 +303,101 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
             </div>
             
             {/* Cierre del grid principal de 2 columnas */}
+            </div>
+
+            {/* Separador inferior: Lista de Alumnos Completa */}
+            <div className="bg-surface-light border border-white/5 rounded-2xl p-6">
+                <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <FileSpreadsheet className="w-5 h-5 text-green-400" />
+                        <h3 className="text-white font-bold">Lista de Alumnos (CSV / Whitelist)</h3>
+                    </div>
+                    <WhitelistPanel courses={[course]} />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Users className="w-5 h-5 text-blue-400" />
+                        Alumnos Registrados
+                        <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0}</span>
+                    </h3>
+                    <div className="flex gap-2">
+                        <button onClick={async () => { setProcessing(true); try { const res = await fixAllIds(); toast.success(`Sincronización: ${res.fixed} corregidos`); } catch (e: any) { toast.error("Error"); } finally { setProcessing(false); } }} disabled={processing} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all flex items-center gap-1.5 font-medium uppercase tracking-wider text-[10px]">
+                            {processing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sincronizar
+                        </button>
+                        <button onClick={() => setConfirmDelete({ type: 'cleanup', id: course._id })} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all uppercase tracking-wider text-[10px]">
+                            <Sparkles className="w-3 h-3" /> Limpiar
+                        </button>
+                        <button onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all uppercase tracking-wider text-[10px]">
+                            <Trash2 className="w-3 h-3" /> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div className="relative group mb-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <input type="text" placeholder="Buscar alumno por nombre o RUT..." value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-slate-600" />
+                </div>
+
+                {students === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : students.length === 0 ? <p className="text-slate-500 text-sm">No hay alumnos cargados</p> : (
+                    (() => {
+                        const sectionsEntries = Object.entries(
+                            students.filter((s: any) =>
+                                (s.name || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                (s.identifier || s.student_id || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                (s.section || '').toLowerCase().includes(studentSearch.toLowerCase())
+                            ).reduce((acc: any, student: any) => {
+                                const sec = student.section || 'Sin Sección';
+                                if (!acc[sec]) acc[sec] = [];
+                                acc[sec].push(student);
+                                return acc;
+                            }, {})
+                        ).sort((a: any, b: any) => a[0].localeCompare(b[0]));
+
+                        const gridClass = sectionsEntries.length === 1 ? 'grid-cols-1 xl:w-1/2' : 'grid-cols-1 xl:grid-cols-2';
+
+                        return (
+                            <div className={`grid ${gridClass} gap-6 items-start`}>
+                                {sectionsEntries.map(([sectionName, sectionStudents]: [string, any]) => (
+                                    <div key={sectionName} className="bg-surface border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all flex flex-col max-h-[500px]">
+                                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4 shrink-0">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                                            {sectionName}
+                                            <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full ml-auto">{sectionStudents.length}</span>
+                                        </h3>
+                                        <ul className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                            {sectionStudents.map((s: any) => (
+                                                <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                                                    <div className="flex items-center gap-3 truncate">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-gradient-to-br from-accent to-accent-light text-white' : 'bg-slate-700/50 text-slate-400'}`}>
+                                                            {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
+                                                        </div>
+                                                        <div className="flex flex-col truncate">
+                                                            <span className="text-white text-sm font-semibold truncate flex items-center gap-2">
+                                                                {s.name || 'Sin registro'}
+                                                                {s.daily_streak > 0 && <Flame className="w-3 h-3 fill-orange-500 text-orange-400" />}
+                                                            </span>
+                                                            <div className="flex gap-4 mt-1 items-center">
+                                                                <span className="text-[10px] text-primary-light font-mono font-bold bg-primary/5 px-2 py-0.5 rounded">ID: {s.identifier || s.student_id || 'S/ID'}</span>
+                                                                <span className="text-[10px] text-slate-400 flex items-center gap-1"><Trophy className="w-3 h-3 text-gold" />: {s.ranking_points || 0}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${s.status === 'registered' ? 'text-green-400 bg-green-400/10 border border-green-400/20' : 'text-orange-400 bg-orange-400/10 border border-orange-400/20'}`}>
+                                                            {s.status === 'registered' ? 'OK' : 'Sin registro'}
+                                                        </span>
+                                                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{s.belbin}</span>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()
+                )}
             </div>
 
             {viewingQuizResults && (
