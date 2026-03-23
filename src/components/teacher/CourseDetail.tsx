@@ -421,6 +421,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                 <AgregarEvaluacionModal
                     courseId={course._id}
                     courseName={course.name}
+                    sections={Array.from(new Set(students?.map((s: any) => s.section).filter(Boolean))) as string[]}
                     onClose={() => setShowAgregarEvaluacion(false)}
                 />
             )}

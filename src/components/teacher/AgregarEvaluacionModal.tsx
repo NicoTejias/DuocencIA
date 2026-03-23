@@ -7,17 +7,19 @@ import { toast } from "sonner"
 interface AgregarEvaluacionModalProps {
     courseId: string
     courseName: string
+    sections: string[]
     onClose: () => void
 }
 
-export default function AgregarEvaluacionModal({ courseId, courseName, onClose }: AgregarEvaluacionModalProps) {
+export default function AgregarEvaluacionModal({ courseId, courseName, sections, onClose }: AgregarEvaluacionModalProps) {
     const createEvaluacion = useMutation(api.evaluaciones.createEvaluacion)
 
     const [titulo, setTitulo] = useState("")
     const [tipo, setTipo] = useState<"prueba" | "trabajo" | "informe">("prueba")
     const [descripcion, setDescripcion] = useState("")
     const [fecha, setFecha] = useState("")
-    const [hora, setHora] = useState("")
+    const [horaStr, setHoraStr] = useState("12")
+    const [minStr, setMinStr] = useState("00")
     const [puntos, setPuntos] = useState("")
     const [section, setSection] = useState("")
     const [loading, setLoading] = useState(false)
@@ -44,7 +46,7 @@ export default function AgregarEvaluacionModal({ courseId, courseName, onClose }
                 tipo,
                 descripcion: descripcion.trim() || undefined,
                 fecha: fechaTimestamp,
-                hora: hora || undefined,
+                hora: `${horaStr}:${minStr}`,
                 puntos: puntos ? parseInt(puntos) : undefined,
                 section: section || undefined,
             })
@@ -134,14 +136,29 @@ export default function AgregarEvaluacionModal({ courseId, courseName, onClose }
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
                                 <Clock className="w-3 h-3 inline mr-1" />
-                                Hora (opcional)
+                                Hora / Minuto (24h)
                             </label>
-                            <input
-                                type="time"
-                                value={hora}
-                                onChange={(e) => setHora(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium outline-none focus:border-primary"
-                            />
+                            <div className="flex gap-2">
+                                <select
+                                    value={horaStr}
+                                    onChange={(e) => setHoraStr(e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none text-center cursor-pointer"
+                                >
+                                    {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map(h => (
+                                        <option key={h} value={h} className="bg-surface text-white">{h}</option>
+                                    ))}
+                                </select>
+                                <span className="text-white font-bold flex items-center">:</span>
+                                <select
+                                    value={minStr}
+                                    onChange={(e) => setMinStr(e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none text-center cursor-pointer"
+                                >
+                                    {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map(m => (
+                                        <option key={m} value={m} className="bg-surface text-white">{m}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -160,15 +177,18 @@ export default function AgregarEvaluacionModal({ courseId, courseName, onClose }
                     {/* Sección */}
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                            Sección (opcional)
+                            Aplica a Sección
                         </label>
-                        <input
-                            type="text"
+                        <select
                             value={section}
                             onChange={(e) => setSection(e.target.value)}
-                            placeholder="Ej: Sección A, Grupo 1"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium outline-none focus:border-primary"
-                        />
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none cursor-pointer"
+                        >
+                            <option value="" className="bg-surface text-slate-400">Todas las secciones del curso</option>
+                            {sections.map(sec => (
+                                <option key={sec} value={sec} className="bg-surface text-white">{sec}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Descripción */}
