@@ -16,7 +16,7 @@ export const createEvaluacion = mutation({
         const user = await requireTeacher(ctx);
         
         const course = await ctx.db.get(args.course_id);
-        if (!course || course.teacher_id !== user._id) {
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
             throw new Error("No tienes permiso para agregar evaluaciones a este curso");
         }
 
@@ -111,7 +111,7 @@ export const updateEvaluacion = mutation({
         }
 
         const course = await ctx.db.get(evaluacion.course_id);
-        if (!course || course.teacher_id !== user._id) {
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
             throw new Error("No tienes permiso para modificar esta evaluación");
         }
 
@@ -131,7 +131,7 @@ export const deleteEvaluacion = mutation({
         }
 
         const course = await ctx.db.get(evaluacion.course_id);
-        if (!course || course.teacher_id !== user._id) {
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin")) {
             throw new Error("No tienes permiso para eliminar esta evaluación");
         }
 
