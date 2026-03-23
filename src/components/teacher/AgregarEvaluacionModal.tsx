@@ -17,7 +17,9 @@ export default function AgregarEvaluacionModal({ courseId, courseName, sections,
     const [titulo, setTitulo] = useState("")
     const [tipo, setTipo] = useState<"prueba" | "trabajo" | "informe">("prueba")
     const [descripcion, setDescripcion] = useState("")
-    const [fecha, setFecha] = useState("")
+    const [dia, setDia] = useState(new Date().getDate().toString().padStart(2, '0'))
+    const [mes, setMes] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'))
+    const [anio, setAnio] = useState(new Date().getFullYear().toString())
     const [horaStr, setHoraStr] = useState("12")
     const [minStr, setMinStr] = useState("00")
     const [puntos, setPuntos] = useState("")
@@ -31,15 +33,17 @@ export default function AgregarEvaluacionModal({ courseId, courseName, sections,
             toast.error("El título es requerido")
             return
         }
-        if (!fecha) {
-            toast.error("La fecha es requerida")
+
+        const fechaStr = `${anio}-${mes}-${dia}`
+        const fechaTimestamp = new Date(`${fechaStr}T12:00:00`).getTime()
+
+        if (isNaN(fechaTimestamp)) {
+            toast.error("La fecha seleccionada no es válida")
             return
         }
-
+            
         setLoading(true)
         try {
-            const fechaTimestamp = new Date(fecha).getTime()
-            
             await createEvaluacion({
                 course_id: courseId as any,
                 titulo: titulo.trim(),
@@ -121,17 +125,50 @@ export default function AgregarEvaluacionModal({ courseId, courseName, sections,
 
                     {/* Fecha y Hora */}
                     <div className="grid grid-cols-2 gap-3">
-                        <div>
+                        <div className="flex-1">
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
                                 <Calendar className="w-3 h-3 inline mr-1" />
-                                Fecha
+                                Fecha (DD/MM/AAAA)
                             </label>
-                            <input
-                                type="date"
-                                value={fecha}
-                                onChange={(e) => setFecha(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium outline-none focus:border-primary"
-                            />
+                            <div className="flex gap-1.5">
+                                {/* Día */}
+                                <select
+                                    value={dia}
+                                    onChange={(e) => setDia(e.target.value)}
+                                    className="w-16 bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none text-center cursor-pointer"
+                                >
+                                    {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(d => (
+                                        <option key={d} value={d} className="bg-surface text-white">{d}</option>
+                                    ))}
+                                </select>
+                                
+                                {/* Mes */}
+                                <select
+                                    value={mes}
+                                    onChange={(e) => setMes(e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none cursor-pointer"
+                                >
+                                    {[
+                                        { v: '01', l: 'Enero' }, { v: '02', l: 'Febrero' }, { v: '03', l: 'Marzo' },
+                                        { v: '04', l: 'Abril' }, { v: '05', l: 'Mayo' }, { v: '06', l: 'Junio' },
+                                        { v: '07', l: 'Julio' }, { v: '08', l: 'Agosto' }, { v: '09', l: 'Septiembre' },
+                                        { v: '10', l: 'Octubre' }, { v: '11', l: 'Noviembre' }, { v: '12', l: 'Diciembre' }
+                                    ].map(m => (
+                                        <option key={m.v} value={m.v} className="bg-surface text-white">{m.l}</option>
+                                    ))}
+                                </select>
+
+                                {/* Año */}
+                                <select
+                                    value={anio}
+                                    onChange={(e) => setAnio(e.target.value)}
+                                    className="w-20 bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-medium outline-none focus:border-primary appearance-none text-center cursor-pointer"
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() + i).toString()).map(y => (
+                                        <option key={y} value={y} className="bg-surface text-white">{y}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
