@@ -57,32 +57,37 @@ export const getEvaluacionesEstudiante = query({
     handler: async (ctx) => {
         const user = await requireAuth(ctx);
         
-        const enrollments = await ctx.db
-            .query("enrollments")
-            .withIndex("by_user", (q) => q.eq("user_id", user._id))
-            .collect();
-
-        const courseIds = enrollments.map(e => e.course_id);
-
-        let allEvaluaciones: any[] = [];
-        
-        for (const courseId of courseIds) {
-            const evals = await ctx.db
-                .query("evaluaciones")
-                .withIndex("by_course", (q) => q.eq("course_id", courseId))
-                .filter((q) => q.eq(q.field("activo"), true))
+        try {
+            const enrollments = await ctx.db
+                .query("enrollments")
+                .withIndex("by_user", (q) => q.eq("user_id", user._id))
                 .collect();
-            
-            const course = await ctx.db.get(courseId);
-            
-            allEvaluaciones.push(...evals.map(e => ({
-                ...e,
-                course_name: course?.name,
-                course_code: course?.code,
-            })));
-        }
 
-        return allEvaluaciones.sort((a, b) => a.fecha - b.fecha);
+            const courseIds = enrollments.map(e => e.course_id);
+
+            let allEvaluaciones: any[] = [];
+            
+            for (const courseId of courseIds) {
+                const evals = await ctx.db
+                    .query("evaluaciones")
+                    .withIndex("by_course", (q) => q.eq("course_id", courseId))
+                    .filter((q) => q.eq(q.field("activo"), true))
+                    .collect();
+                
+                const course = await ctx.db.get(courseId);
+                
+                allEvaluaciones.push(...evals.map(e => ({
+                    ...e,
+                    course_name: course?.name,
+                    course_code: course?.code,
+                })));
+            }
+
+            return allEvaluaciones.sort((a, b) => a.fecha - b.fecha);
+        } catch (error: any) {
+            console.error("DEBUG EVAL ERROR", error);
+            throw new Error(`Detalle del error en getEvaluacionesEstudiante: ${error.message || error}`);
+        }
     },
 });
 
