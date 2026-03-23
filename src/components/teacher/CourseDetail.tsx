@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
 import { EditMissionModal, EditRewardModal } from './EditModals'
 // import AttendancePanel from './AttendancePanel'
-import WhitelistPanel from './WhitelistPanel'
+import ImportarAlumnosModal from './ImportarAlumnosModal'
 import EvaluadorIAPanel from './EvaluadorIAPanel'
 import AgregarEvaluacionModal from './AgregarEvaluacionModal'
 import EvaluacionesPorCurso from './EvaluacionesPorCurso'
@@ -41,6 +41,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const [editingMission, setEditingMission] = useState<any>(null)
     const [editingReward, setEditingReward] = useState<any>(null)
     const [showAgregarEvaluacion, setShowAgregarEvaluacion] = useState(false)
+    const [showImportarAlumnos, setShowImportarAlumnos] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState<{ type: 'reward' | 'mission' | 'quiz' | 'cleanup' | 'reset_points', id: any } | null>(null)
 
     const deleteReward = useMutation(api.rewards.deleteReward)
@@ -307,28 +308,34 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
 
             {/* Separador inferior: Lista de Alumnos Completa */}
             <div className="bg-surface-light border border-white/5 rounded-2xl p-6">
-                <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <FileSpreadsheet className="w-5 h-5 text-green-400" />
-                        <h3 className="text-white font-bold">Lista de Alumnos (CSV / Whitelist)</h3>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                    <div className="flex flex-col gap-1">
+                        <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                            <Users className="w-6 h-6 text-blue-400" />
+                            Alumnos Registrados
+                            <span className="text-xs bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/10">{students?.length || 0}</span>
+                        </h3>
+                        <p className="text-slate-500 text-xs font-medium ml-9 uppercase tracking-widest opacity-80">Gestión de estudiantes y sincronización</p>
                     </div>
-                    <WhitelistPanel courses={[course]} />
-                </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                        <button 
+                            onClick={() => setShowImportarAlumnos(true)}
+                            className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-xl border border-green-500/20 transition-all flex items-center gap-2 font-bold text-xs uppercase tracking-wider shadow-lg shadow-green-500/5 group"
+                        >
+                            <FileSpreadsheet className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            Importar Lista
+                        </button>
+                        
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block"></div>
 
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-400" />
-                        Alumnos Registrados
-                        <span className="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full">{students?.length || 0}</span>
-                    </h3>
-                    <div className="flex gap-2">
-                        <button onClick={async () => { setProcessing(true); try { const res = await fixAllIds(); toast.success(`Sincronización: ${res.fixed} corregidos`); } catch (e: any) { toast.error("Error"); } finally { setProcessing(false); } }} disabled={processing} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all flex items-center gap-1.5 font-medium uppercase tracking-wider text-[10px]">
+                        <button onClick={async () => { setProcessing(true); try { const res = await fixAllIds(); toast.success(`Sincronización: ${res.fixed} corregidos`); } catch (e: any) { toast.error("Error"); } finally { setProcessing(false); } }} disabled={processing} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl border border-white/5 transition-all flex items-center gap-1.5 font-bold uppercase tracking-widest text-[9px]">
                             {processing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sincronizar
                         </button>
-                        <button onClick={() => setConfirmDelete({ type: 'cleanup', id: course._id })} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-lg border border-white/5 transition-all uppercase tracking-wider text-[10px]">
+                        <button onClick={() => setConfirmDelete({ type: 'cleanup', id: course._id })} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl border border-white/5 transition-all uppercase tracking-widest text-[9px]">
                             <Sparkles className="w-3 h-3" /> Limpiar
                         </button>
-                        <button onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all uppercase tracking-wider text-[10px]">
+                        <button onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all uppercase tracking-widest text-[9px]">
                             <Trash2 className="w-3 h-3" /> Reset
                         </button>
                     </div>
@@ -423,6 +430,13 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                     courseName={course.name}
                     sections={Array.from(new Set(students?.map((s: any) => s.section).filter(Boolean))) as string[]}
                     onClose={() => setShowAgregarEvaluacion(false)}
+                />
+            )}
+
+            {showImportarAlumnos && (
+                <ImportarAlumnosModal
+                    course={course}
+                    onClose={() => setShowImportarAlumnos(false)}
                 />
             )}
         </div>
