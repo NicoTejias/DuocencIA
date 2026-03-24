@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
 import { BookOpen, Target, Trophy, Gift, BarChart3, LogOut, Menu, X, Settings, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, HelpCircle, ArrowRightLeft } from 'lucide-react'
 import FAQSection from '../components/FAQSection'
-import { toast } from 'sonner'
 import RamosPanel from '../components/teacher/RamosPanel'
 import CrearMisionPanel from '../components/teacher/CrearMisionPanel'
 import CrearRecompensaPanel from '../components/teacher/CrearRecompensaPanel'
