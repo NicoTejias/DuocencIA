@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useConvexAuth } from "convex/react"
 import { useQuery } from "convex/react"
 import { api } from "../convex/_generated/api"
-import { Loader2, Sparkles, ShieldAlert } from 'lucide-react'
+import { Loader2, ShieldAlert } from 'lucide-react'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
