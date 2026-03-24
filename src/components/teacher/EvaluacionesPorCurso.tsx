@@ -10,6 +10,7 @@ interface EvaluacionesPorCursoProps {
 }
 
 export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoProps) {
+    const [now] = useState(() => Date.now())
     const evaluaciones = useQuery(api.evaluaciones.getEvaluacionesPorCurso, { course_id: courseId as any })
     const deleteEvaluacion = useMutation(api.evaluaciones.deleteEvaluacion)
     const [deleteTarget, setDeleteTarget] = useState<any>(null)
@@ -62,7 +63,7 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
                 </h4>
                 <div className="space-y-2">
                     {pruebas.map((ev: any) => (
-                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} />
+                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
                     ))}
                 </div>
             </div>
@@ -74,7 +75,7 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
                 </h4>
                 <div className="space-y-2">
                     {trabajos.map((ev: any) => (
-                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} />
+                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
                     ))}
                 </div>
             </div>
@@ -93,8 +94,8 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
     )
 }
 
-function EvaluacionItem({ evaluacion, onDelete, formatDate }: { evaluacion: any, onDelete: () => void, formatDate: (ts: number) => string }) {
-    const isPast = evaluacion.fecha < Date.now()
+function EvaluacionItem({ evaluacion, onDelete, formatDate, now }: { evaluacion: any, onDelete: () => void, formatDate: (ts: number) => string, now: number }) {
+    const isPast = evaluacion.fecha < now
     
     return (
         <div className={`p-4 rounded-xl border flex items-center justify-between ${

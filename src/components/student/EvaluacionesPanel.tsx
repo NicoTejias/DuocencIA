@@ -1,4 +1,5 @@
 import { useQuery } from "convex/react"
+import { useState } from "react"
 import { api } from "../../../convex/_generated/api"
 import { FileText, PenSquare, Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 export default function EvaluacionesPanel() {
@@ -15,7 +16,7 @@ export default function EvaluacionesPanel() {
     const pruebas = evaluaciones.filter(e => e.tipo === 'prueba')
     const trabajos = evaluaciones.filter(e => e.tipo === 'trabajo' || e.tipo === 'informe')
 
-    const now = Date.now()
+    const [now] = useState(() => Date.now())
     const oneWeek = 7 * 24 * 60 * 60 * 1000
 
     const formatDate = (timestamp: number, hora?: string) => {
