@@ -2,16 +2,19 @@
 
 @theme {
   /* Duoc UC Institutional Colors */
-  --color-primary: #FFD633;        /* Amarillo Duoc */
-  --color-primary-light: #FFE066;
-  --color-primary-dark: #E6C200;
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
   
-  --color-accent: #0050FF;         /* Azul Mascota Duco */
-  --color-accent-light: #3373FF;
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
   
-  --color-surface: #000000;        /* Pure Black */
-  --color-surface-light: #1A1A1A;  /* 90% Black */
-  --color-surface-lighter: #262626;/* 85% Black */
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-surface-lighter: var(--surface-lighter);
+  
+  --color-text-main: var(--text-main);
+  --color-text-dim: var(--text-dim);
   
   --color-gold: #f59e0b;
   --color-gold-light: #fbbf24;
@@ -22,6 +25,35 @@
   --animate-gradient-x: gradient-x 15s ease infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+:root {
+  --primary: #FFD633;
+  --primary-light: #FFE066;
+  --primary-dark: #E6C200;
+  --accent: #0050FF;
+  --accent-light: #3373FF;
+  
+  /* Temas - Valores por defecto (Dark) */
+  --surface: #000000;
+  --surface-light: #121212;
+  --surface-lighter: #1e1e1e;
+  --text-main: #f1f5f9;
+  --text-dim: #94a3b8;
+  --text-muted: #64748b;
+  --border-dim: rgba(255, 255, 255, 0.05);
+
+  --font-size-base: 16px;
+}
+
+[data-theme='light'] {
+  --surface: #f8fafc;
+  --surface-light: #ffffff;
+  --surface-lighter: #f1f5f9;
+  --text-main: #0f172a;
+  --text-dim: #475569;
+  --text-muted: #94a3b8;
+  --border-dim: rgba(0, 0, 0, 0.05);
 }
 
 @keyframes gradient-x {
@@ -41,10 +73,11 @@
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    font-size: var(--font-size-base);
   }
 
   body {
-    @apply bg-surface text-slate-100 font-sans antialiased;
+    @apply bg-surface text-text-main font-sans antialiased;
     overscroll-behavior-y: contain;
     overflow-x: hidden;
     overflow-y: auto;

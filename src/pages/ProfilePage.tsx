@@ -4,7 +4,8 @@ import { api } from "../../convex/_generated/api"
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
-import { Camera, BadgeCheck, User, RefreshCw, Upload, Mail, Shield, Key, Save, Loader2, ArrowLeft, IdCard } from 'lucide-react'
+import { Camera, BadgeCheck, User, RefreshCw, Upload, Mail, Shield, Key, Save, Loader2, ArrowLeft, IdCard, Settings, Sun, Moon, Palette } from 'lucide-react'
+import { useTheme } from '../components/ThemeProvider'
 
 export default function ProfilePage() {
     const user = useQuery(api.users.getProfile)
@@ -12,6 +13,7 @@ export default function ProfilePage() {
     const updateAvatar = useMutation(api.users.updateAvatar)
     const resetBartle = useMutation(api.users.resetBartleTest)
     const navigate = useNavigate()
+    const { theme, fontSize, setTheme, setFontSize } = useTheme()
 
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -265,6 +267,16 @@ export default function ProfilePage() {
                                 Repetir Test Bartle
                             </button>
                         )}
+                        <button 
+                            onClick={() => {
+                                // Scroll to preferences
+                                document.getElementById('preferences-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="w-full flex items-center gap-3 px-6 py-4 hover:bg-white/5 text-slate-400 hover:text-white rounded-2xl font-bold transition-all text-left"
+                        >
+                            <Settings className="w-5 h-5" />
+                            Preferencias
+                        </button>
                         <button className="w-full flex items-center gap-3 px-6 py-4 hover:bg-white/5 text-slate-400 hover:text-white rounded-2xl font-bold transition-all text-left">
                             <Shield className="w-5 h-5" />
                             Seguridad
@@ -354,6 +366,64 @@ export default function ProfilePage() {
                                         GUARDAR CAMBIOS
                                     </button>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Preferences Card */}
+                        <div id="preferences-section" className="scroll-mt-6 bg-surface-light border border-white/5 rounded-[2.5rem] p-8 md:p-10 shadow-xl overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                                <Palette className="w-24 h-24 text-primary" />
+                            </div>
+
+                            <h2 className="text-xl font-black flex items-center gap-3 mb-8 text-white">
+                                <Settings className="w-6 h-6 text-primary" />
+                                Preferencias de Interfaz
+                            </h2>
+
+                            <div className="space-y-8 relative z-10">
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-4 block">Modo de Visualización</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button 
+                                            onClick={() => setTheme('dark')}
+                                            className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all ${theme === 'dark' ? 'bg-primary/10 border-primary text-primary-light' : 'bg-black/20 border-white/5 text-slate-400 hover:border-white/10'}`}
+                                        >
+                                            <Moon className="w-5 h-5" />
+                                            <span className="font-bold">Oscuro</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => setTheme('light')}
+                                            className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all ${theme === 'light' ? 'bg-primary/10 border-primary text-primary-light' : 'bg-black/10 border-white/5 text-slate-400 hover:border-white/10'}`}
+                                        >
+                                            <Sun className="w-5 h-5" />
+                                            <span className="font-bold">Claro</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-4 block">Tamaño de Fuente (Accesibilidad)</label>
+                                    <div className="flex bg-black/20 p-2 rounded-2xl border border-white/5">
+                                        {[
+                                            { id: 'small', label: 'A', class: 'text-xs' },
+                                            { id: 'medium', label: 'A', class: 'text-sm' },
+                                            { id: 'large', label: 'A', class: 'text-lg' },
+                                            { id: 'extra-large', label: 'A', class: 'text-xl' }
+                                        ].map((size) => (
+                                            <button
+                                                key={size.id}
+                                                onClick={() => setFontSize(size.id as any)}
+                                                className={`flex-1 flex flex-col items-center justify-center py-4 rounded-xl transition-all ${fontSize === size.id ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-105 z-10' : 'text-slate-500 hover:bg-white/5'}`}
+                                            >
+                                                <span className={`font-black ${size.class}`}>{size.label}</span>
+                                                <span className="text-[8px] mt-1 font-bold uppercase">{size.id.replace('-', ' ')}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="mt-3 text-[10px] text-slate-500 font-medium ml-1 leading-relaxed opacity-60">
+                                        * Esto ajustará dinámicamente el tamaño de los textos en toda la aplicación para mejorar tu confort visual.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

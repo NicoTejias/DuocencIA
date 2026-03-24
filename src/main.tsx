@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { UserSync } from './components/auth/UserSync'
+import { ThemeProvider } from './components/ThemeProvider'
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
@@ -60,7 +61,9 @@ createRoot(document.getElementById('root')!).render(
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <BrowserRouter>
           <UserSync />
-          <App />
+          <ThemeProvider>
+            <App />
+          </ThemeProvider>
         </BrowserRouter>
       </ConvexProviderWithClerk>
     </ClerkProvider>

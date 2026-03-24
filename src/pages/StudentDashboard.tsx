@@ -82,7 +82,7 @@ export default function StudentDashboard() {
     ]
 
     return (
-        <div className="h-screen-dvh bg-surface flex text-slate-200 overflow-hidden relative">
+        <div className="h-screen-dvh bg-surface flex text-text-main overflow-hidden relative">
 
             {showCompleteProfile && (
                 <CompleteProfileModal 
