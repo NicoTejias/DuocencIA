@@ -363,7 +363,19 @@ export const getCourseStudents = query({
                         .unique();
                     if (userByRaw) return userByRaw;
 
-                    // 4. Intentar búsqueda por email pero con el ID normalizado (por si acaso)
+                    // 4. Fallback por cuerpo numérico (sin DV o con prefijos/sufijos extra)
+                    const bodyMatch = id.replace(/[^\d]/g, '');
+                    if (bodyMatch.length >= 7) {
+                        const allUsers = await ctx.db.query("users").collect(); // Fallback pesado pero necesario si el índice exacto falla
+                        const matchingBodyUser = allUsers.find(u => {
+                             if (!u.student_id) return false;
+                             const uBody = u.student_id.replace(/[^\d]/g, '');
+                             return uBody === bodyMatch || uBody.includes(bodyMatch) || bodyMatch.includes(uBody);
+                        });
+                        if (matchingBodyUser) return matchingBodyUser;
+                    }
+
+                    // 5. Intentar búsqueda por email con el ID normalizado
                     if (id.includes("@")) {
                         const userByEmailAgain = await ctx.db
                             .query("users")

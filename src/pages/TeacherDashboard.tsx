@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
 import { api } from "../../convex/_generated/api"
 import { BookOpen, Target, Trophy, Gift, BarChart3, LogOut, Menu, X, Settings, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, HelpCircle, ArrowRightLeft } from 'lucide-react'
 import FAQSection from '../components/FAQSection'
+import { toast } from 'sonner'
 import RamosPanel from '../components/teacher/RamosPanel'
 import CrearMisionPanel from '../components/teacher/CrearMisionPanel'
 import CrearRecompensaPanel from '../components/teacher/CrearRecompensaPanel'
@@ -350,6 +351,8 @@ function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { f
 
 function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }) {
     const navigate = useNavigate()
+    const cleanAllMyWhitelists = useMutation(api.courses.cleanAllMyWhitelists)
+    const fixAllStudentIds = useMutation(api.users.fixAllStudentIds)
 
     return (
         <div className="max-w-4xl mx-auto py-10 space-y-8">
@@ -383,6 +386,63 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                         <Settings className="w-4 h-4" />
                         Configurar Perfil
                     </button>
+                </div>
+            </div>
+
+            {/* Nueva sección de Mantenimiento para el Docente */}
+            <div className="bg-surface-light border border-white/5 rounded-3xl p-8 shadow-xl">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                        <ShieldCheck className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-white">Herramientas de Mantenimiento</h3>
+                        <p className="text-slate-400 text-sm">Resuelve problemas de duplicados y sincronización de alumnos</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                            <User className="w-4 h-4 text-accent" />
+                            Limpiar Duplicados
+                        </h4>
+                        <p className="text-slate-500 text-xs">Busca y elimina registros duplicados en las listas de alumnos (RUTs repetidos entre secciones o con formatos distintos).</p>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const res = await cleanAllMyWhitelists();
+                                    toast.success(`Limpieza completada: ${res.totalDeleted} duplicados eliminados.`);
+                                } catch (e: any) {
+                                    toast.error(e.message || "Error al limpiar");
+                                }
+                            }}
+                            className="w-full bg-accent/10 hover:bg-accent/20 text-accent-light font-bold py-3 rounded-xl border border-accent/20 transition-all text-sm"
+                        >
+                            Optimizar Whitelist
+                        </button>
+                    </div>
+
+                    <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                        <h4 className="font-bold text-white flex items-center gap-2">
+                            <ArrowRightLeft className="w-4 h-4 text-primary-light" />
+                            Forzar Sincronización
+                        </h4>
+                        <p className="text-slate-500 text-xs">Re-evalúa a todos los usuarios registrados para asegurar que estén inscritos en sus respectivos ramos según la whitelist.</p>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const res = await fixAllStudentIds();
+                                    toast.success(`Sincronización terminada: ${res.enrolled} nuevos accesos otorgados.`);
+                                } catch (e: any) {
+                                    toast.error(e.message || "Error al sincronizar");
+                                }
+                            }}
+                            className="w-full bg-primary/10 hover:bg-primary/20 text-primary-light font-bold py-3 rounded-xl border border-primary/20 transition-all text-sm"
+                        >
+                            Sincronizar Alumnos
+                        </button>
+                    </div>
                 </div>
             </div>
 
