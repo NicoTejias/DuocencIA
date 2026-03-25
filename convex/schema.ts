@@ -72,7 +72,7 @@ export default defineSchema({
             v.literal("achiever"), 
             v.literal("socializer"), 
             v.literal("explorer"), 
-            v.literal("killer")
+            v.literal("competidor")
         )),
         avatarUrl: v.optional(v.string()),
     })
@@ -84,6 +84,7 @@ export default defineSchema({
         name: v.string(),
         code: v.string(),
         teacher_id: v.id("users"),
+        career_id: v.optional(v.id("careers")),
         description: v.string(),
     })
         .index("by_teacher", ["teacher_id"])
@@ -385,4 +386,13 @@ faqs: defineTable({
         updated_by: v.optional(v.id("users")),
     })
         .index("by_key", ["key"]),
+
+    careers: defineTable({
+        name: v.string(),
+        coordinator_email: v.string(),
+        director_email: v.string(),
+        jefe_admin_email: v.optional(v.string()), // Puede ser compartido entre carreras
+        created_at: v.number(),
+    })
+        .index("by_name", ["name"]),
 });

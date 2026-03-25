@@ -17,7 +17,7 @@ const QUESTIONS = [
             { text: "Haber dominado todas las competencias", score: { achiever: 10 } },
             { text: "Haber hecho buenos amigos y contactos", score: { socializer: 10 } },
             { text: "Haber descubierto herramientas que no conocía", score: { explorer: 10 } },
-            { text: "Haber quedado en el primer lugar de la sección", score: { killer: 10 } }
+            { text: "Haber quedado en el primer lugar de la sección", score: { competidor: 10 } }
         ]
     },
     {
@@ -27,7 +27,7 @@ const QUESTIONS = [
             { text: "Lo reportas para que la experiencia mejore para todos", score: { achiever: 5, socializer: 5 } },
             { text: "Se lo comentas a tus compañeros en el chat", score: { socializer: 10 } },
             { text: "Intentas explorar hasta dónde llega ese error", score: { explorer: 10 } },
-            { text: "Ves si puedes usarlo para sacar ventaja en el ranking", score: { killer: 10 } }
+            { text: "Ves si puedes usarlo para sacar ventaja en el ranking", score: { competidor: 10 } }
         ]
     },
     {
@@ -37,7 +37,7 @@ const QUESTIONS = [
             { text: "Asegurar que el entregable sea perfecto", score: { achiever: 10 } },
             { text: "Mantener un buen ambiente y que todos participen", score: { socializer: 10 } },
             { text: "Investigar la solución más innovadora", score: { explorer: 10 } },
-            { text: "Ser el grupo que obtenga la nota más alta", score: { killer: 10 } }
+            { text: "Ser el grupo que obtenga la nota más alta", score: { competidor: 10 } }
         ]
     },
     {
@@ -47,14 +47,14 @@ const QUESTIONS = [
             { text: "Coleccionar todas las insignias posibles", score: { achiever: 10 } },
             { text: "El sistema de chat y colaboración", score: { socializer: 10 } },
             { text: "Que la IA genere contextos profesionales curiosos", score: { explorer: 10 } },
-            { text: "Superar a los 'invencibles' del ranking", score: { killer: 10 } }
+            { text: "Superar a los 'invencibles' del ranking", score: { competidor: 10 } }
         ]
     }
 ]
 
 export default function BartleTest({ onComplete }: BartleTestProps) {
     const [currentStep, setCurrentStep] = useState(0)
-    const [scores, setScores] = useState({ achiever: 0, socializer: 0, explorer: 0, killer: 0 })
+    const [scores, setScores] = useState({ achiever: 0, socializer: 0, explorer: 0, competidor: 0 })
     const [loading, setLoading] = useState(false)
     const saveProfile = useMutation(api.users.saveBartleProfile)
 
@@ -63,7 +63,7 @@ export default function BartleTest({ onComplete }: BartleTestProps) {
             achiever: scores.achiever + (score.achiever || 0),
             socializer: scores.socializer + (score.socializer || 0),
             explorer: scores.explorer + (score.explorer || 0),
-            killer: scores.killer + (score.killer || 0),
+            competidor: scores.competidor + (score.competidor || 0),
         }
         setScores(newScores)
 
@@ -172,7 +172,7 @@ export function BartleProfileDisplay({ profile }: { profile: string }) {
             bg: "bg-purple-400/10",
             desc: "Te encanta descubrir contenido nuevo, secretos y entender el 'por qué' de las cosas."
         },
-        killer: {
+        competidor: {
             title: "Competidor",
             icon: Sword,
             color: "text-red-400",

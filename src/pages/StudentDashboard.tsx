@@ -20,7 +20,9 @@ import TransferModal from '../components/student/TransferModal'
 import CompleteProfileModal from '../components/student/CompleteProfileModal'
 import BartlePopup from '../components/student/BartlePopup'
 import { BartleProfileDisplay } from '../components/student/BartleTest'
+import RetentionProgressWidget from '../components/student/RetentionProgressWidget'
 import FAQSection from '../components/FAQSection'
+
 
 // Utilidades
 import { getFirstName } from '../utils/dashboardUtils'
@@ -137,8 +139,13 @@ export default function StudentDashboard() {
                                     {user.bartle_profile && (
                                         <BartleProfileDisplay profile={user.bartle_profile} />
                                     )}
+                                    <RetentionProgressWidget 
+                                        user={user} 
+                                        courses={courses || []} 
+                                    />
                                     <DashboardHome
                                         courses={courses || []}
+
                                         totalRanking={totalRankingPoints}
                                         firstName={firstName}
                                         onSelectCourse={(id) => setSelectedCourseId(id)}
