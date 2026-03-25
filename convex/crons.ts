@@ -1,7 +1,6 @@
-import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internalMutation } from "./_generated/server";
 import { pushNotification } from "./notifications";
+
 
 // Job que se ejecuta semanalmente para detectar riesgo de deserción
 export const checkRetentionAlerts = internalMutation({
