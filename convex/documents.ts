@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
+import { api } from "./_generated/api";
 
 const ALLOWED_FILE_TYPES = ["pdf", "docx", "pptx", "xlsx"];
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
