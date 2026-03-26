@@ -50,7 +50,7 @@ export function useGooglePicker() {
         client_id: CLIENT_ID,
         scope: SCOPES,
         prompt: 'select_account',
-        hint: 'ni.tejias@profesor.duoc.cl', // Ayuda a Google a preseleccionar tu cuenta
+        // hint: 'ni.tejias@profesor.duoc.cl', // Ayuda a Google a preseleccionar tu cuenta
         callback: (response: any) => {
           if (response.error) {
             reject(response);
@@ -84,7 +84,7 @@ export function useGooglePicker() {
         .addView(docsView)
         .setOAuthToken(token)
         .setDeveloperKey(API_KEY)
-        .setOrigin(window.location.origin)
+        .setOrigin(window.location.origin.replace(/\/$/, ""))
         .enableFeature(pickerWindow.Feature.MULTISELECT_ENABLED)
         .setCallback((data: any) => {
           if (data.action === pickerWindow.Action.PICKED) {
