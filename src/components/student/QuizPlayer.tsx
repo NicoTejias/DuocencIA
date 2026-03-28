@@ -115,6 +115,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
     // Game timer state (for word_search and memory)
     const [gameScore, setGameScore] = useState(100)
+    const [gameTimeLeft, setGameTimeLeft] = useState(30)
     const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // Interactive word search state
@@ -235,20 +236,19 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     useEffect(() => {
         if ((quizType === 'word_search' || quizType === 'memory') && honorAccepted) {
             setGameScore(100)
+            setGameTimeLeft(30)
             if (gameTimerRef.current) clearInterval(gameTimerRef.current)
             gameTimerRef.current = setInterval(() => {
-                setGameScore(prev => {
-                    // Lose 10 points every 30 seconds
-                    return prev > 0 ? prev : 0
+                setGameTimeLeft(prev => {
+                    if (prev <= 1) {
+                        setGameScore(s => Math.max(0, s - 10))
+                        return 30
+                    }
+                    return prev - 1
                 })
             }, 1000)
-            // Score reduction every 30s
-            const penaltyInterval = setInterval(() => {
-                setGameScore(prev => Math.max(0, prev - 10))
-            }, 30000)
             return () => {
                 if (gameTimerRef.current) clearInterval(gameTimerRef.current)
-                clearInterval(penaltyInterval)
             }
         }
     }, [quizType, honorAccepted]) // eslint-disable-line
@@ -777,7 +777,9 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                             <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
                                 Bono: {gameScore} pts
                             </span>
-                            <span className="text-[10px] text-accent-light opacity-70 ml-1 font-bold tracking-widest uppercase">(-10 c/30s)</span>
+                            <span className="text-xs font-mono text-accent-light opacity-80 ml-2 font-bold">
+                                {gameTimeLeft}s
+                            </span>
                         </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {words.length} palabras ocultas</h3>
                         <p className="text-slate-500 text-xs text-center mb-6">Toca la primera y última letra en la cuadrícula para marcar cada palabra</p>
@@ -833,7 +835,9 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                             <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
                                 Bono: {gameScore} pts
                             </span>
-                            <span className="text-[10px] text-pink-400 opacity-70 ml-1 font-bold tracking-widest uppercase">(-10 c/30s)</span>
+                            <span className="text-xs font-mono text-pink-400 opacity-80 ml-2 font-bold">
+                                {gameTimeLeft}s
+                            </span>
                         </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {pairs.length} parejas</h3>
                         <p className="text-slate-500 text-xs text-center mb-4">Toca dos cartas para buscar una pareja (término ↔ definición)</p>

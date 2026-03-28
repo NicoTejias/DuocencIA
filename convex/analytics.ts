@@ -91,13 +91,12 @@ export const getTeacherStats = query({
             const allWhitelistArrays = await Promise.all(allWhitelistPromises);
             const allWhitelistEntries = allWhitelistArrays.flat();
 
-            // Obtener TODAS las recompensas del docente para luego filtrar las redenciones
+            // (Restablecido para usar el nuevo índice by_reward)
             const allRewardsPromises = courseIds.map((id: any) => ctx.db.query("rewards").withIndex("by_course", (q: any) => q.eq("course_id", id)).collect());
             const allRewardsArrays = await Promise.all(allRewardsPromises);
             const rewards = allRewardsArrays.flat();
             const rewardIds = new Set(rewards.map((r: any) => r._id));
 
-            // Obtener TODAS las canjes (redemptions)
             const allRedemptionsPromises = Array.from(rewardIds).map(rid =>
                 ctx.db
                     .query("redemptions")
@@ -107,6 +106,7 @@ export const getTeacherStats = query({
             const allRedemptionsArrays = await Promise.all(allRedemptionsPromises);
             const teacherRedemptions = allRedemptionsArrays.flat();
 
+            const totalRedemptionsCount = teacherRedemptions.length;
             // Calcular Estadisticas Consolidadas
             // totalWhitelistEntries = todos los registros en whitelists
             // totalUniqueStudents = RUTs únicos en las whitelists (por si están en varios ramos)
@@ -121,7 +121,6 @@ export const getTeacherStats = query({
             const totalRegisteredUniqueUsers = registeredUserIds.size;
             let totalPoints = 0;
             const totalMissionsCompleted = submissions.length + quizSubmissions.length;
-            const totalRedemptionsCount = teacherRedemptions.length;
             const totalMissionsCreated = missions.length + quizzes.length;
             const totalDocuments = documents.length;
             const totalMasterDocs = documents.filter(d => d.is_master_doc).length;
