@@ -122,7 +122,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     const [wsFoundCells, setWsFoundCells] = useState<{r: number, c: number}[]>([])
 
     // Stable shuffled cards for memory
-    const [shuffledCards, setShuffledCards] = useState<{idx: number, label: string, type: string}[]>([])
+    const [shuffledCards, setShuffledCards] = useState<{idx: number, label: string, type: string, pairIndex: number}[]>([])
 
     const quizType = quiz.quiz_type || "multiple_choice"
     const questions = quiz.questions || []
@@ -259,8 +259,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             const q = questions[currentIdx]
             if (q?.pairs) {
                 const cards = q.pairs.flatMap((p: any, i: number) => [
-                    { idx: i * 2, label: p.term, type: 'term' },
-                    { idx: i * 2 + 1, label: p.definition, type: 'definition' },
+                    { idx: i * 2, label: p.term, type: 'term', pairIndex: i },
+                    { idx: i * 2 + 1, label: p.definition, type: 'definition', pairIndex: i },
                 ])
                 // Fisher-Yates shuffle
                 for (let i = cards.length - 1; i > 0; i--) {
@@ -532,7 +532,9 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             const [a, b] = newFlipped
 
             // Check if it's a matching pair
-            const isMatch = (a % 2 === 0 && b === a + 1) || (a % 2 === 1 && b === a - 1)
+            const cardA = shuffledCards.find(c => c.idx === a)
+            const cardB = shuffledCards.find(c => c.idx === b)
+            const isMatch = cardA && cardB && cardA.pairIndex === cardB.pairIndex
 
             setTimeout(() => {
                 if (isMatch) {
@@ -813,8 +815,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             case "memory": {
                 const pairs = currentQ.pairs || []
                 const cardsToRender = shuffledCards.length > 0 ? shuffledCards : pairs.flatMap((p: any, i: number) => [
-                    { idx: i * 2, label: p.term, type: "term" },
-                    { idx: i * 2 + 1, label: p.definition, type: "definition" },
+                    { idx: i * 2, label: p.term, type: "term", pairIndex: i },
+                    { idx: i * 2 + 1, label: p.definition, type: "definition", pairIndex: i },
                 ])
 
                 return (
