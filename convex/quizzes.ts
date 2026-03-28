@@ -653,7 +653,7 @@ export const getOrCreateAttempt = mutation({
 
             // Validar que las opciones seleccionadas coincidan con el número de preguntas actual
             if (!attempt.selected_options || attempt.selected_options.length !== numQuestions) {
-                const newSelected: (number | null)[] = new Array(numQuestions).fill(null);
+                const newSelected: any[] = new Array(numQuestions).fill(null);
                 if (attempt.selected_options) {
                     for (let i = 0; i < Math.min(attempt.selected_options.length, numQuestions); i++) {
                         newSelected[i] = attempt.selected_options[i];
@@ -688,7 +688,7 @@ export const getOrCreateAttempt = mutation({
         }
 
         // 4) Crear nuevo intento
-        const selectedOptions: (number | null)[] = new Array(numQuestions).fill(null);
+        const selectedOptions: any[] = new Array(numQuestions).fill(null);
         const attemptId = await ctx.db.insert("quiz_attempts", {
             quiz_id: args.quiz_id,
             user_id: user._id,
@@ -710,7 +710,7 @@ export const updateAttemptProgress = mutation({
     args: {
         attempt_id: v.id("quiz_attempts"),
         current_question_index: v.number(),
-        selected_options: v.array(v.union(v.number(), v.null())),
+        selected_options: v.array(v.union(v.number(), v.null(), v.array(v.number()), v.array(v.string()))),
     },
     handler: async (ctx, args) => {
         const user = await requireAuth(ctx);
@@ -764,7 +764,7 @@ export const submitQuiz = mutation({
 
             if (quizType === "order_steps") {
                 if (Array.isArray(selected) && selected.length === (q.steps?.length || 0)) {
-                    selected.forEach((s: number, i: number) => {
+                    (selected as any[]).forEach((s: number, i: number) => {
                         if (s === q.correctOrder[i]) correctCount += 1 / totalQuestions;
                     });
                 }
@@ -779,14 +779,14 @@ export const submitQuiz = mutation({
                 }
             } else if (quizType === "word_search") {
                 if (Array.isArray(selected)) {
-                    const found = selected.filter((w: string) => q.words?.includes(w)).length;
+                    const found = (selected as any[]).filter((w: string) => q.words?.includes(w)).length;
                     correctCount += found / (q.words?.length || 1);
                 }
             } else if (quizType === "memory") {
                 if (Array.isArray(selected)) {
                     const pairs = q.pairs || [];
                     const correctPairs = pairs.filter((_: any, pi: number) => {
-                        return selected.includes(pi * 2) && selected.includes(pi * 2 + 1);
+                        return (selected as number[]).includes(pi * 2) && (selected as number[]).includes(pi * 2 + 1);
                     }).length;
                     correctCount += correctPairs / (pairs.length || 1);
                 }

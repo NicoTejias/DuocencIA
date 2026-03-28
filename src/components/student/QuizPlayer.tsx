@@ -772,8 +772,15 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                 const words = currentQ.words || []
                 return (
                     <div className="animate-in fade-in duration-300">
+                        <div className="flex items-center justify-center gap-2 mb-6 bg-accent/10 border border-accent/20 rounded-xl max-w-sm mx-auto p-3 shadow-lg shadow-accent/5">
+                            <Clock className={`w-5 h-5 ${gameScore <= 30 ? "text-red-400 animate-pulse" : "text-accent-light"}`} />
+                            <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
+                                Bono: {gameScore} pts
+                            </span>
+                            <span className="text-[10px] text-accent-light opacity-70 ml-1 font-bold tracking-widest uppercase">(-10 c/30s)</span>
+                        </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {words.length} palabras ocultas</h3>
-                        <p className="text-slate-500 text-xs text-center mb-4">Toca cada palabra en la lista para marcarla</p>
+                        <p className="text-slate-500 text-xs text-center mb-6">Toca la primera y última letra en la cuadrícula para marcar cada palabra</p>
                         <div className="flex flex-wrap gap-2 justify-center mb-4">
                             {words.map((word: string, i: number) => (
                                 <button key={i} onClick={() => handleWordSearchSelect(word)}
@@ -821,6 +828,13 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
                 return (
                     <div className="animate-in fade-in duration-300">
+                        <div className="flex items-center justify-center gap-2 mb-6 bg-pink-500/10 border border-pink-500/20 rounded-xl max-w-sm mx-auto p-3 shadow-lg shadow-pink-500/5">
+                            <Clock className={`w-5 h-5 ${gameScore <= 30 ? "text-red-400 animate-pulse" : "text-pink-400"}`} />
+                            <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
+                                Bono: {gameScore} pts
+                            </span>
+                            <span className="text-[10px] text-pink-400 opacity-70 ml-1 font-bold tracking-widest uppercase">(-10 c/30s)</span>
+                        </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {pairs.length} parejas</h3>
                         <p className="text-slate-500 text-xs text-center mb-4">Toca dos cartas para buscar una pareja (término ↔ definición)</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">

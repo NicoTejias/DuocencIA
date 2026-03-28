@@ -321,7 +321,7 @@ export default defineSchema({
         quiz_id: v.id("quizzes"),
         user_id: v.id("users"),
         current_question_index: v.number(),
-        selected_options: v.array(v.union(v.number(), v.null())),
+        selected_options: v.array(v.union(v.number(), v.null(), v.array(v.number()), v.array(v.string()))),
         status: v.union(v.literal("in_progress"), v.literal("completed")),
         last_updated: v.number(),
     })
