@@ -43,7 +43,7 @@
   --text-muted: #64748b;
   --border-dim: rgba(255, 255, 255, 0.05);
 
-  --font-size-base: 16px;
+  --font-size-base: 18px;
 }
 
 [data-theme='light'] {

@@ -548,23 +548,28 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
                     if (newMatched.length === questions[currentIdx]?.pairs?.length * 2) {
                         if (questions.length === 1) {
-                            saveResult()
+                            setTimeout(() => saveResult(), 1500)
                         } else {
-                            setFlippedCards([])
-                            setMemoryMatched([])
                             setTimeout(() => {
+                                setFlippedCards([])
+                                setMemoryMatched([])
                                 if (currentIdx < questions.length - 1) {
                                     setCurrentIdx(c => c + 1)
                                 } else {
                                     saveResult()
                                 }
-                            }, 500)
+                            }, 1000)
                         }
+                        memoryLockRef.current = false
+                        setFlippedCards([])
+                        return
                     }
                 }
-                setFlippedCards([])
-                memoryLockRef.current = false
-            }, 800)
+                setTimeout(() => {
+                    setFlippedCards([])
+                    memoryLockRef.current = false
+                }, isMatch ? 1500 : 3000) // Mayor tiempo para lectura
+            }, 500)
         }
     }
 
@@ -586,7 +591,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                 {timeLeft <= 5 && <Zap className="w-4 h-4 text-red-400 animate-pulse" />}
                             </div>
                         )}
-                        <h3 className="text-lg md:text-2xl font-black text-white mb-6 md:mb-8 leading-relaxed">{currentQ.question}</h3>
+                        <h3 className="text-xl md:text-3xl font-black text-white mb-6 md:mb-8 leading-relaxed">{currentQ.question}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                             {currentQ.options?.map((opt: string, i: number) => {
                                 const isSelected = selectedOptions[currentIdx] === i
@@ -594,8 +599,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                 return (
                                     <button key={i} onClick={() => handleAnswerMC(i)} className={`p-4 md:p-6 rounded-xl md:rounded-2xl border text-left font-semibold transition-all ${btnCls} active:scale-[0.98]`}>
                                         <div className="flex items-center gap-3 md:gap-4">
-                                            <span className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/20 flex items-center justify-center text-xs font-black shrink-0">{['A', 'B', 'C', 'D'][i]}</span>
-                                            <span className="text-sm md:text-base">{opt}</span>
+                                            <span className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/20 flex items-center justify-center text-sm font-black shrink-0">{['A', 'B', 'C', 'D'][i]}</span>
+                                            <span className="text-base md:text-lg">{opt}</span>
                                         </div>
                                     </button>
                                 )
@@ -772,14 +777,21 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                 const words = currentQ.words || []
                 return (
                     <div className="animate-in fade-in duration-300">
-                        <div className="flex items-center justify-center gap-2 mb-6 bg-accent/10 border border-accent/20 rounded-xl max-w-sm mx-auto p-3 shadow-lg shadow-accent/5">
-                            <Clock className={`w-5 h-5 ${gameScore <= 30 ? "text-red-400 animate-pulse" : "text-accent-light"}`} />
-                            <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
-                                Bono: {gameScore} pts
-                            </span>
-                            <span className="text-xs font-mono text-accent-light opacity-80 ml-2 font-bold">
-                                {gameTimeLeft}s
-                            </span>
+                        <div className="flex items-center justify-center gap-3 mb-6 bg-accent/10 border border-accent/20 rounded-2xl max-w-sm mx-auto p-4 shadow-xl shadow-accent/5">
+                            <Clock className={`w-6 h-6 ${gameTimeLeft <= 10 ? "text-red-400 animate-pulse" : "text-accent-light"}`} />
+                            <div className="flex flex-col items-center">
+                                <span className={`text-xl font-black ${gameTimeLeft <= 10 ? "text-red-400" : "text-white"}`}>
+                                    {(foundWords.length) * 10} / {(currentQ.words?.length || 5) * 10} PTS
+                                </span>
+                                <span className="text-[10px] font-bold text-accent-light/60 uppercase tracking-widest">
+                                    Bono Tiempo: {gameScore}
+                                </span>
+                            </div>
+                            <div className="ml-2 pl-3 border-l border-white/10 text-center">
+                                <span className={`text-sm font-mono font-black ${gameTimeLeft <= 5 ? "text-red-400 animate-pulse" : "text-slate-400"}`}>
+                                    {gameTimeLeft}s
+                                </span>
+                            </div>
                         </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {words.length} palabras ocultas</h3>
                         <p className="text-slate-500 text-xs text-center mb-6">Toca la primera y última letra en la cuadrícula para marcar cada palabra</p>
@@ -830,14 +842,21 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
 
                 return (
                     <div className="animate-in fade-in duration-300">
-                        <div className="flex items-center justify-center gap-2 mb-6 bg-pink-500/10 border border-pink-500/20 rounded-xl max-w-sm mx-auto p-3 shadow-lg shadow-pink-500/5">
-                            <Clock className={`w-5 h-5 ${gameScore <= 30 ? "text-red-400 animate-pulse" : "text-pink-400"}`} />
-                            <span className={`text-base font-black ${gameScore <= 30 ? "text-red-400" : "text-white"}`}>
-                                Bono: {gameScore} pts
-                            </span>
-                            <span className="text-xs font-mono text-pink-400 opacity-80 ml-2 font-bold">
-                                {gameTimeLeft}s
-                            </span>
+                        <div className="flex items-center justify-center gap-3 mb-6 bg-pink-500/10 border border-pink-500/20 rounded-2xl max-w-sm mx-auto p-4 shadow-xl shadow-pink-500/5">
+                            <Clock className={`w-6 h-6 ${gameTimeLeft <= 10 ? "text-red-400 animate-pulse" : "text-pink-400"}`} />
+                            <div className="flex flex-col items-center">
+                                <span className={`text-xl font-black ${gameTimeLeft <= 10 ? "text-red-400" : "text-white"}`}>
+                                    {(memoryMatched.length / 2) * 10} / {(currentQ.pairs?.length || 5) * 10} PTS
+                                </span>
+                                <span className="text-[10px] font-bold text-pink-400/60 uppercase tracking-widest">
+                                    Bono Tiempo: {gameScore}
+                                </span>
+                            </div>
+                            <div className="ml-2 pl-3 border-l border-white/10 text-center">
+                                <span className={`text-sm font-mono font-black ${gameTimeLeft <= 5 ? "text-red-400 animate-pulse" : "text-slate-400"}`}>
+                                    {gameTimeLeft}s
+                                </span>
+                            </div>
                         </div>
                         <h3 className="text-lg md:text-xl font-bold text-white mb-2 text-center">Encuentra las {pairs.length} parejas</h3>
                         <p className="text-slate-500 text-xs text-center mb-4">Toca dos cartas para buscar una pareja (término ↔ definición)</p>
@@ -849,15 +868,21 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                     <button key={card.idx}
                                         onClick={() => handleMemoryFlip(card.idx)}
                                         disabled={memoryMatched.includes(card.idx)}
-                                        className={`p-2 md:p-3 rounded-xl border text-left transition-all min-h-[60px] md:min-h-[80px] flex items-center justify-center ${isMatched ? 'bg-pink-500/20 border-pink-500/40 cursor-default' : isFlipped ? 'bg-pink-500/10 border-pink-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                        className={`p-1.5 md:p-3 rounded-xl border text-left transition-all min-h-[100px] md:min-h-[140px] flex items-center justify-center overflow-hidden hover:scale-[1.02] active:scale-[0.98] ${isMatched ? 'bg-pink-500/20 border-pink-500/40 cursor-default opacity-80' : isFlipped ? 'bg-pink-500/10 border-pink-500/30 ring-2 ring-pink-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                                         {isMatched ? (
-                                            <span className="text-pink-400 text-xs md:text-sm font-bold text-center">✅</span>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <CheckCircle2 className="w-5 h-5 text-pink-400" />
+                                                <span className="text-pink-400 text-[8px] font-black uppercase tracking-tighter">Pareja</span>
+                                            </div>
                                         ) : isFlipped ? (
-                                            <span className={`text-xs md:text-sm font-bold text-center leading-tight ${card.type === "term" ? "text-pink-300" : "text-slate-300"}`}>
-                                                {card.type === "term" ? card.label : card.label.substring(0, 60) + (card.label.length > 60 ? "..." : "")}
+                                            <span className={`text-xs md:text-sm font-bold text-center leading-tight break-words px-2 max-h-full ${card.type === "term" ? "text-pink-300" : "text-slate-200"}`}>
+                                                {card.label}
                                             </span>
                                         ) : (
-                                            <span className="text-slate-600 text-xl md:text-2xl">?</span>
+                                            <div className="relative">
+                                                <span className="text-slate-600 text-xl md:text-3xl font-black">?</span>
+                                                <div className="absolute -inset-4 bg-pink-500/5 rounded-full blur-xl"></div>
+                                            </div>
                                         )}
                                     </button>
                                 )
@@ -1138,7 +1163,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                         </div>
                                     )}
 
-                                    <div className="mt-6 md:mt-8 text-left border-t border-white/10 pt-6 md:pt-8">
+                                    <div className="mt-6 md:mt-8 text-left border-t border-white/10 pt-6 md:pt-8 pb-32">
                                         <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
                                             <AlertCircle className="w-5 h-5 text-accent" />
                                             {quizResult?.is_simulation ? 'Revisión de Preguntas' : 'Revisión de respuestas'}
@@ -1146,7 +1171,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                         {renderReview()}
                                     </div>
 
-                                    <div className="mt-8 md:mt-12 sticky bottom-0 bg-surface-light py-4 border-t border-white/10 pb-safe">
+                                    <div className="mt-8 md:mt-12 sticky bottom-0 bg-surface-light py-4 border-t border-white/10 pb-safe md:px-8 z-20">
                                         <button onClick={onClose}
                                             className="w-full bg-accent hover:bg-accent-light text-white font-black px-8 md:px-12 py-4 md:py-5 rounded-xl md:rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent/20 uppercase tracking-widest text-xs md:text-sm">
                                             VOLVER AL RAMO

@@ -200,12 +200,17 @@ function DashboardRedirect() {
 
 
 function App() {
+  const { isAuthenticated } = useConvexAuth()
+  const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
+  const isTeacher = user && (user.role === 'teacher' || user.role === 'admin');
+  const isSimulating = localStorage.getItem('questia_simulate_student') === 'true';
+
   return (
     <>
       <PushNotificationManager />
       <UpdateNotification />
       <FeedbackButton />
-      {localStorage.getItem('questia_simulate_student') === 'true' && (
+      {isTeacher && isSimulating && (
         <div className="fixed bottom-[5.5rem] right-6 z-[59] flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <button 
             onClick={() => {

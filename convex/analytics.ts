@@ -5,14 +5,17 @@ import { normalizeRut } from "./rutUtils";
 
 // Estadísticas generales de un docente
 export const getTeacherStats = query({
-    args: {},
-    handler: async (ctx) => {
+    args: {
+        all_courses: v.optional(v.boolean()),
+    },
+    handler: async (ctx, args) => {
         try {
             const user = await requireTeacher(ctx);
             const userId = user._id;
 
-            // Obtener ramos del docente de una vez
-            const courses = user.role === "admin"
+            // Por defecto solo mostramos LOS RAMOS DEL USUARIO, incluso si es admin.
+            // Los admins ven todo solo si lo piden específicamente.
+            const courses = (user.role === "admin" && args.all_courses)
                 ? await ctx.db.query("courses").collect()
                 : await ctx.db
                     .query("courses")

@@ -24,11 +24,11 @@ export default function RetentionProgressWidget({ user, courses }: RetentionProg
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-primary" />
-                            Tu Progreso de Retención
+                        <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                            <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                            Mi Racha y Crecimiento
                         </h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Nivel de compromiso esta semana</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">¡Sigue así! Tu constancia es el camino al éxito</p>
                     </div>
                     <div className="px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-green-500/20 text-green-400 border border-green-500/20 shadow-lg shadow-green-500/10">
                         ✅ Mantente Activo

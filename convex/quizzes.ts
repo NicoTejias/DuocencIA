@@ -819,7 +819,14 @@ export const submitQuiz = mutation({
 
         if (user.role === "teacher" || user.role === "admin") {
             await ctx.db.patch(attempt._id, { status: "completed", last_updated: Date.now() });
-            const basePoints2 = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
+            let basePointsValue = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
+            const qType = quiz.quiz_type || "multiple_choice";
+            if (qType === "memory" || qType === "word_search") {
+                const firstQ = quiz.questions[0] as any;
+                const itemCount = qType === "memory" ? (firstQ.pairs?.length || 5) : (firstQ.words?.length || 5);
+                basePointsValue = itemCount * 10;
+            }
+            const basePoints2 = basePointsValue;
             const rawEarned2 = Math.round((scorePct / 100) * basePoints2);
             const potentialEarned2 = Math.max(0, rawEarned2 - (args.time_penalty || 0));
             return {
@@ -837,20 +844,27 @@ export const submitQuiz = mutation({
 
         await ctx.db.patch(attempt._id, { status: "completed", last_updated: Date.now() });
 
-        if (user.role === "teacher" || user.role === "admin") {
-            const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
-            const rawEarned = Math.round((scorePct / 100) * basePoints);
-            const potentialEarned = Math.max(0, rawEarned - (args.time_penalty || 0));
-            const remainingAttempts = maxAttempts === 99 ? 999 : Math.max(0, maxAttempts - currentAttemptsCount - 1);
-            return {
-                success: true, score: scorePct, earned: potentialEarned,
-                is_simulation: true, remaining_attempts: remainingAttempts,
-                message: `MODO PRUEBA: ${potentialEarned} puntos.`,
-                selected_options: attempt.selected_options, attempts_used: currentAttemptsCount + 1
-            };
-        }
 
-        const basePoints = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
+
+
+
+
+
+
+
+
+
+
+
+
+        let basePointsValueStu = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
+        const qTypeStu = quiz.quiz_type || "multiple_choice";
+        if (qTypeStu === "memory" || qTypeStu === "word_search") {
+            const firstQ = quiz.questions[0] as any;
+            const itemCount = qTypeStu === "memory" ? (firstQ.pairs?.length || 5) : (firstQ.words?.length || 5);
+            basePointsValueStu = itemCount * 10;
+        }
+        const basePoints = basePointsValueStu;
         const rawEarnedThisAttempt = Math.round((scorePct / 100) * basePoints);
         const earnedPointsThisAttempt = Math.max(0, rawEarnedThisAttempt - (args.time_penalty || 0));
 

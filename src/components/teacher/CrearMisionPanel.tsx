@@ -158,21 +158,25 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                                 {documents && documents.length > 0 ? (
                                     <div className="grid gap-2">
                                         {documents.map((doc: any) => (
-                                            <button
-                                                key={doc._id}
-                                                onClick={() => setSelectedDoc(doc._id)}
-                                                className={`w-full text-left p-4 rounded-xl border transition-all flex items-center gap-3 ${selectedDoc === doc._id
-                                                    ? 'bg-accent/10 border-accent/40 text-white'
-                                                    : 'bg-surface border-white/10 text-slate-300 hover:bg-white/5'
-                                                    }`}
-                                            >
-                                                <span className="text-2xl">{getFileIcon(doc.file_type)}</span>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium truncate">{doc.file_name}</p>
-                                                    <p className="text-xs text-slate-500">{formatFileSize(doc.file_size)} · {doc.content_text?.length?.toLocaleString()} chars</p>
-                                                </div>
-                                                {selectedDoc === doc._id && <CheckCircle className="w-5 h-5 text-accent-light shrink-0" />}
-                                            </button>
+                                            <div key={doc._id} className="space-y-1">
+                                                <button
+                                                    onClick={() => setSelectedDoc(doc._id)}
+                                                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-center gap-3 ${selectedDoc === doc._id
+                                                        ? 'bg-accent/10 border-accent/40 text-white ring-1 ring-accent/20'
+                                                        : 'bg-surface border-white/10 text-slate-300 hover:bg-white/5'
+                                                        }`}
+                                                >
+                                                    <span className="text-2xl">{getFileIcon(doc.file_type)}</span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold truncate text-sm">{doc.file_name}</p>
+                                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{formatFileSize(doc.file_size)} · {doc.content_text?.length?.toLocaleString()} caracteres</p>
+                                                    </div>
+                                                    {selectedDoc === doc._id && <CheckCircle className="w-5 h-5 text-accent-light shrink-0" />}
+                                                </button>
+                                                
+                                                {/* Lista de juegos ya creados para este documento */}
+                                                <QuizList documentId={doc._id} />
+                                            </div>
                                         ))}
                                     </div>
                                 ) : (
@@ -398,4 +402,23 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
             )}
         </div>
     )
+}
+
+function QuizList({ documentId }: { documentId: string }) {
+    const quizzes = useQuery(api.quizzes.getQuizzesByDocument, { document_id: documentId as any });
+    
+    if (!quizzes || quizzes.length === 0) return null;
+    
+    return (
+        <div className="ml-12 flex flex-wrap gap-1.5 pb-2">
+            {quizzes.map((q: any) => (
+                <div key={q._id} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/5 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                    <span className="opacity-70">
+                        {GAME_TYPES.find(gt => gt.id === q.quiz_type)?.icon || '🎯'}
+                    </span>
+                    {GAME_TYPES.find(gt => gt.id === q.quiz_type)?.label || 'Juego'}
+                </div>
+            ))}
+        </div>
+    );
 }
