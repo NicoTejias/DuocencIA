@@ -1,4 +1,5 @@
 import { query } from "./_generated/server";
+import { requireAdmin } from "./withUser";
 
 /**
  * Realiza un respaldo de seguridad de todos los enrolamientos y puntos actuales
@@ -7,6 +8,7 @@ import { query } from "./_generated/server";
 export const backupCurrentPoints = query({
     args: {},
     handler: async (ctx) => {
+        await requireAdmin(ctx);
         const enrollments = await ctx.db.query("enrollments").collect();
         const users = await ctx.db.query("users").collect();
         const courses = await ctx.db.query("courses").collect();
