@@ -1,13 +1,17 @@
 import { mutation } from "./_generated/server";
-import { requireTeacher } from "./withUser";
+import { requireAdmin } from "./withUser";
 
+/**
+ * Unificación de usuarios por RUT.
+ * Esta operación es global y afecta a toda la base de datos, 
+ * por lo que está restringida únicamente a administradores.
+ */
 export const unifyUsersByRut = mutation({
     args: {},
     handler: async (ctx) => {
-        await requireTeacher(ctx);
+        await requireAdmin(ctx);
         
-        // 1. Obtener todos los alumnos del sistema (o al menos los vinculados a este docente)
-        // Por ahora lo haremos global pero limitado a lo que el docente puede ver/gestionar
+        // 1. Obtener todos los alumnos del sistema
         const users = await ctx.db.query("users").collect();
         const students = users.filter(u => u.role === "student" && u.student_id);
 
@@ -88,39 +92,5 @@ export const unifyUsersByRut = mutation({
         }
 
         return { unifiedCount, pointsTransferred };
-    }
-});
-
-export const makeMeAdmin = mutation({
-    args: {},
-    handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("No autenticado en Convex");
-        
-        // Primero intentar buscar por clerkId
-        let user = await ctx.db
-            .query("users")
-            .withIndex("by_clerk_id", q => q.eq("clerkId", identity.subject))
-            .unique();
-            
-        // Si no, intentar por el mail específico del usuario
-        if (!user && identity.email === "ni.tejias@profesor.duoc.cl") {
-            user = await ctx.db
-                .query("users")
-                .withIndex("email", q => q.eq("email", "ni.tejias@profesor.duoc.cl"))
-                .unique();
-        }
-        
-        if (!user) {
-            throw new Error(`Usuario no encontrado para la identidad: ${identity.email || identity.subject}`);
-        }
-
-        // Aplicar el rol de admin
-        await ctx.db.patch(user._id, { role: "admin" });
-        
-        return { 
-            success: true, 
-            message: "¡Acceso concedido! Ahora eres Administrador. Por favor, recarga la aplicación." 
-        };
     }
 });
