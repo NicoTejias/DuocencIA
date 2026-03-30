@@ -327,7 +327,7 @@ function BadgeRow({
                             <p className="text-slate-600 text-xs">Nadie tiene esta insignia aún</p>
                         ) : (
                             <ul className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                                {holders.map((h) => (
+                                {holders.map((h: any) => (
                                     <li key={h._id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-1.5">
                                         <span className="text-xs text-white truncate">{h.userName}</span>
                                         <button
