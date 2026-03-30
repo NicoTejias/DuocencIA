@@ -41,7 +41,7 @@ export default function AnaliticasPanel() {
                 'Puntos Canjeables': d.spendable
             }))
 
-            exportToExcel(exportData, `Reporte_${courseName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`)
+            await exportToExcel(exportData, `Reporte_${courseName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`)
             toast.success("Excel generado correctamente")
         } catch (err: any) {
             toast.error("Error al exportar: " + err.message)

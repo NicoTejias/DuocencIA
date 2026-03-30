@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import ConfirmModal from '../ConfirmModal'
 
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
@@ -25,6 +26,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
     const [uploadType, setUploadType] = useState<string>('none')
     const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
     const [collapsedMasterVault, setCollapsedMasterVault] = useState(false)
+    const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; docId: any }>({ open: false, docId: null })
 
     const ACCEPTED_TYPES = '.pdf,.docx,.pptx,.xlsx,.xls'
     const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -131,14 +133,19 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
         }
     }
 
-    const handleDelete = async (docId: any) => {
-        if (!window.confirm('¿Estás seguro de que quieres eliminar este documento?')) return
+    const handleDelete = (docId: any) => {
+        setConfirmDelete({ open: true, docId })
+    }
+
+    const handleConfirmDelete = async () => {
         try {
-            await deleteDocument({ document_id: docId })
+            await deleteDocument({ document_id: confirmDelete.docId })
             setSuccess('Documento eliminado.')
             setTimeout(() => setSuccess(''), 3000)
         } catch (err: any) {
             setError(err.message)
+        } finally {
+            setConfirmDelete({ open: false, docId: null })
         }
     }
 
@@ -158,6 +165,14 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
     return (
         <div className="space-y-6 max-w-full overflow-x-hidden pb-10">
+            <ConfirmModal
+                isOpen={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, docId: null })}
+                onConfirm={handleConfirmDelete}
+                title="Eliminar documento"
+                message="¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+            />
             <p className="text-slate-400 text-sm md:text-base leading-relaxed">Sube documentos de tus ramos (PDF, DOCX, PPTX, XLSX). El sistema extraerá automáticamente el contenido para que la IA pueda generar actividades gamificadas.</p>
 
             {/* Mensajes de estado */}

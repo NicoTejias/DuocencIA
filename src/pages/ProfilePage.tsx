@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ConfirmModal from '../components/ConfirmModal'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +22,7 @@ export default function ProfilePage() {
     const [studentId, setStudentId] = useState('')
     const [initialPopulated, setInitialPopulated] = useState(false)
     const [uploading, setUploading] = useState(false)
+    const [confirmResetBartle, setConfirmResetBartle] = useState(false)
 
     useEffect(() => {
         if (user && !initialPopulated) {
@@ -253,19 +255,29 @@ export default function ProfilePage() {
                             Datos Personales
                         </button>
                         {user.role === 'student' && (
-                            <button 
-                                onClick={async () => {
-                                    if(window.confirm('¿Quieres borrar tu perfil actual de jugador y repetir el test?')) {
-                                        await resetBartle();
-                                        toast.success('Perfil de jugador reseteado');
-                                        navigate('/alumno');
-                                    }
-                                }}
-                                className="w-full flex items-center gap-3 px-6 py-4 hover:bg-white/5 text-slate-400 hover:text-white rounded-2xl font-bold transition-all text-left"
-                            >
-                                <RefreshCw className="w-5 h-5" />
-                                Repetir Test Bartle
-                            </button>
+                            <>
+                                <ConfirmModal
+                                    isOpen={confirmResetBartle}
+                                    onClose={() => setConfirmResetBartle(false)}
+                                    onConfirm={async () => {
+                                        await resetBartle()
+                                        toast.success('Perfil de jugador reseteado')
+                                        setConfirmResetBartle(false)
+                                        navigate('/alumno')
+                                    }}
+                                    title="Repetir Test Bartle"
+                                    message="¿Quieres borrar tu perfil actual de jugador y repetir el test? Esta acción no se puede deshacer."
+                                    confirmText="Resetear"
+                                    variant="warning"
+                                />
+                                <button
+                                    onClick={() => setConfirmResetBartle(true)}
+                                    className="w-full flex items-center gap-3 px-6 py-4 hover:bg-white/5 text-slate-400 hover:text-white rounded-2xl font-bold transition-all text-left"
+                                >
+                                    <RefreshCw className="w-5 h-5" />
+                                    Repetir Test Bartle
+                                </button>
+                            </>
                         )}
                         <button 
                             onClick={() => {

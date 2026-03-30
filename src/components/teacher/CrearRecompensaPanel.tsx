@@ -3,6 +3,7 @@ import { useMutation, usePaginatedQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Gift, Loader2, Trash2, Sparkles, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import ConfirmModal from '../ConfirmModal'
 
 export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     const createReward = useMutation(api.rewards.createReward)
@@ -11,6 +12,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     const [creating, setCreating] = useState(false)
     const [success, setSuccess] = useState('')
     const [subTab, setSubTab] = useState<'recomendadas' | 'manual'>('recomendadas')
+    const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; rewardId: any }>({ open: false, rewardId: null })
 
     // Obtener recompensas existentes para el ramo seleccionado (PAGINADO)
     const { results: existingRewards, status: rewardsStatus } = usePaginatedQuery(
@@ -39,16 +41,20 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
         }
     }
 
-    const handleDelete = async (e: React.MouseEvent, rewardId: any) => {
+    const handleDelete = (e: React.MouseEvent, rewardId: any) => {
         e.preventDefault()
         e.stopPropagation()
-        if (window.confirm('¿Estás seguro de que quieres borrar esta recompensa?')) {
-            try {
-                await deleteReward({ reward_id: rewardId })
-                toast.success('Recompensa eliminada')
-            } catch (err: any) {
-                toast.error('Fallo al eliminar: ' + (err.message || String(err)))
-            }
+        setConfirmDelete({ open: true, rewardId })
+    }
+
+    const handleConfirmDelete = async () => {
+        try {
+            await deleteReward({ reward_id: confirmDelete.rewardId })
+            toast.success('Recompensa eliminada')
+        } catch (err: any) {
+            toast.error('Fallo al eliminar: ' + (err.message || String(err)))
+        } finally {
+            setConfirmDelete({ open: false, rewardId: null })
         }
     }
 
@@ -144,6 +150,14 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
 
     return (
         <div>
+            <ConfirmModal
+                isOpen={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, rewardId: null })}
+                onConfirm={handleConfirmDelete}
+                title="Borrar recompensa"
+                message="¿Estás seguro de que quieres borrar esta recompensa? Esta acción no se puede deshacer."
+                confirmText="Borrar"
+            />
             <p className="text-slate-400 mb-6">Define premios que tus alumnos podrán canjear con sus puntos. El stock por defecto es de 1 por alumno inscrito.</p>
 
             {success && (

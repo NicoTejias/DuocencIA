@@ -371,3 +371,103 @@ export const exportCourseData = query({
     }
 });
 
+export const exportQuizHistory = query({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+        const course = await ctx.db.get(args.course_id);
+        if (!course || (user.role !== "admin" && course.teacher_id !== user._id)) {
+            throw new Error("No tienes acceso a este ramo");
+        }
+        const quizzes = await ctx.db
+            .query("quizzes")
+            .withIndex("by_course", q => q.eq("course_id", args.course_id))
+            .collect();
+        const rows: {
+            'Alumno': string;
+            'RUT/ID': string;
+            'Quiz': string;
+            'Tipo': string;
+            'Puntuación (%)': number;
+            'Puntos Ganados': number;
+            'Fecha': string;
+        }[] = [];
+        for (const quiz of quizzes) {
+            const submissions = await ctx.db
+                .query("quiz_submissions")
+                .withIndex("by_quiz", q => q.eq("quiz_id", quiz._id))
+                .collect();
+            for (const s of submissions) {
+                const student = await ctx.db.get(s.user_id);
+                rows.push({
+                    'Alumno': student?.name ?? 'Desconocido',
+                    'RUT/ID': student?.student_id ?? 'S/I',
+                    'Quiz': quiz.title,
+                    'Tipo': quiz.quiz_type,
+                    'Puntuación (%)': s.score,
+                    'Puntos Ganados': s.earned_points,
+                    'Fecha': new Date(s.completed_at).toLocaleDateString('es-CL'),
+                });
+            }
+        }
+        return rows.sort((a, b) => a['Alumno'].localeCompare(b['Alumno']));
+    }
+});
+
+export const exportAttendance = query({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+        const course = await ctx.db.get(args.course_id);
+        if (!course || (user.role !== "admin" && course.teacher_id !== user._id)) {
+            throw new Error("No tienes acceso a este ramo");
+        }
+        const sessions = await ctx.db
+            .query("attendance_sessions")
+            .withIndex("by_course", q => q.eq("course_id", args.course_id))
+            .collect();
+        if (sessions.length === 0) return [];
+        const rows: {
+            'Alumno': string;
+            'RUT/ID': string;
+            [key: string]: string | number;
+        }[] = [];
+        // Build a map: student_id -> { name, id, [session_date]: "Presente"|"Ausente" }
+        const studentMap = new Map<string, { name: string; id: string; sessions: Map<string, string> }>();
+        for (const session of sessions) {
+            const sessionDate = new Date(session.created_at).toLocaleDateString('es-CL');
+            const logs = await ctx.db
+                .query("attendance_logs")
+                .withIndex("by_session", q => q.eq("session_id", session._id))
+                .collect();
+            const presentIds = new Set(logs.map(l => l.user_id));
+            const enrollments = await ctx.db
+                .query("enrollments")
+                .withIndex("by_course", q => q.eq("course_id", args.course_id))
+                .collect();
+            for (const en of enrollments) {
+                const key = en.user_id;
+                if (!studentMap.has(key)) {
+                    const student = await ctx.db.get(en.user_id);
+                    studentMap.set(key, {
+                        name: student?.name ?? 'Desconocido',
+                        id: student?.student_id ?? 'S/I',
+                        sessions: new Map(),
+                    });
+                }
+                studentMap.get(key)!.sessions.set(sessionDate, presentIds.has(en.user_id) ? 'Presente' : 'Ausente');
+            }
+        }
+        for (const [, data] of studentMap) {
+            const row: { 'Alumno': string; 'RUT/ID': string; [key: string]: string | number } = {
+                'Alumno': data.name,
+                'RUT/ID': data.id,
+            };
+            for (const [date, status] of data.sessions) {
+                row[date] = status;
+            }
+            rows.push(row);
+        }
+        return rows.sort((a, b) => (a['Alumno'] as string).localeCompare(b['Alumno'] as string));
+    }
+});

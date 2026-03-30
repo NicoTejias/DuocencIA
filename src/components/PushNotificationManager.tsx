@@ -23,7 +23,6 @@ export default function PushNotificationManager() {
                 }
 
                 if (permStatus.receive !== 'granted') {
-                    console.warn("Permiso de notificaciones denegado en móvil");
                     return;
                 }
 
@@ -31,12 +30,11 @@ export default function PushNotificationManager() {
 
                 // Listener para el token registrado por el sistema nativo
                 PushNotifications.addListener('registration', (token) => {
-                    console.log('Push registration success, token: ' + token.value);
                     saveToken({ token: token.value });
                 });
 
-                PushNotifications.addListener('registrationError', (error) => {
-                    console.error('Error on registration: ' + JSON.stringify(error));
+                PushNotifications.addListener('registrationError', (_error) => {
+                    // Error silenciado — no exponer tokens ni detalles internos en consola
                 });
 
                 // Notificación recibida con la app abierta (foreground)
@@ -51,13 +49,12 @@ export default function PushNotificationManager() {
                 try {
                     const token = await requestNotificationPermission();
                     if (token) {
-                        console.log('Web Push Token:', token);
                         saveToken({ token }).catch(() => {
                             // Silenciamos error de servidor en consola para evitar ruido
                         });
                     }
-                } catch (err) {
-                    console.error("Error setting up web push", err);
+                } catch {
+                    // Error silenciado — fallo al configurar web push no debe interrumpir la app
                 }
             }
         };

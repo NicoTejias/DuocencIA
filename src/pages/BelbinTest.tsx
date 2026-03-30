@@ -27,7 +27,7 @@ const PREGUNTAS_BELBIN = [
     {
         pregunta: "Cuando enfrento un desafío nuevo, prefiero...",
         opciones: [
-            { texto: "Explorar soluciones nunca antes尝试adas.", rol: "Cerebro" },
+            { texto: "Explorar soluciones nunca antes intentadas.", rol: "Cerebro" },
             { texto: "Investigar qué han hecho otros en situaciones similares.", rol: "Especialista" },
             { texto: "Seguir un enfoque metódico y estructurado.", rol: "Implementador" },
             { texto: "Analizar todos los riesgos antes de actuar.", rol: "Monitor" },

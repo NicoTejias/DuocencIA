@@ -22,6 +22,7 @@ import BartlePopup from '../components/student/BartlePopup'
 import { BartleProfileDisplay } from '../components/student/BartleTest'
 import RetentionProgressWidget from '../components/student/RetentionProgressWidget'
 import FAQSection from '../components/FAQSection'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 
 // Utilidades
@@ -166,7 +167,11 @@ export default function StudentDashboard() {
 
             {/* Modals */}
             {showTransferModal && <TransferModal onClose={() => setShowTransferModal(false)} courses={courses || []} />}
-            {showQuizPlayer && <QuizPlayer quiz={showQuizPlayer} onClose={() => setShowQuizPlayer(null)} />}
+            {showQuizPlayer && (
+                <ErrorBoundary onReset={() => setShowQuizPlayer(null)}>
+                    <QuizPlayer quiz={showQuizPlayer} onClose={() => setShowQuizPlayer(null)} />
+                </ErrorBoundary>
+            )}
         </div>
     )
 }

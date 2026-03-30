@@ -1,10 +1,10 @@
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
 import { requireAuth } from "./withUser";
 import { checkRateLimit } from "./rateLimit";
 
-export const getUserById = query({
+export const getUserById = internalQuery({
     args: { userId: v.id("users") },
     handler: async (ctx, args) => {
         return await ctx.db.get(args.userId);
@@ -117,6 +117,18 @@ export const getProfileByEmail = query({
             .query("users")
             .withIndex("email", (q) => q.eq("email", args.email))
             .first();
+    },
+});
+
+// Retorna el _id del usuario dado su clerkId — usado internamente para verificar ownership
+export const getTeacherIdByClerkId = query({
+    args: { clerkId: v.string() },
+    handler: async (ctx, args) => {
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+            .first();
+        return user?._id ?? null;
     },
 });
 

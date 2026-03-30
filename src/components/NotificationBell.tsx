@@ -61,6 +61,7 @@ export default function NotificationBell() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label={`Notificaciones${unreadCount > 0 ? ` (${unreadCount} nuevas)` : ''}`}
                 className="relative p-2 text-slate-400 hover:text-white transition-colors focus:outline-none"
             >
                 <Bell className="w-5 h-5" />

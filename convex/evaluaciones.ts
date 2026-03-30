@@ -1,4 +1,4 @@
-import { mutation, query, action, internalMutation } from "./_generated/server";
+import { internalMutation, mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 import { api, internal } from "./_generated/api";
@@ -93,7 +93,7 @@ export const dispatchNotifications = action({
         for (const userId of studentUserIds) {
             try {
                 // Fetch student token - lo ideal sería traerlos todos juntos pero para push uno a uno está bien en una Action
-                const student = await ctx.runQuery(api.users.getUserById, { userId });
+                const student = await ctx.runQuery(internal.users.getUserById, { userId });
                 if (student?.push_token) {
                     await ctx.runAction(api.fcm.sendPushNotification, {
                         token: student.push_token,
@@ -279,7 +279,7 @@ export const deleteEvaluacion = mutation({
     },
 });
 
-export const sendEvaluationReminders = mutation({
+export const sendEvaluationReminders = internalMutation({
     args: {},
     handler: async (ctx) => {
         const now = Date.now();
@@ -335,6 +335,16 @@ export const sendEvaluationReminders = mutation({
                         read: false,
                         created_at: now,
                     });
+
+                    // Enviar push FCM si el alumno tiene token registrado
+                    const student = await ctx.db.get(enrollment.user_id);
+                    if (student?.push_token) {
+                        await ctx.scheduler.runAfter(0, api.fcm.sendPushNotification, {
+                            token: student.push_token,
+                            title: `📚 Recordatorio: ${typeText} en ${daysText}`,
+                            body: `${evaluacion.titulo} - ${course.name}${evaluacion.hora ? ` a las ${evaluacion.hora}` : ''}`,
+                        });
+                    }
                 }
             }
         }

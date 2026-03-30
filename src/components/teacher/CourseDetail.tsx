@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { useQuery, useMutation, usePaginatedQuery } from "convex/react"
+import { useQuery, useMutation, usePaginatedQuery, useConvex } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import {
     ChevronRight, BookOpen, FileText, Gift,
     Trash2, Target, Flame, Sparkles, Loader2, RefreshCw,
     Users, Trophy, Edit3, X, Search, Star,
-    FileSpreadsheet, ClipboardCheck, AlertTriangle, Plus, Gamepad2
+    FileSpreadsheet, ClipboardCheck, AlertTriangle, Plus, Gamepad2, Download
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { exportToExcel } from '../../utils/ExportData'
 import ConfirmModal from '../ConfirmModal'
 import { EditMissionModal, EditRewardModal } from './EditModals'
 // import AttendancePanel from './AttendancePanel'
@@ -15,6 +16,7 @@ import ImportarAlumnosModal from './ImportarAlumnosModal'
 import EvaluadorIAPanel from './EvaluadorIAPanel'
 import AgregarEvaluacionModal from './AgregarEvaluacionModal'
 import EvaluacionesPorCurso from './EvaluacionesPorCurso'
+import BadgesPanel from './BadgesPanel'
 
 export default function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
     const [courseSubTab, setCourseSubTab] = useState<'evaluaciones' | 'evaluacion'>('evaluaciones')
@@ -51,6 +53,36 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const resetCoursePoints = useMutation(api.courses.resetCoursePoints)
 
     const [processing, setProcessing] = useState(false)
+    const convex = useConvex()
+    const [exporting, setExporting] = useState<string | null>(null)
+
+    const handleExportQuizzes = async () => {
+        setExporting('quizzes')
+        try {
+            const data = await convex.query(api.analytics.exportQuizHistory, { course_id: course._id })
+            if (!data || data.length === 0) { toast.error('No hay historial de quizzes para exportar'); return }
+            await exportToExcel(data, `Quizzes_${course.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`, 'Historial Quizzes')
+            toast.success('Excel de quizzes generado')
+        } catch (err: any) {
+            toast.error('Error al exportar: ' + err.message)
+        } finally {
+            setExporting(null)
+        }
+    }
+
+    const handleExportAttendance = async () => {
+        setExporting('attendance')
+        try {
+            const data = await convex.query(api.analytics.exportAttendance, { course_id: course._id })
+            if (!data || data.length === 0) { toast.error('No hay registros de asistencia para exportar'); return }
+            await exportToExcel(data, `Asistencia_${course.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`, 'Asistencia')
+            toast.success('Excel de asistencia generado')
+        } catch (err: any) {
+            toast.error('Error al exportar: ' + err.message)
+        } finally {
+            setExporting(null)
+        }
+    }
 
     const handleConfirmAction = async () => {
         if (!confirmDelete) return
@@ -327,6 +359,8 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
             {/* Cierre del grid principal de 2 columnas */}
             </div>
 
+            <BadgesPanel courseId={course._id} students={students ?? []} />
+
             {/* Separador inferior: Lista de Alumnos Completa */}
             <div className="bg-surface-light border border-white/5 rounded-2xl p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -368,6 +402,25 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         </button>
                         <button onClick={() => setConfirmDelete({ type: 'reset_points', id: course._id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all uppercase tracking-widest text-[9px]">
                             <Trash2 className="w-3 h-3" /> Reset
+                        </button>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block"></div>
+
+                        <button
+                            onClick={handleExportQuizzes}
+                            disabled={exporting === 'quizzes'}
+                            title="Exportar historial de quizzes a Excel"
+                            className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/5 transition-all flex items-center gap-1.5 font-bold uppercase tracking-widest text-[9px]"
+                        >
+                            {exporting === 'quizzes' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Quizzes
+                        </button>
+                        <button
+                            onClick={handleExportAttendance}
+                            disabled={exporting === 'attendance'}
+                            title="Exportar asistencia a Excel"
+                            className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/5 transition-all flex items-center gap-1.5 font-bold uppercase tracking-widest text-[9px]"
+                        >
+                            {exporting === 'attendance' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Asistencia
                         </button>
                     </div>
                 </div>

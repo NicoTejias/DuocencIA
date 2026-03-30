@@ -1,6 +1,9 @@
 import { initializeApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import type { Messaging } from "firebase/messaging";
 import { getAnalytics } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -17,9 +20,9 @@ const firebaseConfig = {
 const isFirebaseConfigured = !!firebaseConfig.apiKey && !!firebaseConfig.projectId && !!firebaseConfig.appId;
 
 // Initialize Firebase only if config is present to avoid crashing the app
-let app: any = null;
-let analytics: any = null;
-let messaging: any = null;
+let app: FirebaseApp | null = null;
+let analytics: Analytics | null = null;
+let messaging: Messaging | null = null;
 
 if (isFirebaseConfigured) {
   try {
@@ -29,10 +32,10 @@ if (isFirebaseConfigured) {
       messaging = getMessaging(app);
     }
   } catch (error) {
-    console.error("❌ Failed to initialize Firebase:", error);
+    if (import.meta.env.DEV) console.error("❌ Failed to initialize Firebase:", error);
   }
 } else {
-  console.warn("⚠️ Firebase is not configured. Push notifications and analytics will be disabled. Check your environment variables (VITE_FIREBASE_...).");
+  if (import.meta.env.DEV) console.warn("⚠️ Firebase is not configured. Push notifications and analytics will be disabled. Check your environment variables (VITE_FIREBASE_...).");
 }
 
 export { app, analytics, messaging };
@@ -49,8 +52,8 @@ export const requestNotificationPermission = async () => {
       });
       return token;
     }
-  } catch (error) {
-    console.error("Error al obtener permiso/token push:", error);
+  } catch {
+    // Error silenciado — fallo al obtener token push no debe interrumpir la app
   }
   return null;
 };

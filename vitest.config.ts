@@ -11,7 +11,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/utils/**', 'convex/rutUtils.ts'],
+      include: [
+        'src/utils/**',
+        'src/components/ErrorBoundary.tsx',
+        'convex/rutUtils.ts',
+        'convex/badges.ts',
+        'convex/rateLimit.ts',
+      ],
     },
   },
 })

@@ -218,7 +218,7 @@ export default function TeacherDashboard() {
                                 <HelpCircle className="w-5 h-5 text-accent-light" />
                                 Ayuda / FAQ
                             </h2>
-                            <button onClick={() => setShowHelp(false)} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
+                            <button onClick={() => setShowHelp(false)} aria-label="Cerrar panel de ayuda" className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -233,7 +233,7 @@ export default function TeacherDashboard() {
 }
 
 function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { firstName: string, coursesCount: number, courses: any[], onSelectCourse: (c: any) => void }) {
-    const stats = useQuery(api.analytics.getTeacherStats)
+    const stats = useQuery(api.analytics.getTeacherStats, {})
     const quizzesCompleted = stats ? `${(stats as any).totalQuizzesCompleted ?? 0}` : '...'
     const avgScore = stats ? `${Math.round((stats as any).avgQuizScore ?? 0)}%` : '...'
     const participation = stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}%` : '...'

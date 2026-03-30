@@ -145,7 +145,7 @@ export default function EvaluacionesPanel() {
                 </div>
                 <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                     {trabajos.length === 0 ? (
-                        <p className="text-slate-500 text-xs text-center py-4">No hay trabajosprogramados</p>
+                        <p className="text-slate-500 text-xs text-center py-4">No hay trabajos programados</p>
                     ) : (
                         trabajos.map(ev => renderItem(ev))
                     )}

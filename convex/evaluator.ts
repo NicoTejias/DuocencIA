@@ -2,6 +2,7 @@ import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { requireTeacher, requireAuth } from "./withUser";
 import { api } from "./_generated/api";
+import { getGeminiModel } from "./geminiClient";
 
 // --- Rubrics ---
 
@@ -81,16 +82,11 @@ export const evaluateSubmission = action({
     submission_text: v.string(),
   },
   handler: async (ctx, args) => {
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no configurada");
-
     // Obtener la rúbrica (necesitamos usar runQuery porque estamos en un action)
     const rubric = await ctx.runQuery(api.evaluator.getRubricInternal, { id: args.rubric_id });
     if (!rubric) throw new Error("Rúbrica no encontrada");
 
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = await getGeminiModel();
 
     const prompt = `
 Eres un asistente de evaluación académica de alto nivel. 

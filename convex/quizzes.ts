@@ -2,8 +2,8 @@ import { action, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 import { api } from "./_generated/api";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit } from "./rateLimit";
+import { getGeminiModel } from "./geminiClient";
 
 // Generar quiz con IA a partir del contenido de un documento
 export const generateQuiz = action({
@@ -25,6 +25,18 @@ export const generateQuiz = action({
         });
 
         if (!doc) throw new Error("Documento no encontrado");
+
+        // Verificar que el usuario es el docente dueño del documento
+        if (doc.teacher_id !== identity.subject && identity.subject) {
+            // Comparar con clerkId — doc.teacher_id es un Convex user _id, buscar por clerkId
+            const docOwner = await ctx.runQuery(api.users.getTeacherIdByClerkId, {
+                clerkId: identity.subject,
+            });
+            if (!docOwner || doc.teacher_id !== docOwner) {
+                throw new Error("No tienes permiso para generar un quiz de este documento");
+            }
+        }
+
         if (!doc.content_text || doc.content_text.length < 50) {
             throw new Error("El documento no tiene suficiente texto para generar un quiz.");
         }
@@ -46,13 +58,7 @@ export const generateQuiz = action({
         // Truncar contenido a 15000 chars para el prompt
         const content = doc.content_text.substring(0, 15000);
 
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-        if (!GEMINI_API_KEY) {
-            throw new Error("API key de Gemini no configurada. Agrega GEMINI_API_KEY en las variables de entorno de Convex.");
-        }
-
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = await getGeminiModel();
 
         const difficultyMap: Record<string, string> = {
             facil: "fácil (conceptos básicos, definiciones directas)",
@@ -976,3 +982,34 @@ export const submitQuiz = mutation({
     },
 });
 
+
+
+// Historial de quizzes completados por el alumno en un ramo
+export const getMyQuizHistory = query({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireAuth(ctx);
+
+        const quizzes = await ctx.db
+            .query("quizzes")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+
+        const quizMap = new Map(quizzes.map((q) => [q._id.toString(), q]));
+        const quizIds = new Set(quizzes.map((q) => q._id.toString()));
+
+        const submissions = await ctx.db
+            .query("quiz_submissions")
+            .withIndex("by_user", (q) => q.eq("user_id", user._id))
+            .collect();
+
+        return submissions
+            .filter((s) => quizIds.has(s.quiz_id.toString()))
+            .map((s) => ({
+                ...s,
+                quizTitle: quizMap.get(s.quiz_id.toString())?.title ?? "Quiz",
+                quizType: quizMap.get(s.quiz_id.toString())?.quiz_type ?? "multiple_choice",
+            }))
+            .sort((a, b) => b.completed_at - a.completed_at);
+    },
+});

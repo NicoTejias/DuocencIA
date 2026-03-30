@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ConfirmModal from '../ConfirmModal'
 import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { 
@@ -453,9 +454,9 @@ function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () =
 function DeleteRubricButton({ rubricId }: { rubricId: string }) {
     const del = useMutation(api.evaluator.deleteRubric)
     const [deleting, setDeleting] = useState(false)
+    const [confirmOpen, setConfirmOpen] = useState(false)
 
-    const handleDelete = async () => {
-        if (!window.confirm("¿Seguro que quieres borrar esta pauta y todo su historial de evaluaciones?")) return
+    const handleConfirm = async () => {
         setDeleting(true)
         try {
             await del({ rubric_id: rubricId as any })
@@ -464,17 +465,29 @@ function DeleteRubricButton({ rubricId }: { rubricId: string }) {
             toast.error(e.message)
         } finally {
             setDeleting(false)
+            setConfirmOpen(false)
         }
     }
 
     return (
-        <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="p-3 bg-white/5 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-xl border border-white/5 hover:border-red-400/20 transition-all"
-            title="Borrar Pauta"
-        >
-            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-        </button>
+        <>
+            <ConfirmModal
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirm}
+                title="Borrar pauta"
+                message="¿Seguro que quieres borrar esta pauta y todo su historial de evaluaciones? Esta acción no se puede deshacer."
+                confirmText="Borrar"
+                loading={deleting}
+            />
+            <button
+                onClick={() => setConfirmOpen(true)}
+                disabled={deleting}
+                className="p-3 bg-white/5 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-xl border border-white/5 hover:border-red-400/20 transition-all"
+                title="Borrar Pauta"
+            >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            </button>
+        </>
     )
 }

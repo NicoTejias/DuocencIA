@@ -1,5 +1,9 @@
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 
+function isMutationCtx(ctx: QueryCtx | MutationCtx): ctx is MutationCtx {
+    return "scheduler" in ctx;
+}
+
 export async function requireAuth(ctx: QueryCtx | MutationCtx) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -25,9 +29,9 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx) {
         
         if (userByEmail) {
             // Intentar vincular clerkId si estamos en una mutación
-            if ((ctx as any).db.patch) {
+            if (isMutationCtx(ctx)) {
                 try {
-                    await (ctx as any).db.patch(userByEmail._id, { clerkId: identity.subject });
+                    await ctx.db.patch(userByEmail._id, { clerkId: identity.subject });
                 } catch (e) { /* ignore */ }
             }
             return userByEmail;

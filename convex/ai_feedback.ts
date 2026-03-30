@@ -1,5 +1,6 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
+import { getGeminiModel } from "./geminiClient";
 
 export const getGroupFeedback = action({
     args: {
@@ -14,14 +15,7 @@ export const getGroupFeedback = action({
         })),
     },
     handler: async (_ctx, args) => {
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-        if (!GEMINI_API_KEY) {
-            throw new Error("GEMINI_API_KEY no configurada");
-        }
-
-        const { GoogleGenerativeAI } = await import("@google/generative-ai");
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = await getGeminiModel();
 
         const groupSummary = args.groupsData.map(g => {
             const members = g.members.map(m => `${m.name} (${m.belbinRole} - ${m.belbinCategory})`).join(", ");

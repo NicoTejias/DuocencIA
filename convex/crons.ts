@@ -108,4 +108,11 @@ crons.weekly(
     internal.crons.checkRetentionAlerts
 );
 
+// Enviar recordatorios de evaluaciones próximas (48h y 24h) — diariamente a las 09:00 AM CL
+crons.daily(
+    "daily-evaluation-reminders",
+    { hourUTC: 13, minuteUTC: 0 }, // 13 UTC = 09:00 AM CL (UTC-4 verano / UTC-3 invierno)
+    internal.evaluaciones.sendEvaluationReminders
+);
+
 export default crons;

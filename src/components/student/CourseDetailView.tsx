@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { Loader2, X, PlayCircle, Target, Star, Flame } from 'lucide-react'
+import { Loader2, X, PlayCircle, Target, Star, Flame, History, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from "sonner"
 import AttendanceCard from "./AttendanceCard"
 
@@ -23,6 +23,11 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
     const completeMission = useMutation(api.missions.completeMission)
 
     const [completing, setCompleting] = useState<string | null>(null)
+    const [showHistory, setShowHistory] = useState(false)
+    const quizHistory = useQuery(
+        api.quizzes.getMyQuizHistory,
+        showHistory ? { course_id: courseId } : "skip"
+    )
 
     const handleCompleteMission = async (missionId: string) => {
         setCompleting(missionId)
@@ -192,6 +197,61 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                         ))}
                     </div>
                 </section>
+            </div>
+
+            {/* Historial de Quizzes */}
+            <div className="bg-surface-light border border-white/5 rounded-2xl overflow-hidden">
+                <button
+                    onClick={() => setShowHistory((v) => !v)}
+                    className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors text-left"
+                >
+                    <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                        <History className="w-5 h-5 text-primary-light" />
+                        Historial de Quizzes
+                    </h3>
+                    {showHistory ? (
+                        <ChevronUp className="w-5 h-5 text-slate-500" />
+                    ) : (
+                        <ChevronDown className="w-5 h-5 text-slate-500" />
+                    )}
+                </button>
+
+                {showHistory && (
+                    <div className="border-t border-white/5 p-5">
+                        {quizHistory === undefined ? (
+                            <div className="flex justify-center py-6">
+                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                            </div>
+                        ) : quizHistory.length === 0 ? (
+                            <div className="text-center py-8 border border-dashed border-white/10 rounded-xl">
+                                <History className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                                <p className="text-slate-400 text-sm">Aún no has completado ningún quiz en este ramo</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                {quizHistory.map((s) => (
+                                    <div key={s._id} className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl px-4 py-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white text-sm font-semibold truncate">{s.quizTitle}</p>
+                                            <p className="text-slate-500 text-xs mt-0.5">
+                                                {new Date(s.completed_at).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0 ml-4">
+                                            <div className="flex items-center gap-1 bg-gold/10 border border-gold/20 px-2 py-1 rounded-lg">
+                                                <Star className="w-3 h-3 fill-gold text-gold" />
+                                                <span className="text-gold font-bold text-xs">+{s.earned_points} pts</span>
+                                            </div>
+                                            <span className={`text-sm font-black ${s.score >= 70 ? 'text-green-400' : s.score >= 40 ? 'text-orange-400' : 'text-red-400'}`}>
+                                                {s.score}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
         </div>

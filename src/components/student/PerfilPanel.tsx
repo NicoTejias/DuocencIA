@@ -1,5 +1,7 @@
 import { useNavigate, Link } from "react-router-dom"
-import { Trophy, Mail, Settings, Sparkles, User as UserIcon } from 'lucide-react'
+import { useQuery } from "convex/react"
+import { api } from "../../../convex/_generated/api"
+import { Trophy, Mail, Settings, Sparkles, User as UserIcon, Award } from 'lucide-react'
 
 interface PerfilPanelProps {
     user: any;
@@ -9,6 +11,7 @@ interface PerfilPanelProps {
 
 export default function PerfilPanel({ user, totalPoints, belbinRole }: PerfilPanelProps) {
     const navigate = useNavigate()
+    const myBadges = useQuery(api.badges.getMyBadges)
     return (
         <div className="max-w-4xl mx-auto py-10 space-y-8">
             <div className="bg-surface-light border border-white/5 rounded-3xl p-8 flex flex-col md:flex-row items-center gap-8">
@@ -73,6 +76,44 @@ export default function PerfilPanel({ user, totalPoints, belbinRole }: PerfilPan
                         Gestionar Perfil →
                     </button>
                 </div>
+            </div>
+
+            {/* Mis Insignias */}
+            <div className="bg-surface-light border border-white/5 rounded-3xl p-8">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-gold" />
+                    Mis Insignias
+                    {myBadges && (
+                        <span className="ml-auto text-xs bg-gold/10 text-gold px-2.5 py-1 rounded-full border border-gold/20">
+                            {myBadges.length}
+                        </span>
+                    )}
+                </h3>
+                {myBadges === undefined ? (
+                    <div className="flex justify-center py-6">
+                        <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : myBadges.length === 0 ? (
+                    <div className="text-center py-8 border border-dashed border-white/10 rounded-2xl">
+                        <Award className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                        <p className="text-slate-400 text-sm">Aún no tienes insignias</p>
+                        <p className="text-slate-600 text-xs mt-1">Destácate en tus ramos para ganar reconocimientos</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {myBadges.map((ub) => (
+                            <div
+                                key={ub._id}
+                                className="bg-gradient-to-br from-gold/10 to-transparent border border-gold/20 rounded-2xl p-4 flex flex-col items-center gap-2 text-center hover:border-gold/40 transition-all"
+                                title={ub.badge?.description}
+                            >
+                                <span className="text-3xl">{ub.badge?.icon ?? '🏅'}</span>
+                                <p className="text-white text-xs font-bold leading-tight">{ub.badge?.name}</p>
+                                <p className="text-slate-500 text-[10px] truncate w-full">{ub.courseCode ?? ub.courseName}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
