@@ -545,7 +545,7 @@ export const getQuizzesByDocument = query({
         const doc = await ctx.db.get(args.document_id);
         const course = await ctx.db.get(doc?.course_id as any);
         const enrollment = await ctx.db.query("enrollments").withIndex("by_user", q => q.eq("user_id", user._id)).filter(q => q.eq(q.field("course_id"), doc?.course_id as any)).first();
-        if (user.role !== "admin" && course?.teacher_id !== user._id && !enrollment) throw new Error("No estás inscrito en este ramo.");
+        if (user.role !== "admin" && (course as any)?.teacher_id !== user._id && !enrollment) throw new Error("No estás inscrito en este ramo.");
         const quizzes = await ctx.db
             .query("quizzes")
             .filter((q) => q.eq(q.field("document_id"), args.document_id))

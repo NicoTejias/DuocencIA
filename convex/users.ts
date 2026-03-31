@@ -171,6 +171,16 @@ export const getProfile = query({
     },
 });
 
+export const getProfileByEmail = query({
+    args: { email: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("users")
+            .withIndex("email", (q) => q.eq("email", args.email))
+            .first();
+    },
+});
+
 
 export const saveBelbinProfile = mutation({
 
