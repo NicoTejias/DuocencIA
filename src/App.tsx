@@ -38,6 +38,13 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode,
   const location = useLocation()
   const [stuckCount, setStuckCount] = useState(0)
 
+  useEffect(() => {
+    if (isAuthLoading || !isAuthenticated || user !== undefined) return
+    if (stuckCount > 5) return
+    const timer = setTimeout(() => setStuckCount(c => c + 1), 1000)
+    return () => clearTimeout(timer)
+  }, [user, stuckCount, isAuthLoading, isAuthenticated])
+
   // 1. Si Convex aún está verificando si hay sesión, esperamos.
   if (isAuthLoading) return <LoadingScreen />
 
@@ -52,7 +59,6 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode,
     if (stuckCount > 5) {
       return <Navigate to="/login" replace />
     }
-    setTimeout(() => setStuckCount(c => c + 1), 1000)
     return <LoadingScreen />
   }
 

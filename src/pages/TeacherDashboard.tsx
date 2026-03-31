@@ -233,7 +233,7 @@ export default function TeacherDashboard() {
 }
 
 function InicioDocente({ firstName, coursesCount, courses, onSelectCourse }: { firstName: string, coursesCount: number, courses: any[], onSelectCourse: (c: any) => void }) {
-    const stats = useQuery(api.analytics.getTeacherStats)
+    const stats = useQuery(api.analytics.getTeacherStats, {})
     const quizzesCompleted = stats ? `${(stats as any).totalQuizzesCompleted ?? 0}` : '...'
     const avgScore = stats ? `${Math.round((stats as any).avgQuizScore ?? 0)}%` : '...'
     const participation = stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}%` : '...'
