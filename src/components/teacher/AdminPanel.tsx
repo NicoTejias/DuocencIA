@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { 
-    Users, 
-    MessageSquare, 
-    ShieldAlert, 
-    Loader2, 
-    CheckCircle, 
-    AlertCircle, 
-    Lightbulb, 
+import {
+    Users,
+    MessageSquare,
+    ShieldAlert,
+    Loader2,
+    CheckCircle,
+    AlertCircle,
+    Lightbulb,
     Heart,
     ExternalLink,
     Search,
@@ -21,7 +21,10 @@ import {
     Globe,
     Plus,
     Trash2,
-    Save
+    Save,
+    Send,
+    Building2,
+    Edit2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import FAQManager from '../admin/FAQManager'
@@ -159,6 +162,11 @@ export default function AdminPanel() {
             {/* Gestión de Dominios de Email */}
             <div className="pt-10 border-t border-white/5">
                 <EmailDomainsManager />
+            </div>
+
+            {/* Gestión de Carreras e Informes Institucionales */}
+            <div className="pt-10 border-t border-white/5">
+                <CareersManager />
             </div>
         </div>
     )
@@ -427,6 +435,185 @@ function RecentUsersList() {
                     </button>
                 </div>
             ))}
+        </div>
+    )
+}
+
+function CareersManager() {
+    const careers = useQuery(api.careers.getCareers)
+    const createCareer = useMutation(api.careers.createCareer)
+    const updateCareer = useMutation(api.careers.updateCareer)
+    const deleteCareer = useMutation(api.careers.deleteCareer)
+    const sendReports = useMutation(api.careers.sendReportsNow)
+    const [sending, setSending] = useState(false)
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [showForm, setShowForm] = useState(false)
+    const [form, setForm] = useState({ name: '', coordinator_email: '', director_email: '', jefe_admin_email: '' })
+    const [saving, setSaving] = useState(false)
+
+    const handleSend = async () => {
+        if (!confirm('¿Enviar los reportes a todos los coordinadores y jefes de carrera ahora?')) return
+        setSending(true)
+        try {
+            await sendReports()
+            toast.success('¡Reportes enviados! Los emails llegarán en los próximos minutos.')
+        } catch (err: any) {
+            toast.error('Error al enviar: ' + err.message)
+        } finally {
+            setSending(false)
+        }
+    }
+
+    const handleSave = async () => {
+        if (!form.name || !form.coordinator_email || !form.director_email) {
+            toast.error('Nombre, email coordinador y email director son obligatorios')
+            return
+        }
+        setSaving(true)
+        try {
+            if (editingId) {
+                await updateCareer({ career_id: editingId as any, ...form, jefe_admin_email: form.jefe_admin_email || undefined })
+                toast.success('Carrera actualizada')
+            } else {
+                await createCareer({ ...form, jefe_admin_email: form.jefe_admin_email || undefined })
+                toast.success('Carrera creada')
+            }
+            setForm({ name: '', coordinator_email: '', director_email: '', jefe_admin_email: '' })
+            setShowForm(false)
+            setEditingId(null)
+        } catch (err: any) {
+            toast.error('Error: ' + err.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const startEdit = (c: any) => {
+        setForm({ name: c.name, coordinator_email: c.coordinator_email, director_email: c.director_email, jefe_admin_email: c.jefe_admin_email ?? '' })
+        setEditingId(c._id)
+        setShowForm(true)
+    }
+
+    const handleDelete = async (id: any, name: string) => {
+        if (!confirm(`¿Eliminar la carrera "${name}"? Los ramos vinculados quedarán sin carrera.`)) return
+        try {
+            await deleteCareer({ career_id: id })
+            toast.success('Carrera eliminada')
+        } catch (err: any) {
+            toast.error('Error: ' + err.message)
+        }
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/10 rounded-xl">
+                        <Building2 className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-white">Carreras e Informes Institucionales</h3>
+                        <p className="text-slate-500 text-xs">Configura los destinatarios de los reportes automáticos semanales y mensuales.</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', coordinator_email: '', director_email: '', jefe_admin_email: '' }) }}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                    >
+                        <Plus className="w-4 h-4" /> Nueva Carrera
+                    </button>
+                    <button
+                        onClick={handleSend}
+                        disabled={sending || !careers?.length}
+                        title="Envía reportes semanal y mensual a todos los coordinadores y jefes de carrera ahora"
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+                    >
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Enviar Reportes Ahora
+                    </button>
+                </div>
+            </div>
+
+            {/* Formulario crear/editar */}
+            {showForm && (
+                <div className="bg-surface-light border border-purple-500/20 rounded-2xl p-6 space-y-4">
+                    <h4 className="text-white font-bold text-sm">{editingId ? 'Editar Carrera' : 'Nueva Carrera'}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Nombre de la Carrera *</label>
+                            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Ingeniería en Computación" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/40 transition-all" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Email Coordinador *</label>
+                            <input type="email" value={form.coordinator_email} onChange={e => setForm(f => ({ ...f, coordinator_email: e.target.value }))} placeholder="coordinador@instituto.cl" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/40 transition-all" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Email Director/Jefe de Carrera *</label>
+                            <input type="email" value={form.director_email} onChange={e => setForm(f => ({ ...f, director_email: e.target.value }))} placeholder="director@instituto.cl" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/40 transition-all" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Email Jefe Administrativo <span className="text-slate-600 normal-case">(opcional)</span></label>
+                            <input type="email" value={form.jefe_admin_email} onChange={e => setForm(f => ({ ...f, jefe_admin_email: e.target.value }))} placeholder="jefe.admin@instituto.cl" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/40 transition-all" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl transition-all disabled:opacity-50">
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {editingId ? 'Guardar Cambios' : 'Crear Carrera'}
+                        </button>
+                        <button onClick={() => { setShowForm(false); setEditingId(null) }} className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 font-bold text-sm rounded-xl transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Lista de carreras */}
+            {!careers ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-600" /></div>
+            ) : careers.length === 0 ? (
+                <div className="bg-surface-light border border-dashed border-white/10 rounded-2xl p-10 text-center">
+                    <Building2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                    <p className="text-slate-400 text-sm font-medium">No hay carreras configuradas.</p>
+                    <p className="text-slate-600 text-xs mt-1">Agrega una carrera para activar los reportes automáticos por email.</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {careers.map((c: any) => (
+                        <div key={c._id} className="bg-surface-light border border-white/5 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-purple-500/20 transition-all">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center shrink-0">
+                                    <School className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-white font-bold truncate">{c.name}</p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                        <span className="text-slate-500 text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Coord: <span className="text-slate-400">{c.coordinator_email}</span></span>
+                                        <span className="text-slate-500 text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Dir: <span className="text-slate-400">{c.director_email}</span></span>
+                                        {c.jefe_admin_email && <span className="text-slate-500 text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Admin: <span className="text-slate-400">{c.jefe_admin_email}</span></span>}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={() => startEdit(c)} className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/5 transition-all" aria-label="Editar carrera">
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleDelete(c._id, c.name)} className="p-2 bg-red-500/5 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/10 transition-all" aria-label="Eliminar carrera">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    <div className="bg-purple-500/5 border border-purple-500/10 rounded-xl p-4 flex items-start gap-3">
+                        <Send className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-purple-300 font-bold text-xs">Envío automático activo</p>
+                            <p className="text-slate-500 text-xs mt-1">Los reportes se envían automáticamente cada <strong className="text-slate-400">lunes a las 08:00 AM</strong> a coordinadores y el <strong className="text-slate-400">1° de cada mes</strong> a directores/jefes de carrera.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

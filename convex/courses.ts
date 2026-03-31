@@ -6,7 +6,7 @@ import { paginationOptsValidator } from "convex/server";
 
 // Crear un nuevo ramo
 export const createCourse = mutation({
-    args: { name: v.string(), code: v.string(), description: v.string() },
+    args: { name: v.string(), code: v.string(), description: v.string(), career_id: v.optional(v.id("careers")) },
     handler: async (ctx, args) => {
         const user = await requireTeacher(ctx);
 
@@ -15,6 +15,7 @@ export const createCourse = mutation({
             code: args.code,
             description: args.description,
             teacher_id: user._id,
+            career_id: args.career_id,
         });
     },
 });
@@ -478,6 +479,7 @@ export const updateCourse = mutation({
         name: v.string(),
         code: v.string(),
         description: v.string(),
+        career_id: v.optional(v.id("careers")),
     },
     handler: async (ctx, args) => {
         const user = await requireTeacher(ctx);
@@ -490,6 +492,7 @@ export const updateCourse = mutation({
             name: args.name,
             code: args.code,
             description: args.description,
+            career_id: args.career_id,
         });
     },
 });

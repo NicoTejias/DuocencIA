@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2, Save } from 'lucide-react'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'
 
@@ -12,11 +12,12 @@ interface EditModalProps {
 
 export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
     const updateCourse = useMutation(api.courses.updateCourse)
-    const [formData, setFormData] = useState({ name: '', code: '', description: '' })
+    const careers = useQuery(api.careers.listCareers)
+    const [formData, setFormData] = useState({ name: '', code: '', description: '', career_id: '' })
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        if (data) setFormData({ name: data.name, code: data.code, description: data.description || '' })
+        if (data) setFormData({ name: data.name, code: data.code, description: data.description || '', career_id: data.career_id || '' })
     }, [data])
 
     const handleSave = async () => {
@@ -26,7 +27,8 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
                 course_id: data._id,
                 name: formData.name,
                 code: formData.code,
-                description: formData.description
+                description: formData.description,
+                career_id: formData.career_id ? (formData.career_id as any) : undefined,
             })
             toast.success('Ramo actualizado con éxito')
             onClose()
@@ -65,6 +67,15 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
                     <div>
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Descripción</label>
                         <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-accent/50 outline-none transition-all h-32 resize-none" title="Descripción" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Carrera Asociada</label>
+                        <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-accent/50 outline-none transition-all" title="Carrera asociada">
+                            <option value="">Sin carrera asociada</option>
+                            {(careers || []).map(c => (
+                                <option key={c._id} value={c._id}>{c.name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="flex gap-4 pt-4">

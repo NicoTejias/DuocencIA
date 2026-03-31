@@ -1,8 +1,12 @@
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
 import { internalMutation } from "./_generated/server";
 import { pushNotification } from "./notifications";
 
+// ─── Job: Alertas de retención (Lunes 08:00 AM CL) ──────────────────────────
+// Detecta alumnos inactivos y notifica tanto al alumno como dispara el
+// reporte semanal a los coordinadores de carrera vía email.
 
-// Job que se ejecuta semanalmente para detectar riesgo de deserción
 export const checkRetentionAlerts = internalMutation({
     args: {},
     handler: async (ctx) => {
@@ -11,25 +15,7 @@ export const checkRetentionAlerts = internalMutation({
         const TenDaysMs = 10 * 24 * 60 * 60 * 1000;
         const FourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
 
-        // 1. Obtener todas las carreras y sus contactos
-        const careers = await ctx.db.query("careers").collect();
-        const alertReports: Record<string, any> = {};
-
-        for (const career of careers) {
-            alertReports[career._id] = {
-                careerName: career.name,
-                coordinator: career.coordinator_email,
-                director: career.director_email,
-                jefeAdmin: career.jefe_admin_email,
-                studentsAtRisk: {
-                    low: [],    // 5 días
-                    medium: [], // 10 días
-                    high: []    // 14 días (Crítico)
-                }
-            };
-        }
-
-        // 2. Obtener todos los alumnos y sus últimos accesos (usando last_daily_bonus_at como proxy de actividad)
+        // Notificar a alumnos en riesgo (incentivo de regreso)
         const students = await ctx.db
             .query("users")
             .filter((q) => q.eq(q.field("role"), "student"))
@@ -37,81 +23,63 @@ export const checkRetentionAlerts = internalMutation({
 
         for (const student of students) {
             const lastActivity = student.last_daily_bonus_at || 0;
-            const inactivityDays = (now - lastActivity);
-            
+            const inactivityMs = now - lastActivity;
+
             let riskLevel: "low" | "medium" | "high" | null = null;
-            if (inactivityDays >= FourteenDaysMs) riskLevel = "high";
-            else if (inactivityDays >= TenDaysMs) riskLevel = "medium";
-            else if (inactivityDays >= FiveDaysMs) riskLevel = "low";
+            if (inactivityMs >= FourteenDaysMs) riskLevel = "high";
+            else if (inactivityMs >= TenDaysMs) riskLevel = "medium";
+            else if (inactivityMs >= FiveDaysMs) riskLevel = "low";
 
             if (riskLevel) {
-                // Buscar a qué carrera pertenece el alumno viendo sus enrollments
-                const enrollments = await ctx.db
-                    .query("enrollments")
-                    .withIndex("by_user", (q) => q.eq("user_id", student._id))
-                    .collect();
-
-                const careerIds = new Set<string>();
-                for (const en of enrollments) {
-                    const course = await ctx.db.get(en.course_id);
-                    if (course?.career_id) {
-                        careerIds.add(course.career_id);
-                    }
-                }
-
-                // Notificar al alumno de su propio riesgo (Incentivo)
                 await pushNotification(
                     ctx,
                     student._id,
                     "🚨 ¡Te extrañamos en QuestIA!",
-                    "Llevas varios días sin actividad. ¡Vuelve hoy para mantener tu racha y evitar alertas institucionales!",
+                    "Llevas varios días sin actividad. ¡Vuelve hoy para mantener tu racha!",
                     "system"
                 );
-
-                // Agregar al reporte de las carreras correspondientes
-                for (const careerId of careerIds) {
-                    if (alertReports[careerId]) {
-                        alertReports[careerId].studentsAtRisk[riskLevel].push({
-                            name: student.name,
-                            email: student.email,
-                            days: Math.floor(inactivityDays / (24 * 60 * 60 * 1000))
-                        });
-                    }
-                }
             }
         }
 
-        // 3. Enviar reportes (Simulado por ahora con logs y notificaciones de sistema a admins)
-        // En una implementación real, aquí se llamaría a un servicio de email (SendGrid/Resend)
-        for (const careerId in alertReports) {
-            const report = alertReports[careerId];
-            const totalAtRisk = report.studentsAtRisk.low.length + report.studentsAtRisk.medium.length + report.studentsAtRisk.high.length;
+        // Disparar reporte semanal a coordinadores por email
+        await ctx.scheduler.runAfter(0, internal.reports.sendWeeklyCoordinatorReports, {});
 
-            if (totalAtRisk > 0) {
-                console.log(`[RETENTION ALERT] Carrera: ${report.careerName} - ${totalAtRisk} alumnos en riesgo.`);
-                // Aquí iría la lógica de envío de email institucional
-            }
-        }
-
-        return { success: true, processedCareers: careers.length };
-    }
+        return { success: true, studentsChecked: students.length };
+    },
 });
-import { cronJobs } from "convex/server";
-import { internal } from "./_generated/api";
+
+// ─── Job: Reporte mensual a jefes de carrera (1° día del mes, 08:00 AM CL) ──
+
+export const sendMonthlyReports = internalMutation({
+    args: {},
+    handler: async (ctx) => {
+        await ctx.scheduler.runAfter(0, internal.reports.sendMonthlyDirectorReports, {});
+        return { triggered: true };
+    },
+});
+
+// ─── Definición de crons ─────────────────────────────────────────────────────
 
 const crons = cronJobs();
 
-// Ejecutar reporte de retenciones todos los Lunes a las 08:00 AM CL
+// Cada lunes 08:00 AM CL: alertas de retención + reporte semanal coordinadores
 crons.weekly(
-    "weekly-retention-report",
-    { dayOfWeek: "monday", hourUTC: 12, minuteUTC: 0 }, // 12 UTC = 08:00 AM CL (aprox)
+    "weekly-retention-and-coordinator-report",
+    { dayOfWeek: "monday", hourUTC: 12, minuteUTC: 0 },
     internal.crons.checkRetentionAlerts
 );
 
-// Enviar recordatorios de evaluaciones próximas (48h y 24h) — diariamente a las 09:00 AM CL
+// 1° de cada mes 08:00 AM CL: reporte mensual a jefes de carrera
+crons.monthly(
+    "monthly-director-report",
+    { day: 1, hourUTC: 12, minuteUTC: 0 },
+    internal.crons.sendMonthlyReports
+);
+
+// Diariamente 09:00 AM CL: recordatorios de evaluaciones próximas
 crons.daily(
     "daily-evaluation-reminders",
-    { hourUTC: 13, minuteUTC: 0 }, // 13 UTC = 09:00 AM CL (UTC-4 verano / UTC-3 invierno)
+    { hourUTC: 13, minuteUTC: 0 },
     internal.evaluaciones.sendEvaluationReminders
 );
 

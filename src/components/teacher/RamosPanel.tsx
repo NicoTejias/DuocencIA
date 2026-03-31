@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { useNavigate } from 'react-router-dom'
 import { Plus, Loader2, ChevronRight, CheckCircle, Edit3, Trash2, Search, User } from 'lucide-react'
@@ -12,8 +12,9 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
     const navigate = useNavigate()
     const createCourse = useMutation(api.courses.createCourse)
     const deleteCourse = useMutation(api.courses.deleteCourse)
+    const careers = useQuery(api.careers.listCareers)
     const [showCreate, setShowCreate] = useState(false)
-    const [formData, setFormData] = useState({ name: '', code: '', description: '' })
+    const [formData, setFormData] = useState({ name: '', code: '', description: '', career_id: '' })
     const [creating, setCreating] = useState(false)
     const [success, setSuccess] = useState('')
 
@@ -32,9 +33,14 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
         if (!formData.name || !formData.code) return
         setCreating(true)
         try {
-            await createCourse(formData)
+            await createCourse({
+                name: formData.name,
+                code: formData.code,
+                description: formData.description,
+                career_id: formData.career_id ? (formData.career_id as any) : undefined,
+            })
             setSuccess(`Ramo "${formData.name}" creado exitosamente.`)
-            setFormData({ name: '', code: '', description: '' })
+            setFormData({ name: '', code: '', description: '', career_id: '' })
             setShowCreate(false)
             setTimeout(() => setSuccess(''), 4000)
         } catch (err: any) {
@@ -119,6 +125,12 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                     <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Nombre del ramo (ej. Electrotecnia I)" className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent" title="Nombre del ramo" />
                     <input value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="Código (ej. ELT-101)" className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent" title="Código del ramo" />
                     <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción del ramo..." className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent h-24 resize-none" title="Descripción" />
+                    <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" title="Carrera asociada">
+                        <option value="">Sin carrera asociada</option>
+                        {(careers || []).map(c => (
+                            <option key={c._id} value={c._id}>{c.name}</option>
+                        ))}
+                    </select>
                     <button onClick={handleCreate} disabled={creating || !formData.name || !formData.code} className="bg-accent text-white font-bold px-6 py-3 rounded-xl hover:bg-accent-light transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Confirmar creación de ramo">
                         {creating && <Loader2 className="w-4 h-4 animate-spin" />}
                         {creating ? 'Creando...' : 'Crear Ramo'}
@@ -159,6 +171,7 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                                     <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-accent-light ml-1" />
                                 </div>
                             </div>
+                            {c.career_id && <p className="text-xs text-accent-light/70 mt-1 font-medium">{(careers || []).find(cr => cr._id === c.career_id)?.name || ''}</p>}
                             {c.description && <p className="text-slate-400 text-sm mt-3 line-clamp-2">{c.description}</p>}
                         </div>
                     ))}
