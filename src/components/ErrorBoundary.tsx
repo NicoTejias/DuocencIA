@@ -24,6 +24,12 @@ export default class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, info: ErrorInfo) {
         console.error('[ErrorBoundary]', error, info.componentStack)
+
+        // Si el error es por un chunk que no se pudo cargar (común después de un deplooy)
+        if (error.message.includes('Failed to fetch dynamically imported module') || 
+            error.message.includes('loading chunk')) {
+            window.location.reload();
+        }
     }
 
     handleReset = () => {
