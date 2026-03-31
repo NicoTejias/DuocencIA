@@ -72,7 +72,7 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Carrera Asociada</label>
                         <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-accent/50 outline-none transition-all" title="Carrera asociada">
                             <option value="">Sin carrera asociada</option>
-                            {(careers || []).map(c => (
+                            {(careers || []).map((c: any) => (
                                 <option key={c._id} value={c._id}>{c.name}</option>
                             ))}
                         </select>

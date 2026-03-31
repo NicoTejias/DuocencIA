@@ -548,7 +548,6 @@ export const sendMonthlyDirectorReports = internalMutation({
     args: {},
     handler: async (ctx) => {
         const now = Date.now();
-        const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
         const monthName = new Date(now).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
 

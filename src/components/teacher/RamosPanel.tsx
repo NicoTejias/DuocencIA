@@ -127,7 +127,7 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                     <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción del ramo..." className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent h-24 resize-none" title="Descripción" />
                     <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" title="Carrera asociada">
                         <option value="">Sin carrera asociada</option>
-                        {(careers || []).map(c => (
+                        {(careers || []).map((c: any) => (
                             <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                     </select>
@@ -171,7 +171,7 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                                     <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-accent-light ml-1" />
                                 </div>
                             </div>
-                            {c.career_id && <p className="text-xs text-accent-light/70 mt-1 font-medium">{(careers || []).find(cr => cr._id === c.career_id)?.name || ''}</p>}
+                            {c.career_id && <p className="text-xs text-accent-light/70 mt-1 font-medium">{(careers || []).find((cr: any) => cr._id === c.career_id)?.name || ''}</p>}
                             {c.description && <p className="text-slate-400 text-sm mt-3 line-clamp-2">{c.description}</p>}
                         </div>
                     ))}
