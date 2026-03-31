@@ -369,19 +369,30 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
                 return tfBase;
             }
             if (type === "order_steps") return { description: String(q.description ?? ''), steps: Array.isArray(q.steps) ? q.steps.map(String) : [], correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder : q.steps?.map((_: any, i: number) => i) ?? [] };
-            if (type === "fill_blank") return { question: String(q.question ?? ''), answer: String(q.answer ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], explanation: q.explanation ? String(q.explanation) : undefined };
-            if (type === "quiz_sprint") return { question: String(q.question ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], correct: Number(q.correct ?? 0), time_limit: q.time_limit ? Number(q.time_limit) : undefined };
+            if (type === "fill_blank") {
+                const fb: any = { question: String(q.question ?? ''), answer: String(q.answer ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [] };
+                if (q.explanation) fb.explanation = String(q.explanation);
+                return fb;
+            }
+            if (type === "quiz_sprint") {
+                const qs: any = { question: String(q.question ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], correct: Number(q.correct ?? 0) };
+                if (q.time_limit) qs.time_limit = Number(q.time_limit);
+                return qs;
+            }
             // match: the prompt generates {front, back} pairs (same format as flashcard)
             if (type === "match") return { front: String(q.front ?? q.term ?? ''), back: String(q.back ?? q.definition ?? '') };
             // multiple_choice, trivia: campos comunes
-            return {
+            const mc: any = {
                 question: String(q.question ?? ''),
                 options: Array.isArray(q.options) ? q.options.map(String) : [],
                 correct: Number(q.correct ?? 0),
-                explanation: q.explanation ? String(q.explanation) : undefined,
-                fun_fact: q.fun_fact ? String(q.fun_fact) : undefined,
-                time_limit: q.time_limit ? Number(q.time_limit) : undefined,
             };
+            if (q.explanation) mc.explanation = String(q.explanation);
+            if (q.fun_fact) mc.fun_fact = String(q.fun_fact);
+            if (q.time_limit) mc.time_limit = Number(q.time_limit);
+            if (q.bloom_level) mc.bloom_level = String(q.bloom_level);
+            if (q.dok_level != null) mc.dok_level = Number(q.dok_level);
+            return mc;
         });
 
         // Guardar el quiz en la BD
