@@ -361,11 +361,18 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
             }
             if (type === "memory") return { pairs: Array.isArray(q.pairs) ? q.pairs.map((p: any) => ({ term: String(p.term ?? ''), definition: String(p.definition ?? '') })) : [] };
             if (type === "flashcard") return { front: String(q.front ?? ''), back: String(q.back ?? '') };
-            if (type === "true_false") return { statement: String(q.statement ?? q.question ?? ''), correct: Boolean(q.correct), falsify: q.falsify ? String(q.falsify) : undefined };
+            if (type === "true_false") {
+                // Use conditional spread to avoid passing `falsify: undefined` (invalid Convex value)
+                const tfCorrect = q.correct === true || q.correct === 1 || String(q.correct).toLowerCase() === 'true';
+                const tfBase: any = { statement: String(q.statement ?? q.question ?? ''), correct: tfCorrect };
+                if (q.falsify && typeof q.falsify === 'string' && q.falsify.trim()) tfBase.falsify = q.falsify.trim();
+                return tfBase;
+            }
             if (type === "order_steps") return { description: String(q.description ?? ''), steps: Array.isArray(q.steps) ? q.steps.map(String) : [], correctOrder: Array.isArray(q.correctOrder) ? q.correctOrder : q.steps?.map((_: any, i: number) => i) ?? [] };
             if (type === "fill_blank") return { question: String(q.question ?? ''), answer: String(q.answer ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], explanation: q.explanation ? String(q.explanation) : undefined };
             if (type === "quiz_sprint") return { question: String(q.question ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], correct: Number(q.correct ?? 0), time_limit: q.time_limit ? Number(q.time_limit) : undefined };
-            if (type === "match") return { question: String(q.question ?? ''), options: Array.isArray(q.options) ? q.options.map(String) : [], correct: Number(q.correct ?? 0), explanation: q.explanation ? String(q.explanation) : undefined };
+            // match: the prompt generates {front, back} pairs (same format as flashcard)
+            if (type === "match") return { front: String(q.front ?? q.term ?? ''), back: String(q.back ?? q.definition ?? '') };
             // multiple_choice, trivia: campos comunes
             return {
                 question: String(q.question ?? ''),
