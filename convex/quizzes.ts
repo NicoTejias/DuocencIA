@@ -3,7 +3,7 @@ import { v, ConvexError } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 import { api } from "./_generated/api";
 import { checkRateLimit } from "./rateLimit";
-import { getGeminiModel } from "./geminiClient";
+import { generateWithFallback } from "./geminiClient";
 
 // Generar quiz con IA a partir del contenido de un documento
 export const generateQuiz = action({
@@ -58,7 +58,6 @@ export const generateQuiz = action({
         // Truncar contenido a 15000 chars para el prompt
         const content = doc.content_text.substring(0, 15000);
 
-        const model = await getGeminiModel();
 
         const difficultyMap: Record<string, string> = {
             facil: "fácil (conceptos básicos, definiciones directas)",
@@ -335,11 +334,9 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
 
         let responseText = "";
         try {
-            const result = await model.generateContent(prompt);
-            responseText = result.response.text();
+            responseText = await generateWithFallback(prompt);
         } catch (apiError: any) {
-            console.error("Gemini API Error:", apiError);
-            throw new ConvexError(`Fallo al comunicarse con Gemini IA: ${apiError.message || 'Error desconocido'}`);
+            throw new ConvexError(apiError.message || "Fallo al comunicarse con IA. Intenta de nuevo.");
         }
 
         // Parsear el JSON de la respuesta
