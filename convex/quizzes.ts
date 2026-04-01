@@ -1,5 +1,5 @@
 import { action, mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { requireAuth, requireTeacher } from "./withUser";
 import { api } from "./_generated/api";
 import { checkRateLimit } from "./rateLimit";
@@ -17,14 +17,14 @@ export const generateQuiz = action({
     handler: async (ctx, args) => {
         // action auth not supported with requireAuth context yet, leaving it as it was if possible:
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("No autenticado");
+        if (!identity) throw new ConvexError("No autenticado");
 
         // Obtener el documento
         const doc = await ctx.runQuery(api.documents.getDocumentById, {
             document_id: args.document_id,
         });
 
-        if (!doc) throw new Error("Documento no encontrado");
+        if (!doc) throw new ConvexError("Documento no encontrado");
 
         // Verificar que el usuario es el docente dueño del documento
         if (doc.teacher_id !== identity.subject && identity.subject) {
@@ -33,12 +33,12 @@ export const generateQuiz = action({
                 clerkId: identity.subject,
             });
             if (!docOwner || doc.teacher_id !== docOwner) {
-                throw new Error("No tienes permiso para generar un quiz de este documento");
+                throw new ConvexError("No tienes permiso para generar un quiz de este documento");
             }
         }
 
         if (!doc.content_text || doc.content_text.length < 50) {
-            throw new Error("El documento no tiene suficiente texto para generar un quiz.");
+            throw new ConvexError("El documento no tiene suficiente texto para generar un quiz.");
         }
 
         // Obtener documentos maestros (PDA, PIA, PA) para alineación pedagógica oficial de QuestIA
@@ -333,18 +333,24 @@ RESPONDE ÚNICAMENTE en formato JSON válido, sin markdown ni backticks:
  }`;
         }
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        let responseText = "";
+        try {
+            const result = await model.generateContent(prompt);
+            responseText = result.response.text();
+        } catch (apiError: any) {
+            console.error("Gemini API Error:", apiError);
+            throw new ConvexError(`Fallo al comunicarse con Gemini IA: ${apiError.message || 'Error desconocido'}`);
+        }
 
         // Parsear el JSON de la respuesta
         let quizData;
         try {
             // Intentar extraer JSON del response (puede venir con backticks)
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error("No se encontró JSON en la respuesta");
+            if (!jsonMatch) throw new ConvexError("No se encontró JSON en la respuesta");
             quizData = JSON.parse(jsonMatch[0]);
-        } catch {
-            throw new Error("Error al parsear la respuesta de la IA. Intenta de nuevo.");
+        } catch (e: any) {
+            throw new ConvexError(e.message || "Error al parsear la JSON de IA. Intenta de nuevo.");
         }
 
         // Validar estructura
@@ -479,7 +485,7 @@ export const saveQuiz = mutation({
 
         const course = await ctx.db.get(args.course_id);
         if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
-            throw new Error("No tienes permiso para agregar quizzes a este curso");
+            throw new ConvexError("No tienes permiso para agregar quizzes a este curso");
 
         const quizType = (args.quiz_type || "multiple_choice") as "multiple_choice" | "match" | "flashcard" | "true_false" | "fill_blank" | "order_steps" | "trivia" | "word_search" | "quiz_sprint" | "memory";
         
