@@ -181,30 +181,35 @@ export const getPendingRedemptions = query({
             .query("rewards")
             .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
             .collect();
-        const rewardIds = new Set(rewards.map(r => r._id));
         const rewardMap = new Map(rewards.map(r => [r._id, r]));
 
         // Obtener canjes pendientes de esas recompensas
-        const allRedemptions: any[] = [];
-        for (const reward of rewards) {
-            const redemptions = await ctx.db
+        const redemptionsPromises = rewards.map(reward => 
+            ctx.db
                 .query("redemptions")
                 .withIndex("by_reward", (q) => q.eq("reward_id", reward._id))
                 .filter((q) => q.eq(q.field("status"), "pending"))
-                .collect();
-            allRedemptions.push(...redemptions);
-        }
+                .collect()
+        );
+        const redemptionsNested = await Promise.all(redemptionsPromises);
+        const allRedemptions = redemptionsNested.flat();
 
         // Enriquecer con datos del alumno y la recompensa
         return await Promise.all(allRedemptions.map(async (r) => {
             const student = await ctx.db.get(r.user_id);
             const reward = rewardMap.get(r.reward_id);
+            
+            // Forzar tipado para evitar el error de unión de tablas en db.get()
+            const sDoc = student as any;
+            const sName = sDoc?.name || "Alumno";
+            const sEmail = sDoc?.email || "";
+            
             return {
                 _id: r._id,
                 timestamp: r.timestamp,
                 status: r.status,
-                student_name: student?.name || "Alumno",
-                student_email: student?.email || "",
+                student_name: sName,
+                student_email: sEmail,
                 reward_name: reward?.name || "Recompensa",
                 reward_cost: reward?.cost || 0,
             };
