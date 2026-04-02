@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useMutation, usePaginatedQuery } from "convex/react"
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { Gift, Loader2, Trash2, Sparkles, CheckCircle } from 'lucide-react'
+import { Gift, Loader2, Trash2, Sparkles, CheckCircle, Bell, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
 
@@ -22,8 +22,23 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     )
 
     const updateReward = useMutation(api.rewards.updateReward)
+    const markDelivered = useMutation((api as any).rewards.markRedemptionDelivered)
     const [editingStock, setEditingStock] = useState<string | null>(null)
     const [newStock, setNewStock] = useState('')
+
+    const pendingRedemptions = useQuery(
+        (api as any).rewards.getPendingRedemptions,
+        formData.course_id ? { course_id: formData.course_id as any } : "skip"
+    )
+
+    const handleMarkDelivered = async (redemptionId: any, rewardName: string) => {
+        try {
+            await markDelivered({ redemption_id: redemptionId })
+            toast.success(`Canje de "${rewardName}" marcado como entregado`)
+        } catch (err: any) {
+            toast.error(err.message || 'Error al marcar entrega')
+        }
+    }
 
     const handleUpdateStock = async (reward: any) => {
         try {
@@ -243,6 +258,53 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                 )}
             </div>
 
+
+            {/* Canjes pendientes */}
+            {formData.course_id && (
+                <div className="bg-surface-light border border-yellow-500/20 rounded-2xl p-6 mb-6">
+                    <h4 className="text-white font-bold text-base mb-4 flex items-center gap-2">
+                        <Bell className="w-5 h-5 text-yellow-400" />
+                        Canjes Pendientes de Entrega
+                        {pendingRedemptions && pendingRedemptions.length > 0 && (
+                            <span className="ml-2 bg-yellow-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full">{pendingRedemptions.length}</span>
+                        )}
+                    </h4>
+                    {!pendingRedemptions ? (
+                        <div className="flex items-center gap-2 text-slate-500 text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Cargando...</div>
+                    ) : pendingRedemptions.length === 0 ? (
+                        <p className="text-slate-500 text-sm italic">No hay canjes pendientes. ✅</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {pendingRedemptions.map((r: any) => (
+                                <div key={r._id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3 gap-4">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-white font-bold text-sm truncate">{r.student_name}</p>
+                                        <p className="text-slate-400 text-xs truncate">{r.student_email}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-yellow-300 text-xs font-semibold">{r.reward_name}</span>
+                                            <span className="text-slate-500 text-[10px]">·</span>
+                                            <span className="text-accent-light text-[10px] font-mono">{r.reward_cost} pts</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-slate-500 text-[10px] flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(r.timestamp).toLocaleDateString('es-CL')}
+                                        </span>
+                                        <button
+                                            onClick={() => handleMarkDelivered(r._id, r.reward_name)}
+                                            className="bg-green-500/20 hover:bg-green-500/40 text-green-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1"
+                                            title="Marcar como entregado"
+                                        >
+                                            <CheckCircle className="w-3.5 h-3.5" /> Entregar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Sub-tabs */}
             <div className="flex gap-2 mb-6">

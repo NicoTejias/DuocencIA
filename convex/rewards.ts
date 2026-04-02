@@ -114,6 +114,20 @@ export const redeemReward = mutation({
             stock: reward.stock - 1,
         });
 
+        // Notificar al docente del ramo
+        const course = await ctx.db.get(reward.course_id);
+        if (course) {
+            await ctx.db.insert("notifications", {
+                user_id: course.teacher_id,
+                title: "🎁 Canje pendiente",
+                message: `${user.name || "Un alumno"} canjeó "${reward.name}" en ${course.name}. Revisa los canjes pendientes.`,
+                type: "reward_redeemed",
+                read: false,
+                related_id: reward.course_id,
+                created_at: Date.now(),
+            });
+        }
+
         // Registrar canje
         const rewardName = reward.name.toLowerCase();
         const isIceCube = rewardName.includes("congelar racha");
@@ -150,6 +164,80 @@ export const redeemReward = mutation({
         }
 
         return { success: true };
+    },
+});
+
+// Obtener canjes pendientes de un ramo (solo docente)
+export const getPendingRedemptions = query({
+    args: { course_id: v.id("courses") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+        const course = await ctx.db.get(args.course_id);
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
+            throw new Error("No autorizado");
+
+        // Obtener todas las recompensas del ramo
+        const rewards = await ctx.db
+            .query("rewards")
+            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+            .collect();
+        const rewardIds = new Set(rewards.map(r => r._id));
+        const rewardMap = new Map(rewards.map(r => [r._id, r]));
+
+        // Obtener canjes pendientes de esas recompensas
+        const allRedemptions: any[] = [];
+        for (const reward of rewards) {
+            const redemptions = await ctx.db
+                .query("redemptions")
+                .withIndex("by_reward", (q) => q.eq("reward_id", reward._id))
+                .filter((q) => q.eq(q.field("status"), "pending"))
+                .collect();
+            allRedemptions.push(...redemptions);
+        }
+
+        // Enriquecer con datos del alumno y la recompensa
+        return await Promise.all(allRedemptions.map(async (r) => {
+            const student = await ctx.db.get(r.user_id);
+            const reward = rewardMap.get(r.reward_id);
+            return {
+                _id: r._id,
+                timestamp: r.timestamp,
+                status: r.status,
+                student_name: student?.name || "Alumno",
+                student_email: student?.email || "",
+                reward_name: reward?.name || "Recompensa",
+                reward_cost: reward?.cost || 0,
+            };
+        }));
+    },
+});
+
+// Marcar canje como entregado (solo docente)
+export const markRedemptionDelivered = mutation({
+    args: { redemption_id: v.id("redemptions") },
+    handler: async (ctx, args) => {
+        const user = await requireTeacher(ctx);
+        const redemption = await ctx.db.get(args.redemption_id);
+        if (!redemption) throw new Error("Canje no encontrado");
+
+        const reward = await ctx.db.get(redemption.reward_id);
+        if (!reward) throw new Error("Recompensa no encontrada");
+
+        const course = await ctx.db.get(reward.course_id);
+        if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
+            throw new Error("No autorizado");
+
+        await ctx.db.patch(args.redemption_id, { status: "completed" });
+
+        // Notificar al alumno que fue entregado
+        await ctx.db.insert("notifications", {
+            user_id: redemption.user_id,
+            title: "🎁 ¡Recompensa entregada!",
+            message: `Tu canje de "${reward.name}" ha sido marcado como entregado por el docente.`,
+            type: "reward_delivered",
+            read: false,
+            created_at: Date.now(),
+        });
     },
 });
 
