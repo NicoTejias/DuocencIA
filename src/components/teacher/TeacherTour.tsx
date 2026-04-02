@@ -4,7 +4,7 @@ import { Joyride, STATUS } from 'react-joyride';
 export default function TeacherTour() {
     const JoyrideComponent: any = Joyride;
     const [run, setRun] = useState(false);
-    const [stepIndex, setStepIndex] = useState(0);
+    const [stepIndex] = useState(0);
 
     // Initial check if we should run the tour
     useEffect(() => {
