@@ -51,15 +51,17 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
     const canAccessAsStudent =
         requiredRole === 'student' &&
-        (userRole === 'student' || (isSimulating && (userRole === 'teacher' || userRole === 'admin')))
+        (userRole === 'student' || userRole === 'demo_student' || (isSimulating && (userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin')))
+
+    const isTeacherRole = userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin';
 
     if (
         requiredRole &&
         !canAccessAsStudent &&
         userRole !== requiredRole &&
-        !(requiredRole === 'teacher' && userRole === 'admin')
+        !(requiredRole === 'teacher' && isTeacherRole)
     ) {
-        const target = userRole === 'teacher' || userRole === 'admin' ? '/docente' : '/alumno'
+        const target = isTeacherRole ? '/docente' : '/alumno'
         return <Navigate to={target} replace />
     }
 

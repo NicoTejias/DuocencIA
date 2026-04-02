@@ -26,7 +26,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 function App() {
   const { isAuthenticated } = useConvexAuth()
   const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
-  const isTeacher = user && (user.role === 'teacher' || user.role === 'admin')
+  const isTeacher = user && (user.role === 'teacher' || user.role === 'admin' || user.role === 'demo_teacher')
   const isSimulating = localStorage.getItem('questia_simulate_student') === 'true'
 
   return (

@@ -83,4 +83,11 @@ crons.daily(
     internal.evaluaciones.sendEvaluationReminders
 );
 
+// Diariamente limpieza de demos
+crons.daily(
+    "daily-demo-cleanup",
+    { hourUTC: 8, minuteUTC: 0 },
+    internal.users.deleteExpiredDemos
+);
+
 export default crons;

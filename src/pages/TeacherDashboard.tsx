@@ -14,6 +14,7 @@ import RankingDocentePanel from '../components/teacher/RankingDocentePanel'
 import NotificationBell from '../components/NotificationBell'
 import BetaBanner from '../components/BetaBanner'
 import AdminPanel from '../components/teacher/AdminPanel'
+import TeacherTour from '../components/teacher/TeacherTour'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 
 function getGreeting(): string {
@@ -68,12 +69,12 @@ export default function TeacherDashboard() {
     const coursesCount = courses?.length || 0
 
     const tabs = [
-        { id: 'inicio', label: 'Inicio', icon: <BarChart3 className="w-5 h-5" /> },
-        { id: 'ramos', label: 'Mis Ramos', icon: <BookOpen className="w-5 h-5" /> },
-        { id: 'material', label: 'Material', icon: <FileText className="w-5 h-5" /> },
-        { id: 'desafios', label: 'Desafíos', icon: <Target className="w-5 h-5" /> },
-        { id: 'ranking', label: 'Ranking', icon: <Trophy className="w-5 h-5" /> },
-        { id: 'recompensas', label: 'Recompensas', icon: <Gift className="w-5 h-5" /> },
+        { id: 'inicio', label: 'Inicio', icon: <BarChart3 className="w-5 h-5" />, tourClass: 'tour-step-estadisticas' },
+        { id: 'ramos', label: 'Mis Ramos', icon: <BookOpen className="w-5 h-5" />, tourClass: 'tour-step-ramos' },
+        { id: 'material', label: 'Material', icon: <FileText className="w-5 h-5" />, tourClass: 'tour-step-material' },
+        { id: 'desafios', label: 'Desafíos', icon: <Target className="w-5 h-5" />, tourClass: 'tour-step-desafios' },
+        { id: 'ranking', label: 'Ranking', icon: <Trophy className="w-5 h-5" />, tourClass: 'tour-step-ranking' },
+        { id: 'recompensas', label: 'Recompensas', icon: <Gift className="w-5 h-5" />, tourClass: 'tour-step-recompensas' },
         { id: 'perfil', label: 'Mi Perfil', icon: <User className="w-5 h-5" /> },
         ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Panel Admin', icon: <ShieldCheck className="w-5 h-5 text-red-500" /> }] : []),
     ]
@@ -130,7 +131,7 @@ export default function TeacherDashboard() {
                             <button
                                 key={tab.id}
                                 onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
-                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left font-medium text-sm
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left font-medium text-sm ${tab.tourClass || ''}
                                     ${activeTab === tab.id
                                         ? 'bg-accent/10 text-accent-light border border-accent/20 shadow-sm shadow-accent/5'
                                         : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
@@ -158,6 +159,8 @@ export default function TeacherDashboard() {
             </aside>
 
             {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+            {user.role === 'demo_teacher' && <TeacherTour />}
 
             <main className="flex-1 h-screen-dvh flex flex-col overflow-hidden">
                 <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 flex flex-col shrink-0">

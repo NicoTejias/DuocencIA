@@ -1,4 +1,4 @@
-import { internalQuery, mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
 import { requireAuth } from "./withUser";
@@ -64,20 +64,27 @@ export const storeUser = mutation({
         
         const isAllowed = allowedDomains.some(domain => email.endsWith(domain.toLowerCase()));
 
-        if (!isAllowed) {
-            throw new Error("Este correo no está autorizado para acceder a QuestIA. Usa tu cuenta institucional.");
-        }
+        let finalRole = "student";
+        let isDemo = false;
 
-        const isTeacherEmail = email.includes("@profesor.") || email.includes("@admin.") || email.includes("@duoc.cl") || email.includes("@questia.cl");
+        if (!isAllowed) {
+            // Entrará en modo testing / demo
+            finalRole = "demo_teacher";
+            isDemo = true;
+        } else {
+            const isTeacherEmail = email.includes("@profesor.") || email.includes("@admin.") || email.includes("@duoc.cl") || email.includes("@questia.cl");
+            finalRole = isTeacherEmail ? "teacher" : "student";
+        }
 
         return await ctx.db.insert("users", {
             name: identity.name,
             email: identity.email,
             image: identity.pictureUrl,
             clerkId: identity.subject,
-            role: isTeacherEmail ? "teacher" : "student",
+            role: finalRole,
             is_verified: true,
-            avatarUrl: !isTeacherEmail ? "" : identity.pictureUrl,
+            avatarUrl: (finalRole !== "teacher" && finalRole !== "demo_teacher") ? "" : identity.pictureUrl,
+            ...(isDemo ? { is_demo: true } : {})
         });
     },
 });
@@ -565,4 +572,29 @@ export const savePushToken = mutation({
             console.error("Silent error in savePushToken:", err);
         }
     },
+});
+
+export const deleteExpiredDemos = internalMutation({
+    args: {},
+    handler: async (ctx) => {
+        const now = Date.now();
+        const FourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+
+        const demoUsers = await ctx.db
+            .query("users")
+            .filter((q) => q.eq(q.field("is_demo"), true))
+            .collect();
+
+        let deletedCount = 0;
+        for (const user of demoUsers) {
+            // Convex automatically adds _creationTime
+            if (user._creationTime && (now - user._creationTime) > FourteenDaysMs) {
+                // To do this cleanly, we may need to use clerk API to delete the user there too, 
+                // but since this is a backend job, we can just delete from convex to block access
+                await ctx.db.delete(user._id);
+                deletedCount++;
+            }
+        }
+        return { deletedCount };
+    }
 });

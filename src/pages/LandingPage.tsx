@@ -109,16 +109,15 @@ export default function LandingPage() {
                     </div>
 
                     <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-8">
-                        Gestiona tus ramos.{' '}
+                        Tus alumnos se comprometen{' '}
                         <br className="hidden sm:block" />
                         <span className="bg-gradient-to-r from-primary via-primary-light to-white bg-clip-text text-transparent italic">
-                            Identidad Duoc UC.
+                            con tus ramos.
                         </span>
                     </h1>
 
                     <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-                        Automatiza tareas, crea misiones gamificadas y transforma tu clase en una experiencia
-                        interactiva donde aprender genera recompensas.
+                        Mejoramos la retención de tus alumnos. Automatiza tareas, crea misiones gamificadas y transforma tu clase en una experiencia interactiva irresistible.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -133,6 +132,7 @@ export default function LandingPage() {
                             Ver Características
                         </a>
                     </div>
+                    <p className="text-sm text-slate-500 mt-6">* ¿No tienes cuenta institucional? Regístrate con tu correo personal (ej. Gmail) para acceder al <strong>Modo Testing (Demo)</strong> de 14 días.</p>
                 </div>
             </section>
 

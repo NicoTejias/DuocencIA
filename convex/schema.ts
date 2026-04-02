@@ -41,6 +41,7 @@ export default defineSchema({
         
         // ID de Clerk para vinculación
         clerkId: v.optional(v.string()), 
+        is_demo: v.optional(v.boolean()),
 
         // Campos personalizados de GestiónDocente
         role: v.optional(v.string()),  // "student" | "teacher" | "admin"
