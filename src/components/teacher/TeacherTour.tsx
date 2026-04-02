@@ -1,121 +1,171 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Joyride, STATUS, EVENTS } from 'react-joyride';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Joyride, STATUS } from 'react-joyride';
 
-const TOUR_KEY = 'questia_demo_tour_seen';
+const TOUR_KEY_PREFIX = 'questia_tour_seen_';
 
-const steps = [
-    {
+function makeStep(content: React.ReactNode) {
+    return {
         target: 'body',
         placement: 'center' as const,
         disableBeacon: true,
-        content: (
-            <div className="text-center space-y-2">
-                <div className="text-4xl mb-3">👋</div>
-                <h2 className="text-lg font-bold text-white">¡Bienvenido a QuestIA!</h2>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Te mostraremos las funciones principales para que puedas sacarle el máximo provecho como docente.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-ramos',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">📚 Mis Ramos</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Crea y gestiona tus cursos. Cada ramo tiene sus propios alumnos, desafíos y ranking.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-material',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">📄 Material</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Sube tus PDFs, Word o PowerPoints. La IA los leerá para generar desafíos automáticamente basados en tu contenido.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-desafios',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">🎯 Desafíos</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Crea quizzes con IA: trivia, verdadero/falso, sopa de letras o memoria. Los alumnos ganan puntos al completarlos.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-ranking',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">🏆 Ranking</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Ve el tablero de puntajes en tiempo real. Fomenta la competencia sana entre compañeros de curso.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-recompensas',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">🎁 Recompensas</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Los alumnos canjean sus puntos por beneficios reales: puntos extra en evaluaciones, extensiones de plazo y más.
-                </p>
-            </div>
-        ),
-    },
-    {
-        target: '.tour-step-estadisticas',
-        placement: 'right' as const,
-        disableBeacon: true,
-        content: (
-            <div className="space-y-1">
-                <h3 className="font-bold text-white">📊 Inicio & Estadísticas</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">
-                    Aquí verás el resumen de retención y actividad de tus alumnos. ¡Ya estás listo para explorar!
-                </p>
-            </div>
-        ),
-    },
-];
+        content,
+    };
+}
 
-export default function TeacherTour() {
+const SECTION_TOURS: Record<string, React.ReactNode[]> = {
+    inicio: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">📊</div>
+            <h3 className="text-base font-bold text-white">Panel de Inicio</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Aquí verás el resumen general de todos tus ramos: retención de alumnos, actividad reciente y métricas clave.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">📈</div>
+            <h3 className="text-base font-bold text-white">Indicadores de Retención</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                El indicador de retención muestra qué tan enganchados están tus alumnos. Mientras más alto, mejor están participando en los desafíos.
+            </p>
+        </div>,
+    ],
+    ramos: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">📚</div>
+            <h3 className="text-base font-bold text-white">Mis Ramos</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Aquí administras todos tus cursos. Cada ramo tiene sus propios alumnos, desafíos, ranking y recompensas independientes.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">➕</div>
+            <h3 className="text-base font-bold text-white">Crear un Ramo</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Usa el botón <strong className="text-accent-light">+ Nuevo Ramo</strong> para crear un curso. Asígnale un nombre y código, y luego agrega a tus alumnos por lista o invitación.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">👥</div>
+            <h3 className="text-base font-bold text-white">Gestión de Alumnos</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Al entrar a un ramo podrás ver la lista de alumnos, su puntaje, historial de quizzes y darles puntos de participación en clases.
+            </p>
+        </div>,
+    ],
+    material: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">📄</div>
+            <h3 className="text-base font-bold text-white">Material de Clases</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Sube tus documentos de clases: PDFs, Word, PowerPoint o Excel. La IA los leerá para generar desafíos automáticamente con el contenido.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">🤖</div>
+            <h3 className="text-base font-bold text-white">Generación con IA</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Una vez subido el material, ve a <strong className="text-accent-light">Desafíos</strong> y selecciona el documento para que la IA cree preguntas basadas en tu propio contenido del ramo.
+            </p>
+        </div>,
+    ],
+    desafios: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">🎯</div>
+            <h3 className="text-base font-bold text-white">Desafíos y Quizzes</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Crea actividades gamificadas para tus alumnos. Tienen 5 tipos de juego: trivia, verdadero/falso, sopa de letras, memoria y emparejamiento.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">✨</div>
+            <h3 className="text-base font-bold text-white">Generación con IA</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Elige <strong className="text-accent-light">Generar con IA</strong> para crear el quiz automáticamente desde tu material de clases. Solo selecciona el ramo, el documento y el tipo de juego.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">⚡</div>
+            <h3 className="text-base font-bold text-white">Puntos y Rachas</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Los alumnos ganan puntos al completar desafíos y acumulan rachas si juegan día a día. Tú defines cuántos puntos vale cada desafío.
+            </p>
+        </div>,
+    ],
+    ranking: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">🏆</div>
+            <h3 className="text-base font-bold text-white">Ranking en Tiempo Real</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Ve el tablero de líderes de cada ramo. Los puntajes se actualizan al instante cuando los alumnos completan desafíos.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">⚡</div>
+            <h3 className="text-base font-bold text-white">Puntos de Participación</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Desde la vista de tu ramo puedes darle puntos extra a cualquier alumno manualmente, por ejemplo para premiar participación en clases.
+            </p>
+        </div>,
+    ],
+    recompensas: [
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">🎁</div>
+            <h3 className="text-base font-bold text-white">Tienda de Recompensas</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Crea recompensas que los alumnos pueden canjear con sus puntos: puntos extra en una evaluación, extensión de un plazo, etc.
+            </p>
+        </div>,
+        <div className="text-center space-y-2">
+            <div className="text-4xl mb-3">📬</div>
+            <h3 className="text-base font-bold text-white">Canjes Pendientes</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                Cuando un alumno canjea una recompensa, te llega una notificación. Aquí verás los canjes pendientes de entrega para gestionarlos uno a uno.
+            </p>
+        </div>,
+    ],
+};
+
+interface TeacherTourProps {
+    activeTab: string;
+    isDemo: boolean;
+}
+
+export default function TeacherTour({ activeTab, isDemo }: TeacherTourProps) {
     const [run, setRun] = useState(false);
+    const [steps, setSteps] = useState<any[]>([]);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        if (!localStorage.getItem(TOUR_KEY)) {
-            setTimeout(() => setRun(true), 1200);
-        }
-    }, []);
+        if (!isDemo) return;
+
+        // Limpiar timer anterior
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setRun(false);
+
+        const key = TOUR_KEY_PREFIX + activeTab;
+        if (localStorage.getItem(key)) return;
+
+        const contents = SECTION_TOURS[activeTab];
+        if (!contents || contents.length === 0) return;
+
+        const sectionSteps = contents.map(makeStep);
+        setSteps(sectionSteps);
+
+        timerRef.current = setTimeout(() => setRun(true), 800);
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, [activeTab, isDemo]);
 
     const handleCallback = useCallback((data: any) => {
-        const { status, type } = data;
-        if (type === EVENTS.TOUR_END || status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+        const { status } = data;
+        if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             setRun(false);
-            localStorage.setItem(TOUR_KEY, 'true');
+            localStorage.setItem(TOUR_KEY_PREFIX + activeTab, 'true');
         }
-    }, []);
+    }, [activeTab]);
 
-    if (!run) return null;
+    if (!run || steps.length === 0) return null;
 
     const JoyrideAny = Joyride as any;
 
@@ -126,16 +176,14 @@ export default function TeacherTour() {
             continuous={true}
             showSkipButton={true}
             showProgress={true}
-            disableScrolling={false}
-            scrollToFirstStep={false}
-            spotlightClicks={false}
+            disableScrolling={true}
             callback={handleCallback}
             locale={{
                 back: 'Atrás',
                 close: 'Cerrar',
-                last: '¡Listo!',
+                last: '¡Entendido!',
                 next: 'Siguiente →',
-                skip: 'Omitir tour',
+                skip: 'Omitir',
             }}
             styles={{
                 options: {
@@ -144,22 +192,18 @@ export default function TeacherTour() {
                     backgroundColor: '#1e293b',
                     textColor: '#f8fafc',
                     arrowColor: '#1e293b',
-                    overlayColor: 'rgba(0,0,0,0.55)',
-                    spotlightShadow: '0 0 0 3px #8b5cf6',
+                    overlayColor: 'rgba(0,0,0,0.6)',
                 },
                 tooltip: {
                     borderRadius: '16px',
-                    padding: '20px',
-                    maxWidth: '300px',
-                },
-                tooltipTitle: {
-                    fontSize: '16px',
-                    fontWeight: 700,
+                    padding: '24px',
+                    maxWidth: '320px',
+                    border: '1px solid rgba(139,92,246,0.2)',
                 },
                 buttonNext: {
                     backgroundColor: '#8b5cf6',
                     borderRadius: '10px',
-                    padding: '8px 16px',
+                    padding: '8px 18px',
                     fontSize: '13px',
                     fontWeight: 600,
                 },
