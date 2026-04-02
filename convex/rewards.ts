@@ -171,49 +171,51 @@ export const redeemReward = mutation({
 export const getPendingRedemptions = query({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
-        const user = await requireTeacher(ctx);
-        const course = await ctx.db.get(args.course_id);
-        if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
-            throw new Error("No autorizado");
+        try {
+            const user = await requireTeacher(ctx);
+            const course = await ctx.db.get(args.course_id);
+            if (!course || (course.teacher_id !== user._id && user.role !== "admin"))
+                return [];
 
-        // Obtener todas las recompensas del ramo
-        const rewards = await ctx.db
-            .query("rewards")
-            .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
-            .collect();
-        const rewardMap = new Map(rewards.map(r => [r._id, r]));
+            // Obtener todas las recompensas del ramo
+            const rewards = await ctx.db
+                .query("rewards")
+                .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
+                .collect();
+            if (rewards.length === 0) return [];
 
-        // Obtener canjes pendientes de esas recompensas
-        const redemptionsPromises = rewards.map(reward => 
-            ctx.db
-                .query("redemptions")
-                .withIndex("by_reward", (q) => q.eq("reward_id", reward._id))
-                .filter((q) => q.eq(q.field("status"), "pending"))
-                .collect()
-        );
-        const redemptionsNested = await Promise.all(redemptionsPromises);
-        const allRedemptions = redemptionsNested.flat();
+            const rewardMap = new Map(rewards.map(r => [r._id, r]));
 
-        // Enriquecer con datos del alumno y la recompensa
-        return await Promise.all(allRedemptions.map(async (r) => {
-            const student = await ctx.db.get(r.user_id);
-            const reward = rewardMap.get(r.reward_id);
-            
-            // Forzar tipado para evitar el error de unión de tablas en db.get()
-            const sDoc = student as any;
-            const sName = sDoc?.name || "Alumno";
-            const sEmail = sDoc?.email || "";
-            
-            return {
-                _id: r._id,
-                timestamp: r.timestamp,
-                status: r.status,
-                student_name: sName,
-                student_email: sEmail,
-                reward_name: reward?.name || "Recompensa",
-                reward_cost: reward?.cost || 0,
-            };
-        }));
+            // Obtener canjes pendientes de esas recompensas
+            const redemptionsNested = await Promise.all(
+                rewards.map(reward =>
+                    ctx.db
+                        .query("redemptions")
+                        .withIndex("by_reward", (q) => q.eq("reward_id", reward._id))
+                        .filter((q) => q.eq(q.field("status"), "pending"))
+                        .collect()
+                )
+            );
+            const allRedemptions = redemptionsNested.flat();
+            if (allRedemptions.length === 0) return [];
+
+            // Enriquecer con datos del alumno y la recompensa
+            return await Promise.all(allRedemptions.map(async (r) => {
+                const student = await ctx.db.get(r.user_id) as any;
+                const reward = rewardMap.get(r.reward_id);
+                return {
+                    _id: r._id,
+                    timestamp: r.timestamp,
+                    status: r.status,
+                    student_name: student?.name || "Alumno",
+                    student_email: student?.email || "",
+                    reward_name: reward?.name || "Recompensa",
+                    reward_cost: reward?.cost || 0,
+                };
+            }));
+        } catch {
+            return [];
+        }
     },
 });
 
