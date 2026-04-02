@@ -44,7 +44,10 @@ export default function StudentDashboard() {
     // Lógica de auto-enrolamiento y perfil
     const autoEnroll = useMutation(api.users.autoEnroll)
     useEffect(() => {
-        if (user && user.role === 'student') {
+        // Solo pedimos RUT/Perfil completo a alumnos reales (que no sean demo)
+        const isRealStudent = user && user.role === 'student' && !user.is_demo;
+        
+        if (isRealStudent) {
             if (!user.student_id) {
                 setShowCompleteProfile(true)
             } else {
