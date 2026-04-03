@@ -10,13 +10,6 @@ export default function TrueFalse({ currentQ, selectedValue, onAnswer }: Props) 
             <h3 className="text-lg md:text-2xl font-black text-white mb-6 md:mb-8 leading-relaxed">
                 {currentQ.statement || currentQ.question}
             </h3>
-            {currentQ.falsify && (
-                <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 mb-6">
-                    <p className="text-amber-300/80 text-xs font-medium">
-                        💡 Si es falso, la respuesta correcta sería: <strong className="text-amber-200">{currentQ.falsify}</strong>
-                    </p>
-                </div>
-            )}
             <div className="grid grid-cols-2 gap-4 md:gap-6">
                 <button
                     onClick={() => onAnswer(true)}

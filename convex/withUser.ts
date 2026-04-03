@@ -45,7 +45,7 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx) {
 
 export async function requireTeacher(ctx: QueryCtx | MutationCtx) {
     const user = await requireAuth(ctx);
-    if (user.role !== "teacher" && user.role !== "admin") {
+    if (user.role !== "teacher" && user.role !== "admin" && user.role !== "demo_teacher") {
         throw new Error("No tienes permisos de docente");
     }
     return user;
