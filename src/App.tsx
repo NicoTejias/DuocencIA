@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useConvexAuth, useQuery, useMutation } from 'convex/react'
 import { api } from "../convex/_generated/api"
@@ -30,6 +30,7 @@ function App() {
   const isSimulating = localStorage.getItem('questia_simulate_student') === 'true'
   const setDemoMode = useMutation(api.users.setDemoMode)
   const setupDemoData = useMutation(api.demo.setupDemoData)
+  const demoDataInitialized = useRef(false)
 
   // Maneja el intent de modo demo al autenticarse
   useEffect(() => {
@@ -74,6 +75,15 @@ function App() {
         window.location.href = demoIntent === 'teacher' ? '/docente' : '/alumno'
       }).catch(() => {})
   }, [isAuthenticated, user, setDemoMode, setupDemoData]);
+
+  // Para usuarios demo ya existentes: crear datos de prueba si aún no los tienen
+  useEffect(() => {
+    if (!isAuthenticated || !user) return
+    if (demoDataInitialized.current) return
+    if (!user.is_demo && user.role !== 'demo_teacher') return
+    demoDataInitialized.current = true
+    setupDemoData().catch(() => {})
+  }, [isAuthenticated, user, setupDemoData]);
 
   return (
     <>

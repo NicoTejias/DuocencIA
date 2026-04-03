@@ -134,6 +134,11 @@ export default function TeacherTour({ activeTab, isDemo }: TeacherTourProps) {
     const [run, setRun] = useState(false);
     const [steps, setSteps] = useState<any[]>([]);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const activeTabRef = useRef(activeTab);
+
+    useEffect(() => {
+        activeTabRef.current = activeTab;
+    }, [activeTab]);
 
     useEffect(() => {
         if (!isDemo) return;
@@ -161,9 +166,9 @@ export default function TeacherTour({ activeTab, isDemo }: TeacherTourProps) {
         const { status } = data;
         if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             setRun(false);
-            localStorage.setItem(TOUR_KEY_PREFIX + activeTab, 'true');
+            localStorage.setItem(TOUR_KEY_PREFIX + activeTabRef.current, 'true');
         }
-    }, [activeTab]);
+    }, []);
 
     if (!run || steps.length === 0) return null;
 
