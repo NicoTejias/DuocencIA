@@ -58,6 +58,7 @@ export const listAdmins = query({
 export const isAdminEmail = query({
     args: { email: v.string() },
     handler: async (ctx, args) => {
+        await requireAuth(ctx);
         const admin = await ctx.db
             .query("admins")
             .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))

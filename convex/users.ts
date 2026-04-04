@@ -1,7 +1,7 @@
 import { internalQuery, mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeRut } from "./rutUtils";
-import { requireAuth } from "./withUser";
+import { requireAuth, requireAdmin } from "./withUser";
 import { checkRateLimit } from "./rateLimit";
 
 export const getUserById = internalQuery({
@@ -120,6 +120,11 @@ export const getProfile = query({
 export const getProfileByEmail = query({
     args: { email: v.string() },
     handler: async (ctx, args) => {
+        const caller = await requireAuth(ctx);
+        // Solo admin puede buscar perfiles por email de terceros
+        if (caller.role !== "admin" && caller.email?.toLowerCase() !== args.email.toLowerCase()) {
+            return null;
+        }
         return await ctx.db
             .query("users")
             .withIndex("email", (q) => q.eq("email", args.email))
@@ -197,6 +202,16 @@ export const resetBartleTest = mutation({
     handler: async (ctx) => {
         const user = await requireAuth(ctx);
         await ctx.db.patch(user._id, { bartle_profile: undefined });
+        return { success: true };
+    },
+});
+
+// Registra la aceptación de Términos y Política de Privacidad
+export const acceptTerms = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const user = await requireAuth(ctx);
+        await ctx.db.patch(user._id, { terms_accepted_at: Date.now() });
         return { success: true };
     },
 });
@@ -419,6 +434,7 @@ export const verifyAccount = mutation({
 export const fixAllStudentIds = mutation({
     args: {},
     handler: async (ctx) => {
+        await requireAdmin(ctx);
         // Obtenemos todos los usuarios y whitelists
         const users = await ctx.db.query("users").collect();
         const whitelists = await ctx.db.query("whitelists").collect();
@@ -481,6 +497,7 @@ export const fixAllStudentIds = mutation({
 export const fixCourseEnrollments = mutation({
     args: { course_id: v.id("courses") },
     handler: async (ctx, args) => {
+        await requireAdmin(ctx);
         // Obtenemos la whitelist de ese ramo y todos los usuarios
         const whitelist = await ctx.db
             .query("whitelists")

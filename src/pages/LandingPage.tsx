@@ -211,9 +211,9 @@ export default function LandingPage() {
                         <span className="text-sm text-slate-500 font-bold italic tracking-tighter">Quest<span className="text-primary">IA</span> © 2026.</span>
                     </div>
                     <div className="flex gap-6 text-sm text-slate-500">
-                        <a href="#" className="hover:text-white transition-colors">Privacidad</a>
-                        <a href="#" className="hover:text-white transition-colors">Términos</a>
-                        <a href="#" className="hover:text-white transition-colors">Contacto</a>
+                        <Link to="/privacy" className="hover:text-white transition-colors">Privacidad</Link>
+                        <Link to="/terms" className="hover:text-white transition-colors">Términos</Link>
+                        <a href="mailto:contacto@questia.cl" className="hover:text-white transition-colors">Contacto</a>
                     </div>
                 </div>
             </footer>

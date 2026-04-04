@@ -319,7 +319,12 @@ export const getCourseStudents = query({
     },
     handler: async (ctx, args) => {
         try {
-            await requireAuth(ctx);
+            const caller = await requireAuth(ctx);
+            // Solo el docente del ramo o un admin pueden ver la lista de alumnos
+            const course = await ctx.db.get(args.course_id);
+            if (course && course.teacher_id !== caller._id && caller.role !== "admin") {
+                return { page: [], isDone: true, continueCursor: "" };
+            }
 
             // 1. Paginar sobre la Whitelist (nuestra fuente de verdad de quién debería estar en el curso)
             const whitelistPaged = await ctx.db

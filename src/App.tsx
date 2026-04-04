@@ -16,12 +16,15 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import PublicOnlyRoute from './components/auth/PublicOnlyRoute'
 import DashboardRedirect from './components/auth/DashboardRedirect'
 import ErrorBoundary from './components/ErrorBoundary'
+import ConsentModal from './components/ConsentModal'
 
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'))
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'))
 const BelbinTest = lazy(() => import('./pages/BelbinTest'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const TermsPage = lazy(() => import('./pages/TermsPage'))
 
 function App() {
   const { isAuthenticated } = useConvexAuth()
@@ -85,8 +88,12 @@ function App() {
     setupDemoData().catch(() => {})
   }, [isAuthenticated, user, setupDemoData]);
 
+  // Mostrar consentimiento si el usuario está autenticado y no ha aceptado TyC
+  const needsConsent = isAuthenticated && user && !user.terms_accepted_at
+
   return (
     <>
+      {needsConsent && <ConsentModal />}
       <PushNotificationManager />
       <UpdateNotification />
       <FeedbackButton />
@@ -158,6 +165,8 @@ function App() {
 
           <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/auth-error" element={<AuthErrorPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
