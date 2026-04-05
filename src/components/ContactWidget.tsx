@@ -22,7 +22,7 @@ export default function ContactWidget() {
     ];
 
     return (
-        <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 group">
+        <div className="fixed bottom-28 right-6 z-[100] flex flex-col items-end gap-3 group">
             {/* Menú de opciones */}
             <div className={`flex flex-col gap-2 transition-all duration-300 origin-bottom ${
                 isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'
