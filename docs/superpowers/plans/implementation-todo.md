@@ -7,9 +7,9 @@
 - [x] **Tarea 2: Backend - Queries para Canjes Centralizados**
     - [x] Crear query `getTeacherRedemptions` en `convex/rewards.ts`
     - [x] Asegurar acceso via `requireTeacher`
-- [ ] **Tarea 3: Frontend - Panel de Gestión de Canjes**
-    - [ ] Crear `src/components/teacher/GestionCanjesPanel.tsx`
-    - [ ] Implementar tabla con filtros y acciones
+- [x] **Tarea 3: Frontend - Panel de Gestión de Canjes**
+    - [x] Crear `src/components/teacher/GestionCanjesPanel.tsx`
+    - [x] Implementar tabla con filtros y acciones
 - [ ] **Tarea 4: Frontend - Integración en Dashboard**
     - [ ] Añadir pestaña "Canjes" en `src/pages/TeacherDashboard.tsx`
     - [ ] Vincular renderizado del panel

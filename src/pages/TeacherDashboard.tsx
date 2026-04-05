@@ -11,6 +11,7 @@ import CrearMisionPanel from '../components/teacher/CrearMisionPanel'
 import CrearRecompensaPanel from '../components/teacher/CrearRecompensaPanel'
 import MaterialPanel from '../components/teacher/MaterialPanel'
 import RankingDocentePanel from '../components/teacher/RankingDocentePanel'
+import GestionCanjesPanel from '../components/teacher/GestionCanjesPanel'
 import NotificationBell from '../components/NotificationBell'
 import BetaBanner from '../components/BetaBanner'
 import AdminPanel from '../components/teacher/AdminPanel'
@@ -75,6 +76,7 @@ export default function TeacherDashboard() {
         { id: 'desafios', label: 'Desafíos', icon: <Target className="w-5 h-5" />, tourClass: 'tour-step-desafios' },
         { id: 'ranking', label: 'Ranking', icon: <Trophy className="w-5 h-5" />, tourClass: 'tour-step-ranking' },
         { id: 'recompensas', label: 'Recompensas', icon: <Gift className="w-5 h-5" />, tourClass: 'tour-step-recompensas' },
+        { id: 'canjes', label: 'Gestión Canjes', icon: <ArrowRightLeft className="w-5 h-5" /> },
         { id: 'perfil', label: 'Mi Perfil', icon: <User className="w-5 h-5" /> },
         ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Panel Admin', icon: <ShieldCheck className="w-5 h-5 text-red-500" /> }] : []),
     ]
@@ -209,6 +211,7 @@ export default function TeacherDashboard() {
                     {activeTab === 'desafios' && <CrearMisionPanel courses={courses || []} />}
                     {activeTab === 'recompensas' && <CrearRecompensaPanel courses={courses || []} />}
                     {activeTab === 'ranking' && <RankingDocentePanel />}
+                    {activeTab === 'canjes' && <GestionCanjesPanel />}
                     {activeTab === 'perfil' && <PerfilPanel user={user} coursesCount={coursesCount} />}
                     {activeTab === 'admin' && user?.role === 'admin' && <AdminPanel />}
                 </div>
