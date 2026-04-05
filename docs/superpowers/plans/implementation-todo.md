@@ -1,0 +1,21 @@
+# QuestIA: Gemini 3 & Redemptions Implementation
+
+- [ ] **Tarea 1: Actualizar Modelo AI y Reglas de Idioma**
+    - [ ] Actualizar `GEMINI_MODELS` en `convex/geminiClient.ts`
+    - [ ] Actualizar valor por defecto de `getGeminiModel`
+    - [ ] Crear `GEMINI.md` en la raíz
+- [ ] **Tarea 2: Backend - Queries para Canjes Centralizados**
+    - [ ] Crear query `getTeacherRedemptions` en `convex/redemptions.ts`
+    - [ ] Asegurar acceso via `requireTeacher`
+- [ ] **Tarea 3: Frontend - Panel de Gestión de Canjes**
+    - [ ] Crear `src/components/teacher/GestionCanjesPanel.tsx`
+    - [ ] Implementar tabla con filtros y acciones
+- [ ] **Tarea 4: Frontend - Integración en Dashboard**
+    - [ ] Añadir pestaña "Canjes" en `src/pages/TeacherDashboard.tsx`
+    - [ ] Vincular renderizado del panel
+- [ ] **Tarea 5: Frontend - Notificaciones Interactivas**
+    - [ ] Actualizar `src/components/NotificationBell.tsx` con botones de acción
+    - [ ] Manejar clics para redirección interactiva
+- [ ] **Tarea 6: Verificación Final**
+    - [ ] Probar generación de quizzes
+    - [ ] Probar flujo de canjes
