@@ -9,7 +9,7 @@
  * npx convex env set OPENAI_API_KEY sk-...
  */
 
-const GEMINI_MODELS = ["gemini-2.5-flash"];
+const GEMINI_MODELS = ["gemini-3-flash-preview", "gemini-2.0-flash"];
 
 function isRateLimitError(err: unknown): boolean {
     const msg = err instanceof Error ? err.message : String(err);
@@ -99,7 +99,7 @@ export async function generateWithFallback(prompt: string): Promise<string> {
 }
 
 /** @deprecated Usa generateWithFallback(prompt) directamente */
-export async function getGeminiModel(modelName = "gemini-2.0-flash") {
+export async function getGeminiModel(modelName = "gemini-3-flash-preview") {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("GEMINI_API_KEY no configurada");
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
