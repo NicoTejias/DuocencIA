@@ -1,7 +1,7 @@
 # Diseño: Gestión Centralizada de Canjes y Mejora de Notificaciones
 
 **Fecha:** 2026-04-05
-**Estado:** Propuesto
+**Estado:** Implementado
 **Contexto:** Actualmente, los profesores deben navegar curso por curso para ver y procesar canjes de recompensas. Además, las notificaciones de canjes son pasivas (no permiten acción directa ni navegación).
 
 ## Objetivos
@@ -10,8 +10,9 @@
 3. Asegurar que el clic en la notificación lleve al usuario al lugar correcto.
 
 ## Arquitectura de Datos (Convex)
-*   **Queries**: Crear `redemptions:getTeacherPendingRedemptions` que filtre canjes por el `teacher_id` del usuario actual a través de sus cursos.
-*   **Mutations**: Asegurar que `redemptions:markAsCompleted` sea accesible y eficiente.
+*   **Queries**: Creada `rewards:getTeacherRedemptions` que agrega los canjes de todos los ramos del docente.
+*   **Mutations**: `rewards:markRedemptionDelivered` permite marcar el canje como completado.
+*   **Notificaciones**: `related_id` ahora contiene el `redemptionId` para permitir acciones rápidas.
 
 ## Cambios en el Frontend (React/Vite)
 

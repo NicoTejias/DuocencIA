@@ -1,7 +1,7 @@
 # Diseño: Migración a Gemini 3 Flash Preview para Generación de Contenido AI
 
 **Fecha:** 2026-04-05
-**Estado:** Propuesto
+**Estado:** Implementado
 **Contexto:** QuestIA utiliza la API de Google Gemini para generar quizzes, feedback académico y evaluar entregas. El usuario ha solicitado migrar al modelo `gemini-3-flash-preview` para aprovechar sus mejoras en rendimiento y precisión, manteniendo los modelos actuales como respaldo (fallback).
 
 ## Objetivos
