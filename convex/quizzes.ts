@@ -548,6 +548,8 @@ export const getQuizzesByCourse = query({
 
         try {
             const user = await requireAuth(ctx);
+            const isTeacher = user.role === "teacher" || user.role === "admin";
+
             return await Promise.all(quizzes.map(async (quiz) => {
                 const userSubmissions = await ctx.db
                     .query("quiz_submissions")
@@ -562,8 +564,15 @@ export const getQuizzesByCourse = query({
                     ? Math.max(...userSubmissions.map(s => s.score))
                     : null;
 
+                // SANITIZACIÓN: Eliminar respuestas para alumnos
+                const questions = isTeacher ? quiz.questions : quiz.questions.map((q: any) => {
+                    const { correct, correctOrder, answer, falsify, explanation, ...rest } = q;
+                    return rest;
+                });
+
                 return {
                     ...quiz,
+                    questions, // Preguntas sin respuestas para el alumno
                     completed: attempts_count > 0,
                     attempts_count,
                     max_attempts,
@@ -575,7 +584,12 @@ export const getQuizzesByCourse = query({
                 };
             }));
         } catch {
-            return quizzes.map(q => ({ ...q, can_take: false, source_file_name: q.document_id ? (docMap.get(q.document_id) || null) : null, game_type_label: GAME_TYPE_LABELS[q.quiz_type || "multiple_choice"] || q.quiz_type }));
+            return quizzes.map(q => ({ 
+                ...q, 
+                can_take: false, 
+                source_file_name: q.document_id ? (docMap.get(q.document_id) || null) : null, 
+                game_type_label: GAME_TYPE_LABELS[q.quiz_type || "multiple_choice"] || q.quiz_type 
+            }));
         }
     },
 });

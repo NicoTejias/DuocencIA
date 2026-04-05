@@ -16,6 +16,7 @@ import NotificationBell from '../components/NotificationBell'
 import BetaBanner from '../components/BetaBanner'
 import AdminPanel from '../components/teacher/AdminPanel'
 import TeacherTour from '../components/teacher/TeacherTour'
+import ContactWidget from '../components/ContactWidget'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 
 function getGreeting(): string {
@@ -546,7 +547,7 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                     Como docente, tienes acceso a herramientas avanzadas para la creación de desafíos, gestión de recompensas y análisis de desempeño de tus alumnos mediante IA.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href="mailto:soporte@quest.edu" className="bg-surface border border-white/10 rounded-xl p-4 text-left hover:border-white/20 transition-all group">
+                    <a href="mailto:nicolas.tejias@gmail.com" className="bg-surface border border-white/10 rounded-xl p-4 text-left hover:border-white/20 transition-all group">
                         <h4 className="text-white font-bold text-sm flex items-center gap-2 mb-1">
                             <ArrowRightLeft className="w-4 h-4 text-slate-400 group-hover:text-accent-light transition-colors" />
                             Gestión de Traspasos
@@ -555,6 +556,7 @@ function PerfilPanel({ user, coursesCount }: { user: any, coursesCount: number }
                     </a>
                 </div>
             </div>
+            <ContactWidget />
         </div>
     )
 }

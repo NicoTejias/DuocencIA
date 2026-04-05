@@ -138,10 +138,10 @@ export default function DashboardHome({
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] text-slate-500 font-black uppercase mb-1">RANKING</span>
+                                            <span className="text-[10px] text-slate-500 font-black uppercase mb-1">POSICIÓN RANKING</span>
                                             <div className="flex items-center gap-2">
                                                 <Trophy className="w-4 h-4 text-gold" />
-                                                <span className="text-lg font-black text-white">{(course.ranking_points || course.total_points || 0).toLocaleString()}</span>
+                                                <span className="text-lg font-black text-white">{course.rank || 1}° LUGAR</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col border-l border-white/5 pl-4">

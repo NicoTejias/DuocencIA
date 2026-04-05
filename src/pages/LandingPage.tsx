@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api"
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import FAQSection from '../components/FAQSection'
+import ContactWidget from '../components/ContactWidget'
 
 const features = [
     {
@@ -213,10 +214,11 @@ export default function LandingPage() {
                     <div className="flex gap-6 text-sm text-slate-500">
                         <Link to="/privacy" className="hover:text-white transition-colors">Privacidad</Link>
                         <Link to="/terms" className="hover:text-white transition-colors">Términos</Link>
-                        <a href="mailto:contacto@questia.cl" className="hover:text-white transition-colors">Contacto</a>
+                        <a href="mailto:nicolas.tejias@gmail.com" className="hover:text-white transition-colors">Contacto</a>
                     </div>
                 </div>
             </footer>
+            <ContactWidget />
         </div>
-    )
+    );
 }

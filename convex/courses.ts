@@ -254,7 +254,7 @@ export const fixAllWhitelists = mutation({
     }
 });
 
-// Obtener ramos de un alumno con puntos
+// Obtener ramos de un alumno con puntos y ranking
 export const getMyCourses = query({
     args: {},
     handler: async (ctx) => {
@@ -271,6 +271,8 @@ export const getMyCourses = query({
                 return teaching.map(c => ({ 
                     ...c, 
                     total_points: 9999, // Puntos infinitos para simulación
+                    ranking_points: 9999,
+                    rank: 1,
                     is_simulation: true 
                 }));
             }
@@ -284,7 +286,22 @@ export const getMyCourses = query({
             const courses = [];
             for (const en of enrollments) {
                 const course = await ctx.db.get(en.course_id);
-                if (course) courses.push({ ...course, total_points: en.total_points });
+                if (course) {
+                    // CALCULAR RANK DEL ALUMNO EN ESTE RAMO
+                    const betterStudents = await ctx.db
+                        .query("enrollments")
+                        .withIndex("by_course", (q) => q.eq("course_id", en.course_id))
+                        .filter((q) => q.gt(q.field("ranking_points"), en.ranking_points ?? 0))
+                        .collect();
+                    
+                    courses.push({ 
+                        ...course, 
+                        total_points: en.total_points,
+                        spendable_points: en.spendable_points,
+                        ranking_points: en.ranking_points,
+                        rank: betterStudents.length + 1
+                    });
+                }
             }
             return courses;
         } catch {
