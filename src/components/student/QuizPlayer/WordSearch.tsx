@@ -9,13 +9,12 @@ interface Props {
     gameTimeLeft: number
     gameScore: number
     onCellClick: (r: number, c: number) => void
-    onWordSelect: (word: string) => void
     onSkip: () => void
 }
 
 export default function WordSearch({
     currentQ, wordGrid, foundWords, wsFirstCell, wsFoundCells,
-    gameTimeLeft, gameScore, onCellClick, onWordSelect, onSkip,
+    gameTimeLeft, gameScore, onCellClick, onSkip,
 }: Props) {
     const words = currentQ.words || []
 
@@ -47,17 +46,16 @@ export default function WordSearch({
 
             <div className="flex flex-wrap gap-2 justify-center mb-4">
                 {words.map((word: string, i: number) => (
-                    <button
+                    <span
                         key={i}
-                        onClick={() => onWordSelect(word)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border select-none ${
                             foundWords.includes(word)
                                 ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 line-through'
-                                : 'bg-cyan-500/5 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10'
+                                : 'bg-cyan-500/5 border-cyan-500/20 text-cyan-400'
                         }`}
                     >
                         {word}
-                    </button>
+                    </span>
                 ))}
             </div>
 

@@ -63,6 +63,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     const [retryCount, setRetryCount] = useState(0)
     const [showHonorCode, setShowHonorCode] = useState(true)
     const [honorAccepted, setHonorAccepted] = useState(false)
+    const [showIntro, setShowIntro] = useState(true)
 
     const quizType = quiz.quiz_type || "multiple_choice"
     const questions = quiz.questions || []
@@ -221,6 +222,8 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             </div>
         )
     }
+
+    if (showIntro && !loadingAttempt && attemptId) return renderIntro()
 
     if (questions.length === 0) {
         return (
@@ -441,6 +444,136 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         }
     }
 
+    // ── Instructions per game type ───────────────────────────────────────────
+
+    const GAME_INTROS: Record<string, { icon: string; title: string; steps: string[] }> = {
+        multiple_choice: {
+            icon: '🧠', title: 'Selección Múltiple',
+            steps: [
+                'Lee cada pregunta con atención.',
+                'Toca la alternativa que creas correcta.',
+                'La pregunta avanza automáticamente al seleccionar.',
+                '¡No hay vuelta atrás, elige bien!',
+            ],
+        },
+        trivia: {
+            icon: '⚡', title: 'Trivia',
+            steps: [
+                'Responde antes de que el tiempo se acabe.',
+                'Toca la alternativa correcta rápidamente.',
+                'Cada pregunta tiene su propio contador.',
+                'Si el tiempo se acaba pasa a la siguiente.',
+            ],
+        },
+        quiz_sprint: {
+            icon: '🚀', title: 'Quiz Sprint',
+            steps: [
+                'Responde lo más rápido posible.',
+                'Toca la alternativa correcta.',
+                'La velocidad suma puntos extra.',
+                '¡A toda máquina!',
+            ],
+        },
+        true_false: {
+            icon: '✅', title: 'Verdadero o Falso',
+            steps: [
+                'Lee la afirmación presentada.',
+                'Decide si es Verdadera o Falsa.',
+                'Toca el botón correspondiente.',
+                '¡Solo hay dos opciones!',
+            ],
+        },
+        match: {
+            icon: '🔗', title: 'Emparejamiento',
+            steps: [
+                'Conecta cada término con su definición.',
+                'Toca un elemento de la columna izquierda.',
+                'Luego toca su par en la columna derecha.',
+                '¡Encuentra todos los pares para completar!',
+            ],
+        },
+        word_search: {
+            icon: '🔍', title: 'Sopa de Letras',
+            steps: [
+                'Busca las palabras listadas arriba en la cuadrícula.',
+                'Toca la PRIMERA letra de la palabra.',
+                'Luego toca la ÚLTIMA letra de la misma palabra.',
+                'Las palabras pueden estar en cualquier dirección.',
+            ],
+        },
+        memory: {
+            icon: '🃏', title: 'Juego de Memoria',
+            steps: [
+                'Voltea dos tarjetas por turno.',
+                'Si hacen pareja (término + definición) se quedan visibles.',
+                'Si no coinciden, se voltean de nuevo.',
+                '¡Encuentra todos los pares para ganar!',
+            ],
+        },
+        fill_blank: {
+            icon: '✏️', title: 'Completar el Espacio',
+            steps: [
+                'Lee la oración con un espacio en blanco.',
+                'Selecciona la palabra o frase que lo completa.',
+                'Solo hay una respuesta correcta por pregunta.',
+            ],
+        },
+        order_steps: {
+            icon: '📋', title: 'Ordenar Pasos',
+            steps: [
+                'Los pasos están desordenados.',
+                'Usa las flechas ↑ ↓ para moverlos al lugar correcto.',
+                'Cuando el orden sea correcto, toca Confirmar.',
+            ],
+        },
+    }
+
+    const renderIntro = () => {
+        const intro = GAME_INTROS[quizType] || GAME_INTROS.multiple_choice
+        const colorClass = GAME_TYPE_COLORS[quizType] || GAME_TYPE_COLORS.multiple_choice
+        return (
+            <div className="fixed inset-0 z-50 bg-surface md:bg-black/80 md:backdrop-blur-md flex items-stretch md:items-center justify-center md:p-4">
+                <div className="bg-surface-light md:border md:border-white/10 md:rounded-[2.5rem] md:max-w-md w-full flex flex-col relative md:shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="flex-1 px-8 py-10 flex flex-col items-center text-center">
+                        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mb-6 bg-gradient-to-br ${colorClass} shadow-xl`}>
+                            {intro.icon}
+                        </div>
+
+                        <span className={`px-3 py-1 bg-gradient-to-r ${colorClass} text-[10px] font-black rounded-full uppercase tracking-widest mb-3`}>
+                            {quiz.title || intro.title}
+                        </span>
+
+                        <h2 className="text-2xl font-black text-white mb-1">{intro.title}</h2>
+                        <p className="text-slate-500 text-xs mb-8">{questions.length} {questions.length === 1 ? 'pregunta' : 'preguntas'}</p>
+
+                        <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-left space-y-3 mb-8">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Cómo jugar</p>
+                            {intro.steps.map((step, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <span className={`w-5 h-5 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5`}>
+                                        {i + 1}
+                                    </span>
+                                    <p className="text-slate-300 text-sm leading-relaxed">{step}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => setShowIntro(false)}
+                            className={`w-full bg-gradient-to-r ${colorClass} text-white font-black py-4 rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all shadow-xl text-sm uppercase tracking-widest`}
+                        >
+                            ¡Empezar! {intro.icon}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     // ── Render question by type ──────────────────────────────────────────────
 
     const renderQuestion = () => {
@@ -459,7 +592,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
             case 'order_steps':
                 return <OrderSteps currentQ={currentQ} stepOrder={stepOrder} onMove={handleStepMove} onConfirm={handleStepConfirm} />
             case 'word_search':
-                return <WordSearch currentQ={currentQ} wordGrid={wordGrid} foundWords={foundWords} wsFirstCell={wsFirstCell} wsFoundCells={wsFoundCells} gameTimeLeft={gameTimeLeft} gameScore={gameScore} onCellClick={handleWsCellClick} onWordSelect={handleWordSearchSelect} onSkip={handleWordSearchSkip} />
+                return <WordSearch currentQ={currentQ} wordGrid={wordGrid} foundWords={foundWords} wsFirstCell={wsFirstCell} wsFoundCells={wsFoundCells} gameTimeLeft={gameTimeLeft} gameScore={gameScore} onCellClick={handleWsCellClick} onSkip={handleWordSearchSkip} />
             case 'memory':
                 return <Memory currentQ={currentQ} shuffledCards={shuffledCards} flippedCards={flippedCards} memoryMatched={memoryMatched} gameTimeLeft={gameTimeLeft} gameScore={gameScore} onFlip={handleMemoryFlip} />
             default:

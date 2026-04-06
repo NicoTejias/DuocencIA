@@ -65,7 +65,10 @@ export default function LoginPage() {
                                 dividerText: "text-slate-500",
                                 dividerLine: "bg-white/5",
                                 identityPreviewText: "text-white",
-                                identityPreviewEditButtonIcon: "text-primary-light"
+                                identityPreviewEditButtonIcon: "text-primary-light",
+                                organizationSwitcherTrigger: "hidden",
+                                organizationPreview: "hidden",
+                                organizationSwitcherMain: "hidden"
                             }
                         }}
                         signUpUrl="/registro"
