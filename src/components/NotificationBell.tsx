@@ -98,7 +98,7 @@ export default function NotificationBell({ onTabChange }: { onTabChange?: (tab: 
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-surface-dark border border-white/10 rounded-2xl shadow-xl overflow-hidden z-50">
+                <div className="absolute right-0 mt-2 w-80 bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden z-50">
                     <div className="p-4 border-b border-white/5 flex items-center justify-between bg-surface-light">
                         <div className="flex items-center gap-2">
                             <h3 className="text-white font-bold text-sm">Notificaciones</h3>
@@ -132,7 +132,7 @@ export default function NotificationBell({ onTabChange }: { onTabChange?: (tab: 
                                 {notifications.map(n => (
                                     <div
                                         key={n._id}
-                                        className={`p-4 hover:bg-white/5 transition-colors cursor-pointer ${!n.read ? 'bg-accent/5' : ''}`}
+                                        className={`p-4 hover:bg-white/5 transition-colors cursor-pointer ${!n.read ? 'bg-accent/10' : 'bg-[#0f172a]'}`}
                                         onClick={() => handleNotificationClick(n)}
                                     >
                                         <div className="flex gap-3">

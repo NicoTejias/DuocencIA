@@ -112,7 +112,7 @@ export default function LandingPage() {
                     <h1 className="text-4xl md:text-7xl font-black text-white leading-tight mb-8">
                         Aumenta la retención y el{' '}
                         <br className="hidden sm:block" />
-                        <span className="bg-gradient-to-r from-primary via-primary-light to-white bg-clip-text text-transparent italic">
+                        <span className="text-primary italic">
                             compromiso con tus ramos.
                         </span>
                     </h1>
@@ -191,7 +191,7 @@ export default function LandingPage() {
                         </div>
                         <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
                             Cotiza con nosotros para <br className="hidden md:block" />
-                            <span className="bg-gradient-to-r from-primary-light via-white to-primary-light bg-clip-text text-transparent italic">
+                            <span className="text-primary italic">
                                 transformar tu sala de clase
                             </span>
                         </h2>
