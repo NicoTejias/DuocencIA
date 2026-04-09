@@ -638,7 +638,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
                                         </div>
                                         <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                                             <span className="block text-[8px] font-black uppercase text-slate-500 tracking-widest mb-1">
-                                                {quizResult?.is_simulation ? 'PUNTOS ESTIMADOS' : 'PUNTOS GANADOS'}
+                                                {quizResult?.is_simulation ? 'PUNTOS ESTIMADOS' : quizResult?.is_practice_mode ? 'MODO PRÁCTICA' : 'PUNTOS GANADOS'}
                                             </span>
                                             <div className="flex items-center justify-center gap-1">
                                                 <Coins className="w-4 h-4 md:w-5 md:h-5 text-gold" />

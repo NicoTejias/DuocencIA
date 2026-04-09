@@ -500,11 +500,17 @@ export const saveQuiz = mutation({
             max_attempts: args.max_attempts ?? 1,
         });
 
-        // Notificar a los alumnos inscritos
+        const now = Date.now();
+        
+        // Actualizar last_quizzes_update en todos los enrollments del curso
         const enrollments = await ctx.db
             .query("enrollments")
             .withIndex("by_course", (q) => q.eq("course_id", args.course_id))
             .collect();
+        
+        for (const en of enrollments) {
+            await ctx.db.patch(en._id, { last_quizzes_update: now });
+        }
         
         for (const en of enrollments) {
             const student = await ctx.db.get(en.user_id);
@@ -550,6 +556,18 @@ export const getQuizzesByCourse = query({
             const user = await requireAuth(ctx);
             const isTeacher = user.role === "teacher" || user.role === "admin";
 
+            // Obtener enrollment del usuario para el curso
+            const enrollment = await ctx.db
+                .query("enrollments")
+                .withIndex("by_user", (q) => q.eq("user_id", user._id))
+                .filter((q) => q.eq(q.field("course_id"), args.course_id))
+                .first();
+
+            const lastQuizzesUpdate = enrollment?.last_quizzes_update ?? 0;
+
+            // Verificar si hay quizzes nuevos desde la última actualización
+            const hasNewQuizzes = quizzes.some(q => (q.created_at ?? 0) > lastQuizzesUpdate);
+
             return await Promise.all(quizzes.map(async (quiz) => {
                 const userSubmissions = await ctx.db
                     .query("quiz_submissions")
@@ -570,14 +588,32 @@ export const getQuizzesByCourse = query({
                     return rest;
                 });
 
+                // Lógica de modo práctica:
+                // El usuario puede jugar en modo práctica cuando:
+                // 1. Ha completado TODOS los quizzes del curso (todos tienen al menos 1 submission)
+                // 2. Y el profesor ha subido un NUEVO quiz (created_at > last_quizzes_update)
+                // 3. O cuando intenta un quiz nuevo pero ya alcanzó el límite de intentos
+                
+                const quizCompleted = attempts_count > 0;
+                const isNewQuiz = (quiz.created_at ?? 0) > lastQuizzesUpdate;
+                
+                // El usuario puede jugar si:
+                // 1. No ha alcanzado el límite de intentos Y hay preguntas
+                // 2. O si está en modo práctica (completó todo y hay nuevos quizzes)
+                const canTakeNormal = attempts_count < max_attempts && num_questions > 0;
+                
+                // Modo práctica: puede jugar aunque haya alcanzado el límite, pero solo si es un quiz nuevo
+                const canTakePractice = isNewQuiz && attempts_count >= max_attempts;
+
                 return {
                     ...quiz,
                     questions, // Preguntas sin respuestas para el alumno
-                    completed: attempts_count > 0,
+                    completed: quizCompleted,
                     attempts_count,
                     max_attempts,
                     best_score,
-                    can_take: attempts_count < max_attempts && num_questions > 0,
+                    can_take: canTakeNormal || canTakePractice,
+                    is_practice_mode: canTakePractice,
                     score: best_score,
                     source_file_name: quiz.document_id ? (docMap.get(quiz.document_id) || null) : null,
                     game_type_label: GAME_TYPE_LABELS[quiz.quiz_type || "multiple_choice"] || quiz.quiz_type,
@@ -743,7 +779,19 @@ export const getOrCreateAttempt = mutation({
             .collect();
 
         const maxAttempts = quiz.max_attempts ?? 1;
-        if (completedSubmissions.length >= maxAttempts) {
+        
+        // Verificar si es modo práctica (quiz nuevo y alcanzó el límite)
+        const enrollment = await ctx.db
+            .query("enrollments")
+            .withIndex("by_user", (q) => q.eq("user_id", user._id))
+            .filter((q) => q.eq(q.field("course_id"), quiz.course_id))
+            .first();
+        
+        const lastQuizzesUpdate = enrollment?.last_quizzes_update ?? 0;
+        const isNewQuiz = (quiz.created_at ?? 0) > lastQuizzesUpdate;
+        const isPracticeMode = isNewQuiz && completedSubmissions.length >= maxAttempts;
+
+        if (!isPracticeMode && completedSubmissions.length >= maxAttempts) {
             throw new Error(`Limite alcanzado (${maxAttempts} intento(s)).`);
         }
 
@@ -891,6 +939,17 @@ export const submitQuiz = mutation({
         const currentAttemptsCount = submissions.length;
         const maxAttempts = quiz.max_attempts ?? 1;
 
+        // Verificar si es modo práctica (quiz nuevo y alcanzó el límite)
+        const enrollment = await ctx.db
+            .query("enrollments")
+            .withIndex("by_user", (q) => q.eq("user_id", user._id))
+            .filter((q) => q.eq(q.field("course_id"), quiz.course_id))
+            .first();
+        
+        const lastQuizzesUpdate = enrollment?.last_quizzes_update ?? 0;
+        const isNewQuiz = (quiz.created_at ?? 0) > lastQuizzesUpdate;
+        const isPracticeMode = isNewQuiz && currentAttemptsCount >= maxAttempts;
+
         if (user.role === "teacher" || user.role === "admin") {
             await ctx.db.patch(attempt._id, { status: "completed", last_updated: Date.now() });
             let basePointsValue = (quiz.num_questions || 5) * (quiz.difficulty === 'dificil' ? 20 : quiz.difficulty === 'medio' ? 15 : 10);
@@ -912,7 +971,8 @@ export const submitQuiz = mutation({
         }
 
         // Verificar limite para alumnos (el teacher ya retorno arriba)
-        if (maxAttempts !== 99 && currentAttemptsCount >= maxAttempts) {
+        // En modo práctica, permitir sin límite
+        if (!isPracticeMode && maxAttempts !== 99 && currentAttemptsCount >= maxAttempts) {
             throw new Error(`Limite alcanzado (${maxAttempts} intento(s)).`);
         }
 
@@ -940,7 +1000,7 @@ export const submitQuiz = mutation({
         }
         const basePoints = basePointsValueStu;
         const rawEarnedThisAttempt = Math.round((scorePct / 100) * basePoints);
-        const earnedPointsThisAttempt = Math.max(0, rawEarnedThisAttempt - (args.time_penalty || 0));
+        const earnedPointsThisAttempt = isPracticeMode ? 0 : Math.max(0, rawEarnedThisAttempt - (args.time_penalty || 0));
 
         await ctx.db.insert("quiz_submissions", {
             quiz_id: args.quiz_id,
@@ -1014,7 +1074,8 @@ export const submitQuiz = mutation({
                 daily_bonus_applied: dailyBonus > 0, daily_bonus: dailyBonus,
                 new_streak: newStreak, new_rank: newRankingPoints,
                 new_spendable: newSpendablePoints,
-                selected_options: attempt.selected_options
+                selected_options: attempt.selected_options,
+                is_practice_mode: isPracticeMode
             };
         }
 
@@ -1035,17 +1096,19 @@ export const submitQuiz = mutation({
                 daily_bonus_applied: true, daily_bonus: dailyBonus,
                 new_streak: newStreak, new_rank: newPoints,
                 new_spendable: newSpendable,
-                selected_options: attempt.selected_options
+                selected_options: attempt.selected_options,
+                is_practice_mode: isPracticeMode
             };
         }
 
         return {
-            success: true, score: scorePct, earned: 0,
+            success: true, score: scorePct, earned: isPracticeMode ? 0 : 0,
             average_score: averageScore, attempts_used: allSubmissions.length,
             remaining_attempts: remainingAttempts, max_attempts: maxAttempts,
             is_final_attempt: remainingAttempts === 0 || maxAttempts === 99,
             new_streak: currentStreak,
-            selected_options: attempt.selected_options
+            selected_options: attempt.selected_options,
+            is_practice_mode: isPracticeMode
         };
     },
 });

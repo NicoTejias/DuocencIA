@@ -112,6 +112,7 @@ export default defineSchema({
         group_id: v.optional(v.string()),
         section: v.optional(v.string()), // Sección del ramo (copiado desde whitelist al registrarse)
         active_multiplier: v.optional(v.number()), // Multiplicador para el próximo quiz
+        last_quizzes_update: v.optional(v.number()), // Timestamp de última actualización de quizzes del ramo
     })
         .index("by_user", ["user_id"])
         .index("by_course", ["course_id"])

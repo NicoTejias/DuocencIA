@@ -114,7 +114,9 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                                             </span>
                                             <span className="text-[9px] md:text-[10px] font-bold text-gold flex items-center gap-1 bg-gold/10 px-1.5 py-0.5 rounded-md border border-gold/20">
                                                 <Star className="w-2.5 h-2.5 fill-gold" />
-                                                HASTA {(q.num_questions || 5) * (q.difficulty === 'dificil' ? 20 : q.difficulty === 'medio' ? 15 : 10)} PTS
+                                                {q.is_practice_mode 
+                                                    ? 'MODO PRÁCTICA' 
+                                                    : `HASTA ${(q.num_questions || 5) * (q.difficulty === 'dificil' ? 20 : q.difficulty === 'medio' ? 15 : 10)} PTS`}
                                             </span>
                                         </div>
                                     </div>
@@ -140,11 +142,13 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                                         className={`font-black text-[9px] md:text-[10px] tracking-widest px-4 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl transition-all shadow-lg shrink-0 w-full sm:w-auto
                                             ${!q.can_take
                                                 ? 'bg-green-500/10 text-green-400 border border-green-500/20 cursor-default shadow-none'
-                                                : q.completed
-                                                    ? 'bg-white/10 text-white border border-white/10 hover:bg-white/20'
-                                                    : 'bg-accent text-white hover:scale-105 active:scale-95 shadow-accent/20'}`}
+                                                : q.is_practice_mode
+                                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30'
+                                                    : q.completed
+                                                        ? 'bg-white/10 text-white border border-white/10 hover:bg-white/20'
+                                                        : 'bg-accent text-white hover:scale-105 active:scale-95 shadow-accent/20'}`}
                                     >
-                                        {!q.can_take ? 'COMPLETADO' : q.completed ? 'REINTENTAR' : '¡JUGAR!'}
+                                        {!q.can_take ? 'COMPLETADO' : q.is_practice_mode ? 'PRÁCTICA' : q.completed ? 'REINTENTAR' : '¡JUGAR!'}
                                     </button>
                                 </div>
                             </div>
