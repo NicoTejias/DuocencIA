@@ -1,6 +1,7 @@
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
+rootProject.name = 'QuestIA-fix-student-names'
 
 // Fix for capacitor-community-file-opener ProGuard issue
 def fileOpenerBuildFile = new File(settingsDir, '../node_modules/@capacitor-community/file-opener/android/build.gradle')
