@@ -565,8 +565,7 @@ export const getQuizzesByCourse = query({
 
             const lastQuizzesUpdate = enrollment?.last_quizzes_update ?? 0;
 
-            // Verificar si hay quizzes nuevos desde la última actualización
-            const hasNewQuizzes = quizzes.some(q => (q.created_at ?? 0) > lastQuizzesUpdate);
+            const lastQuizzesUpdate = enrollment?.last_quizzes_update ?? 0;
 
             return await Promise.all(quizzes.map(async (quiz) => {
                 const userSubmissions = await ctx.db
@@ -1048,12 +1047,6 @@ export const submitQuiz = mutation({
 
         const finalPointsToAward = Math.max(0, pointsToAward) + dailyBonus;
         const remainingAttempts = maxAttempts === 99 ? 999 : Math.max(0, maxAttempts - allSubmissions.length);
-
-        const enrollment = await ctx.db
-            .query("enrollments")
-            .withIndex("by_user", (q) => q.eq("user_id", user._id))
-            .filter((q) => q.eq(q.field("course_id"), quiz.course_id))
-            .first();
 
         if (!enrollment) throw new Error("No inscrito");
 
