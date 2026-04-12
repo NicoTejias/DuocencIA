@@ -1,22 +1,30 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Loader2, Gift, CheckCircle, Search, Calendar, User, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
+import { useProfile } from '../../hooks/useProfile'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { RewardsAPI } from '../../lib/api'
 
 export default function GestionCanjesPanel() {
+    const { user } = useProfile()
     const [filter, setFilter] = useState<'pending' | 'completed'>('pending')
     const [selectedSection, setSelectedSection] = useState<string>('all')
     const [searchTerm, setSearchTerm] = useState('')
-    const redemptions = useQuery(api.rewards.getTeacherRedemptions, { status: filter })
-    const markAsDelivered = useMutation(api.rewards.markRedemptionDelivered)
+    
+    const { data: redemptions, refetch, isLoading } = useSupabaseQuery(
+        () => user ? RewardsAPI.getTeacherRedemptions(user.clerk_id, filter) : Promise.resolve([]),
+        [user, filter]
+    )
+
     const [processingId, setProcessingId] = useState<string | null>(null)
 
     const handleDeliver = async (id: any) => {
+        if (!user) return
         setProcessingId(id)
         try {
-            await markAsDelivered({ redemption_id: id })
+            await RewardsAPI.markRedemptionDelivered(id, user.clerk_id)
             toast.success("Recompensa marcada como entregada")
+            refetch()
         } catch (err: any) {
             toast.error(err.message || "Error al procesar el canje")
         } finally {
@@ -87,9 +95,10 @@ export default function GestionCanjesPanel() {
                 </div>
             )}
 
-            {!redemptions ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-10 h-10 text-accent animate-spin" />
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-surface-light border border-white/5 rounded-3xl">
+                    <Loader2 className="w-10 h-10 text-accent animate-spin mb-4" />
+                    <p className="text-slate-400 animate-pulse">Cargando canjes...</p>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="bg-surface-light border border-dashed border-white/10 rounded-3xl p-16 text-center shadow-xl">

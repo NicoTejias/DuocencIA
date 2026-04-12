@@ -1,18 +1,13 @@
 import { useState, useRef } from 'react'
 import ConfirmModal from '../ConfirmModal'
-
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { FileText, Upload, Trash2, Loader2, X, CheckCircle, Eye, EyeOff, BookOpen, Cloud, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { extractTextFromFile, getFileType, getFileIcon, formatFileSize } from '../../utils/documentParser'
 import { useGooglePicker } from '../../hooks/useGooglePicker'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { DocumentsAPI } from '../../lib/api'
 
 export default function MaterialPanel({ courses }: { courses: any[] }) {
-    const generateUploadUrl = useMutation(api.documents.generateUploadUrl)
-    const saveDocument = useMutation(api.documents.saveDocument)
-    const deleteDocument = useMutation(api.documents.deleteDocument)
-    const setAsMasterDoc = useMutation(api.documents.setAsMasterDoc)
-    const documents = useQuery(api.documents.getMyDocuments)
+    const { data: documents } = useSupabaseQuery(() => DocumentsAPI.getMyDocuments(), [])
     const fileRef = useRef<HTMLInputElement>(null)
     const { openPicker, downloadFile, isLoaded } = useGooglePicker()
 
@@ -33,17 +28,12 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
     const autoDetectType = (fileName: string, content: string): 'PDA' | 'PIA' | 'PA' | 'none' => {
         const text = (fileName + " " + content.substring(0, 3000)).toUpperCase();
-        
-        // Prioridad: Frases exactas
         if (text.includes("PLAN DIDÁCTICO DE AULA") || text.includes("PLAN DIDACTICO DE AULA")) return 'PDA';
         if (text.includes("PROGRAMA DE IMPLEMENTACIÓN DE ASIGNATURA") || text.includes("PROGRAMA DE IMPLEMENTACION DE ASIGNATURA")) return 'PIA';
         if (text.includes("PROGRAMA DE ASIGNATURA")) return 'PA';
-        
-        // Segundas opciones: Acrónimos (con cuidado)
         if (fileName.toUpperCase().includes("PDA")) return 'PDA';
         if (fileName.toUpperCase().includes("PIA")) return 'PIA';
         if (fileName.toUpperCase().includes("PA") && (text.includes("DUOC") || text.includes("UNIDAD"))) return 'PA';
-        
         return 'none';
     }
 
@@ -61,29 +51,20 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
         setUploadProgress(`📖 Leyendo "${file.name}"...`)
         const contentText = await extractTextFromFile(file)
 
-        // Paso 2: Subir archivo a Convex Storage
+        // Paso 2: Subir archivo a Supabase Storage
         setUploadProgress(`📤 Subiendo "${file.name}"...`)
-        const uploadUrl = await generateUploadUrl()
-        const result = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': file.type || 'application/octet-stream' },
-            body: file,
-        })
-        const responseJson = await result.json()
-        const storageId = responseJson.storageId
+        const filePath = `${selectedCourse}/${Date.now()}_${file.name}`
+        const storageId = await DocumentsAPI.uploadFile(file, filePath)
 
         // Paso 3: Guardar metadata + contenido en la BD
         setUploadProgress(`💾 Guardando "${file.name}"...`)
-        
-        // Si el usuario dejó 'Material' (none), intentamos autodetectar.
-        // Si el usuario seleccionó uno específicamente, respetamos su selección.
         let finalType = uploadType;
         if (uploadType === 'none') {
             finalType = autoDetectType(file.name, contentText);
         }
 
-        await saveDocument({
-            course_id: selectedCourse as any,
+        await DocumentsAPI.saveDocument({
+            course_id: selectedCourse,
             file_id: storageId,
             file_name: file.name,
             file_type: fileType,
@@ -100,7 +81,6 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
         if (!files || files.length === 0) return
         if (!selectedCourse) {
             setError('Selecciona un ramo antes de subir archivos.')
-            // Limpiar el input para que se pueda volver a seleccionar archivos
             if (fileRef.current) fileRef.current.value = ''
             return
         }
@@ -125,7 +105,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
     const handleSetMasterType = async (docId: any, type: string) => {
         try {
-            await setAsMasterDoc({ document_id: docId, master_type: type as any })
+            await DocumentsAPI.setAsMasterDoc(docId, type)
             setSuccess(`Documento marcado como ${type === 'none' ? 'material común' : type}.`)
             setTimeout(() => setSuccess(''), 3000)
         } catch (err: any) {
@@ -139,7 +119,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
 
     const handleConfirmDelete = async () => {
         try {
-            await deleteDocument({ document_id: confirmDelete.docId })
+            await DocumentsAPI.deleteDocument(confirmDelete.docId)
             setSuccess('Documento eliminado.')
             setTimeout(() => setSuccess(''), 3000)
         } catch (err: any) {
@@ -211,7 +191,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                         >
                             <option value="">Selecciona un ramo</option>
                             {courses.map((c: any) => (
-                                <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                                <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
                             ))}
                         </select>
                     </div>
@@ -368,9 +348,9 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                     {!collapsedMasterVault && (
                         <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {documents.filter((d: any) => d.is_master_doc).map((doc: any) => {
-                                const course = courses.find((c: any) => c._id === doc.course_id);
+                                const course = courses.find((c: any) => c.id === doc.course_id);
                                 return (
-                                    <div key={doc._id} className="relative group">
+                                    <div key={doc.id} className="relative group">
                                         <div className="absolute -top-2 left-4 z-10 bg-surface px-2 py-0.5 rounded-md border border-white/10 text-[8px] font-bold text-slate-500 uppercase tracking-tighter">
                                             {course?.name || 'Ramo Desconocido'}
                                         </div>
@@ -399,7 +379,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
             {Object.keys(docsByCourse).length > 0 ? (
                 <div className="space-y-4">
                     {Object.entries(docsByCourse).map(([courseId, docs]) => {
-                        const course = courses.find((c: any) => c._id === courseId)
+                        const course = courses.find((c: any) => c.id === courseId)
                         const regularDocs = (docs as any[]).filter(d => !d.is_master_doc);
                         const isCollapsed = collapsedCourses.has(courseId);
                         
@@ -438,7 +418,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                                     <div className="px-5 pb-5 space-y-2">
                                         {regularDocs.map((doc: any) => (
                                             <DocumentCard 
-                                                key={doc._id} 
+                                                key={doc.id} 
                                                 doc={doc} 
                                                 expandedDoc={expandedDoc}
                                                 setExpandedDoc={setExpandedDoc}
@@ -487,7 +467,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                         <select
                             title="Tipo de Documento"
                             value={doc.master_doc_type || 'none'}
-                            onChange={(e) => handleSetMasterType(doc._id, e.target.value)}
+                            onChange={(e) => handleSetMasterType(doc.id, e.target.value)}
                             className="bg-black/20 border border-white/5 rounded-lg px-2 py-1.5 text-[10px] font-black text-slate-400 focus:outline-none focus:border-primary/50 cursor-pointer"
                         >
                             <option value="none">Material</option>
@@ -496,14 +476,14 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                             <option value="PA">PA</option>
                         </select>
                         <button
-                            onClick={() => setExpandedDoc(expandedDoc === doc._id ? null : doc._id)}
+                            onClick={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
                             className="p-2 text-slate-500 hover:text-accent-light hover:bg-accent/10 rounded-lg transition-colors"
                             title="Ver contenido extraído"
                         >
-                            {expandedDoc === doc._id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {expandedDoc === doc.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                         <button
-                            onClick={() => handleDelete(doc._id)}
+                            onClick={() => handleDelete(doc.id)}
                             className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                             title="Eliminar documento"
                         >
@@ -511,7 +491,7 @@ export default function MaterialPanel({ courses }: { courses: any[] }) {
                         </button>
                     </div>
                 </div>
-                {expandedDoc === doc._id && (
+                {expandedDoc === doc.id && (
                     <div className="px-5 pb-4 border-t border-white/5">
                         <div className="mt-3 bg-surface rounded-xl p-4 max-h-64 overflow-y-auto">
                             <pre className="text-slate-300 text-xs whitespace-pre-wrap font-mono leading-relaxed">

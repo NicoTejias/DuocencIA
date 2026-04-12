@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Loader2, CheckCircle, Flame, Sparkles, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { getFileIcon, formatFileSize } from '../../utils/documentParser'
+import { MissionsAPI, QuizzesAPI, DocumentsAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 
 const GAME_TYPES = [
     { id: 'multiple_choice', label: 'Quiz Clásico', icon: '🎯', desc: 'Opción múltiple con 4 alternativas', color: 'accent' },
@@ -15,8 +15,6 @@ const GAME_TYPES = [
 ]
 
 export default function CrearMisionPanel({ courses }: { courses: any[] }) {
-    const createMission = useMutation(api.missions.createMission)
-    const generateQuiz = useAction(api.quizzes.generateQuiz)
     const [subTab, setSubTab] = useState<'manual' | 'quiz'>('quiz')
     const [formData, setFormData] = useState({ course_id: '', title: '', description: '', points: '' })
     const [creating, setCreating] = useState(false)
@@ -24,13 +22,15 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
     const [error, setError] = useState('')
 
     const [quizCourse, setQuizCourse] = useState('')
-    const documents = useQuery(
-        api.documents.getDocumentsByCourse,
-        quizCourse ? { course_id: quizCourse as any } : "skip"
+    const { data: documents } = useSupabaseQuery(
+        () => DocumentsAPI.getDocumentsByCourse(quizCourse),
+        [quizCourse],
+        { skip: !quizCourse }
     )
-    const masterDocs = useQuery(
-        api.documents.getMasterDocuments,
-        quizCourse ? { course_id: quizCourse as any } : "skip"
+    const { data: masterDocs } = useSupabaseQuery(
+        () => DocumentsAPI.getMasterDocuments(quizCourse),
+        [quizCourse],
+        { skip: !quizCourse }
     )
     const [selectedDoc, setSelectedDoc] = useState('')
     const [numQuestions, setNumQuestions] = useState(5)
@@ -46,8 +46,8 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
         if (!formData.course_id || !formData.title || !formData.points) return
         setCreating(true)
         try {
-            await createMission({
-                course_id: formData.course_id as any,
+            await MissionsAPI.createMission({
+                course_id: formData.course_id,
                 title: formData.title,
                 description: formData.description,
                 points: parseInt(formData.points),
@@ -68,8 +68,8 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
         setError('')
         setQuizPreview(null)
         try {
-            const result = await generateQuiz({
-                document_id: selectedDoc as any,
+            const result = await QuizzesAPI.generateQuiz({
+                document_id: selectedDoc,
                 num_questions: numQuestions,
                 difficulty,
                 quiz_type: quizType,
@@ -147,7 +147,7 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                             >
                                 <option value="">Selecciona un ramo</option>
                                 {courses.map((c: any) => (
-                                    <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                                    <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
                                 ))}
                             </select>
                         </div>
@@ -158,10 +158,10 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                                 {documents && documents.length > 0 ? (
                                     <div className="grid gap-2">
                                         {documents.map((doc: any) => (
-                                            <div key={doc._id} className="space-y-1">
+                                            <div key={doc.id} className="space-y-1">
                                                 <button
-                                                    onClick={() => setSelectedDoc(doc._id)}
-                                                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-center gap-3 ${selectedDoc === doc._id
+                                                    onClick={() => setSelectedDoc(doc.id)}
+                                                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-center gap-3 ${selectedDoc === doc.id
                                                         ? 'bg-accent/10 border-accent/40 text-white ring-1 ring-accent/20'
                                                         : 'bg-surface border-white/10 text-slate-300 hover:bg-white/5'
                                                         }`}
@@ -171,11 +171,11 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                                                         <p className="font-bold truncate text-sm">{doc.file_name}</p>
                                                         <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{formatFileSize(doc.file_size)} · {doc.content_text?.length?.toLocaleString()} caracteres</p>
                                                     </div>
-                                                    {selectedDoc === doc._id && <CheckCircle className="w-5 h-5 text-accent-light shrink-0" />}
+                                                    {selectedDoc === doc.id && <CheckCircle className="w-5 h-5 text-accent-light shrink-0" />}
                                                 </button>
                                                 
                                                 {/* Lista de juegos ya creados para este documento */}
-                                                <QuizList documentId={doc._id} />
+                                                <QuizList documentId={doc.id} />
                                             </div>
                                         ))}
                                     </div>
@@ -377,7 +377,7 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
                             <select value={formData.course_id} onChange={e => setFormData({ ...formData, course_id: e.target.value })} className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary">
                                 <option value="">Selecciona un ramo</option>
                                 {courses.map((c: any) => (
-                                    <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                                    <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
                                 ))}
                             </select>
                         </div>
@@ -405,14 +405,17 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
 }
 
 function QuizList({ documentId }: { documentId: string }) {
-    const quizzes = useQuery(api.quizzes.getQuizzesByDocument, { document_id: documentId as any });
+    const { data: quizzes } = useSupabaseQuery(
+        () => QuizzesAPI.getQuizzesByDocument(documentId),
+        [documentId]
+    );
     
     if (!quizzes || quizzes.length === 0) return null;
     
     return (
         <div className="ml-12 flex flex-wrap gap-1.5 pb-2">
             {quizzes.map((q: any) => (
-                <div key={q._id} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/5 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                <div key={q.id} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/5 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-tighter">
                     <span className="opacity-70">
                         {GAME_TYPES.find(gt => gt.id === q.quiz_type)?.icon || '🎯'}
                     </span>

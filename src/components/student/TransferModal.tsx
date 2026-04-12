@@ -1,8 +1,9 @@
 import { useState } from "react"
-import { usePaginatedQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
-import { X, ArrowRightLeft, Coins, AlertCircle } from 'lucide-react'
+import { X, ArrowRightLeft, Coins, AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from "sonner"
+import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
+import { PointTransfersAPI } from "../../lib/api"
+import { useUser } from "@clerk/clerk-react"
 
 interface TransferModalProps {
     onClose: () => void;
@@ -10,12 +11,12 @@ interface TransferModalProps {
 }
 
 export default function TransferModal({ onClose, courses }: TransferModalProps) {
-    const requestTransfer = useMutation(api.point_transfers.requestTransfer)
-    const { results: transferHistory, status: historyStatus, loadMore } = usePaginatedQuery(
-        api.point_transfers.getStudentTransfers,
-        {},
-        { initialNumItems: 5 }
+    const { user } = useUser()
+    const { data: transferHistory, isLoading: historyLoading } = useSupabaseQuery(
+        () => PointTransfersAPI.getStudentTransfers(user?.id || ''),
+        [user]
     )
+
     const [fromCourse, setFromCourse] = useState('')
     const [toCourse, setToCourse] = useState('')
     const [amount, setAmount] = useState<number>(0)
@@ -33,11 +34,11 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
 
         setLoading(true)
         try {
-            await requestTransfer({
+            await PointTransfersAPI.requestTransfer({
                 from_course_id: fromCourse as any,
                 to_course_id: toCourse as any,
                 amount
-            })
+            }, user?.id || '')
             toast.success('Solicitud enviada. Los docentes deben aprobar el traspaso para que sea efectivo.')
             onClose()
         } catch (err: any) {
@@ -72,7 +73,7 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
                         >
                             <option value="">Seleccionar Ramo...</option>
                             {courses.map(c => (
-                                <option key={c._id} value={c._id}>{c.name} (Saldo: {c.spendable_points || c.total_points || 0} pts)</option>
+                                <option key={c.id} value={c.id}>{c.name} (Saldo: {c.spendable_points || c.total_points || 0} pts)</option>
                             ))}
                         </select>
                     </div>
@@ -94,7 +95,7 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
                         >
                             <option value="">Seleccionar Ramo...</option>
                             {courses.map(c => (
-                                <option key={c._id} value={c._id}>{c.name}</option>
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                     </div>
@@ -132,7 +133,7 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
                             <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Historial de Solicitudes</h3>
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                 {transferHistory.map((hist: any) => (
-                                    <div key={hist._id} className="bg-black/20 rounded-xl p-3 border border-white/5 flex items-center justify-between text-xs">
+                                    <div key={hist.id} className="bg-black/20 rounded-xl p-3 border border-white/5 flex items-center justify-between text-xs">
                                         <div className="flex flex-col min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-slate-300 font-bold truncate max-w-[120px]" title={hist.from_course_name}>{hist.from_course_name}</span>
@@ -155,14 +156,7 @@ export default function TransferModal({ onClose, courses }: TransferModalProps) 
                                     </div>
                                 ))}
 
-                                {historyStatus === "CanLoadMore" && (
-                                    <button
-                                        onClick={() => loadMore(5)}
-                                        className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all border border-white/5 rounded-xl mt-2"
-                                    >
-                                        Cargar más historial
-                                    </button>
-                                )}
+                                {/* loadMore removed for simplicity in Supabase migration */}
                             </div>
                         </div>
                     )}

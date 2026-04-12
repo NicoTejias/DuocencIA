@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useConvexAuth, useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
+import { useUser } from '@clerk/clerk-react'
 import { Loader2 } from 'lucide-react'
+import { useProfile } from '../../hooks/useProfile'
 
 function LoadingScreen() {
     return (
@@ -21,39 +21,41 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-    const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth()
-    const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : 'skip')
+    const { isLoaded, isSignedIn } = useUser()
+    const { user, isLoading } = useProfile()
     const location = useLocation()
     const [stuckCount, setStuckCount] = useState(0)
 
     useEffect(() => {
-        if (isAuthLoading || !isAuthenticated || user !== undefined) return
-        if (stuckCount > 5) return
-        const timer = setTimeout(() => setStuckCount((c) => c + 1), 1000)
+        if (isLoading || !isSignedIn || user !== null) return
+        if (stuckCount > 6) return
+        const timer = setTimeout(() => setStuckCount(c => c + 1), 1000)
         return () => clearTimeout(timer)
-    }, [user, stuckCount, isAuthLoading, isAuthenticated])
+    }, [user, stuckCount, isLoading, isSignedIn])
 
-    if (isAuthLoading) return <LoadingScreen />
+    // Still loading Clerk
+    if (!isLoaded || isLoading) return <LoadingScreen />
 
-    if (!isAuthenticated) {
+    // Not signed in → login
+    if (!isSignedIn) {
         return <Navigate to="/login" state={{ from: location }} replace />
     }
 
-    if (user === undefined) {
-        if (stuckCount > 5) return <Navigate to="/login" replace />
+    // Profile not yet created (UserSync is running) — wait a bit then redirect
+    if (user === null) {
+        if (stuckCount > 6) return <Navigate to="/login" replace />
         return <LoadingScreen />
     }
 
-    if (user === null) return <Navigate to="/login" replace />
-
-    const userRole = (user as any)?.role || 'student'
+    const userRole = user.role || 'student'
     const isSimulating = localStorage.getItem('questia_simulate_student') === 'true'
 
     const canAccessAsStudent =
         requiredRole === 'student' &&
-        (userRole === 'student' || userRole === 'demo_student' || (isSimulating && (userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin')))
+        (userRole === 'student' || userRole === 'demo_student' ||
+            (isSimulating && (userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin')))
 
-    const isTeacherRole = userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin';
+    const isTeacherRole = userRole === 'teacher' || userRole === 'demo_teacher' || userRole === 'admin'
 
     if (
         requiredRole &&
@@ -61,8 +63,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         userRole !== requiredRole &&
         !(requiredRole === 'teacher' && isTeacherRole)
     ) {
-        const target = isTeacherRole ? '/docente' : '/alumno'
-        return <Navigate to={target} replace />
+        return <Navigate to={isTeacherRole ? '/docente' : '/alumno'} replace />
     }
 
     return <>{children}</>

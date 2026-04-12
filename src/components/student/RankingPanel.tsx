@@ -1,30 +1,32 @@
 import { useState } from "react"
-import { useQuery, usePaginatedQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Trophy, Loader2, Brain, Coins } from 'lucide-react'
+import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
+import { MissionsAPI, CoursesAPI } from "../../lib/api"
 
 interface RankingPanelProps {
     courses: any[];
 }
 
 export default function RankingPanel({ courses }: RankingPanelProps) {
-    const [selectedId, setSelectedId] = useState<string>(courses?.[0]?._id || '')
+    const [selectedId, setSelectedId] = useState<string>(courses?.[0]?.id || '')
     const [isGlobal, setIsGlobal] = useState(false)
 
-    // Vista Local (Paginada)
-    const { results: leaderboard, status: localStatus, loadMore } = usePaginatedQuery(
-        api.missions.getLeaderboard,
-        (selectedId && !isGlobal) ? { course_id: selectedId as any } : 'skip',
-        { initialNumItems: 10 }
+    // Vista Local
+    const { data: leaderboard, isLoading: localLoading } = useSupabaseQuery(
+        () => MissionsAPI.getLeaderboard(selectedId),
+        [selectedId, isGlobal],
+        { enabled: !!selectedId && !isGlobal }
     )
 
-    // Vista Global (Top 100)
-    const globalLeaderboard = useQuery(api.courses.getGlobalRanking,
-        (selectedId && isGlobal) ? { course_id: selectedId as any } : 'skip'
+    // Vista Global
+    const { data: globalRanking, isLoading: globalLoading } = useSupabaseQuery(
+        () => CoursesAPI.getGlobalRanking(selectedId),
+        [selectedId, isGlobal],
+        { enabled: !!selectedId && isGlobal }
     )
 
-    const currentLeaderboard = isGlobal ? (globalLeaderboard || []) : leaderboard
-    const status = isGlobal ? (globalLeaderboard ? "Loaded" : "LoadingFirstPage") : localStatus
+    const currentLeaderboard = isGlobal ? (globalRanking || []) : (leaderboard || [])
+    const isLoading = isGlobal ? globalLoading : localLoading
 
     return (
         <div className="max-w-4xl mx-auto py-10">
@@ -47,7 +49,7 @@ export default function RankingPanel({ courses }: RankingPanelProps) {
                     >
                         {courses.length === 0 && <option value="">Sin Ramos</option>}
                         {courses.map(c => (
-                            <option key={c._id} value={c._id}>{c.name}</option>
+                            <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
                     
@@ -69,7 +71,7 @@ export default function RankingPanel({ courses }: RankingPanelProps) {
             </div>
 
             <div className="bg-surface-light rounded-3xl overflow-hidden border border-white/10">
-                {status === "LoadingFirstPage" ? (
+                {isLoading ? (
                     <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-gold" /></div>
                 ) : currentLeaderboard.length === 0 ? (
                     <div className="flex flex-col items-center justify-center p-16 text-center">
@@ -80,7 +82,7 @@ export default function RankingPanel({ courses }: RankingPanelProps) {
                 ) : (
                     <>
                         {currentLeaderboard.map((student: any, i: number) => (
-                            <div key={student._id || student.userId} className={`flex items-center justify-between p-6 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
+                            <div key={student.id || student.userId} className={`flex items-center justify-between p-6 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
                                 <div className="flex items-center gap-6 overflow-hidden">
                                     <span className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg
                                         ${i === 0 ? 'bg-gold/20 text-gold shadow-lg shadow-gold/20' :
@@ -117,16 +119,7 @@ export default function RankingPanel({ courses }: RankingPanelProps) {
                                 </div>
                             </div>
                         ))}
-                        {status === "CanLoadMore" && !isGlobal && (
-                            <div className="p-4 border-t border-white/5 text-center">
-                                <button
-                                    onClick={() => loadMore(10)}
-                                    className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
-                                >
-                                    Cargar más...
-                                </button>
-                            </div>
-                        )}
+                        {/* loadMore removed for simplicity in Supabase migration */}
                     </>
                 )}
             </div>

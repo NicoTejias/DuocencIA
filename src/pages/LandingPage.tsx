@@ -1,8 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Trophy, Users, Shield, ChevronRight, Sparkles, Target, Gift, BarChart3, LogOut } from 'lucide-react'
-import { useConvexAuth, useQuery } from "convex/react"
-import { useClerk } from "@clerk/clerk-react"
-import { api } from "../../convex/_generated/api"
+import { useClerk, useUser } from "@clerk/clerk-react"
+import { ProfilesAPI } from '../lib/api'
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import FAQSection from '../components/FAQSection'
@@ -42,20 +42,24 @@ const features = [
 ]
 
 export default function LandingPage() {
-    const { isAuthenticated, isLoading } = useConvexAuth()
+    const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser()
     const { signOut } = useClerk()
     const navigate = useNavigate()
 
-    const userProfile = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
+    const { data: profile } = useSupabaseQuery(
+        () => ProfilesAPI.getProfile(clerkUser?.id || ''),
+        [clerkUser],
+        { enabled: !!clerkUser }
+    )
 
     // 1. Redirigir al dashboard si ya está autenticado y tenemos su perfil
     useEffect(() => {
-        if (isAuthenticated && userProfile) {
-            const userRole = (userProfile as any).role || 'student'
+        if (isSignedIn && profile) {
+            const userRole = profile.role || 'student'
             const target = (userRole === 'teacher' || userRole === 'admin') ? '/docente' : '/alumno'
             navigate(target, { replace: true })
         }
-    }, [isAuthenticated, userProfile, navigate]);
+    }, [isSignedIn, profile, navigate]);
 
     const handleLogout = async () => {
         await signOut()
@@ -76,7 +80,7 @@ export default function LandingPage() {
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
-                        {!isLoading && isAuthenticated ? (
+                        {clerkLoaded && isSignedIn ? (
                             <button 
                                 onClick={handleLogout}
                                 className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-medium px-4 py-2"

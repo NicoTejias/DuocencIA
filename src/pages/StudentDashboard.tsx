@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useQuery, useMutation } from "convex/react"
-import { useClerk } from "@clerk/clerk-react"
+import { useClerk, useUser } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
-import { api } from "../../convex/_generated/api"
 import { Loader2 } from 'lucide-react'
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery'
+import { ProfilesAPI, CoursesAPI } from '../lib/api'
 
 // Importaciones de sub-componentes modulares
 import DashboardSidebar from '../components/student/DashboardSidebar'
@@ -24,15 +24,16 @@ import RetentionProgressWidget from '../components/student/RetentionProgressWidg
 import FAQSection from '../components/FAQSection'
 import ErrorBoundary from '../components/ErrorBoundary'
 
-
 // Utilidades
 import { getFirstName } from '../utils/dashboardUtils'
 
 export default function StudentDashboard() {
     const { signOut } = useClerk()
+    const { user: clerkUser } = useUser()
     const navigate = useNavigate()
-    const user = useQuery(api.users.getProfile)
-    const courses = useQuery(api.courses.getMyCourses)
+    
+    const { data: profile } = useSupabaseQuery(() => ProfilesAPI.getProfile(clerkUser?.id || ''), [clerkUser])
+    const { data: courses } = useSupabaseQuery(() => CoursesAPI.getMyCourses(profile?.id || '', profile?.role || 'student'), [profile])
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('inicio')
@@ -42,26 +43,25 @@ export default function StudentDashboard() {
     const [showCompleteProfile, setShowCompleteProfile] = useState(false)
 
     // Lógica de auto-enrolamiento y perfil
-    const autoEnroll = useMutation(api.users.autoEnroll)
     useEffect(() => {
-        // Solo pedimos RUT/Perfil completo a alumnos reales (que no sean demo)
-        const isRealStudent = user && user.role === 'student' && !user.is_demo;
+        if (!profile) return;
+        const isRealStudent = profile.role === 'student' && !profile.is_demo;
         
         if (isRealStudent) {
-            if (!user.student_id) {
+            if (!profile.student_id) {
                 setShowCompleteProfile(true)
             } else {
-                autoEnroll().catch(() => { })
+                ProfilesAPI.autoEnroll(clerkUser?.id || '', profile.student_id, profile.email).catch(() => { })
             }
         }
-    }, [user, autoEnroll])
+    }, [profile, clerkUser])
 
     const handleLogout = async () => {
         await signOut()
         navigate('/')
     }
 
-    if (!user) {
+    if (!profile) {
         return (
             <div className="min-h-screen bg-surface flex items-center justify-center">
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -69,9 +69,9 @@ export default function StudentDashboard() {
         )
     }
 
-    const userName = user?.name || 'Alumno'
-    const firstName = getFirstName(user?.name)
-    const belbinRole = user?.belbin_profile?.role_dominant || 'Sin determinar'
+    const userName = profile?.name || 'Alumno'
+    const firstName = getFirstName(profile?.name)
+    const belbinRole = profile?.belbin_profile?.role_dominant || 'Sin determinar'
 
     // Totales agregados de todos los ramos
     const totalRankingPoints = courses?.reduce((sum: number, c: any) => sum + (c.ranking_points || c.total_points || 0), 0) || 0
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
 
             {showCompleteProfile && (
                 <CompleteProfileModal 
-                    user={user} 
+                    user={profile} 
                     onComplete={() => setShowCompleteProfile(false)} 
                 />
             )}
@@ -100,7 +100,7 @@ export default function StudentDashboard() {
             <DashboardSidebar 
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
-                user={user}
+                user={profile}
                 userName={userName}
                 belbinRole={belbinRole}
                 totalRankingPoints={totalRankingPoints}
@@ -137,14 +137,14 @@ export default function StudentDashboard() {
                         <>
                             {activeTab === 'inicio' && (
                                 <div className="space-y-6 overflow-x-hidden">
-                                    {!user.bartle_profile && !!user.terms_accepted_at && (
-                                        <BartlePopup user={user} onComplete={() => {}} />
+                                    {!profile.bartle_profile && !!profile.terms_accepted_at && (
+                                        <BartlePopup user={profile} onComplete={() => {}} />
                                     )}
-                                    {user.bartle_profile && (
-                                        <BartleProfileDisplay profile={user.bartle_profile} />
+                                    {profile.bartle_profile && (
+                                        <BartleProfileDisplay profile={profile.bartle_profile} />
                                     )}
                                     <RetentionProgressWidget 
-                                        user={user} 
+                                        user={profile} 
                                         courses={courses || []} 
                                     />
                                     <DashboardHome
@@ -152,7 +152,7 @@ export default function StudentDashboard() {
                                         totalRanking={totalRankingPoints}
                                         firstName={firstName}
                                         onSelectCourse={(id) => setSelectedCourseId(id)}
-                                        user={user}
+                                        user={profile}
                                     />
 
                                 </div>
@@ -161,7 +161,7 @@ export default function StudentDashboard() {
                             {activeTab === 'misiones' && <MisionesPanel courses={courses || []} onSelectCourse={(id: string) => { setSelectedCourseId(id); setActiveTab('ramos') }} />}
                             {activeTab === 'ranking' && <RankingPanel courses={courses || []} />}
                             {activeTab === 'tienda' && <TiendaPanel courses={courses || []} />}
-                            {activeTab === 'perfil' && <PerfilPanel user={user} totalPoints={totalRankingPoints} belbinRole={belbinRole} />}
+                            {activeTab === 'perfil' && <PerfilPanel user={profile} totalPoints={totalRankingPoints} belbinRole={belbinRole} />}
                             {activeTab === 'ayuda' && <FAQSection category="alumno" />}
                         </>
                     )}
@@ -178,3 +178,4 @@ export default function StudentDashboard() {
         </div>
     )
 }
+

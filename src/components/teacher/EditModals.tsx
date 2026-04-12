@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2, Save } from 'lucide-react'
-import { useMutation, useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { toast } from 'sonner'
+import { CoursesAPI, MissionsAPI, RewardsAPI, DocumentsAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 
 interface EditModalProps {
     isOpen: boolean
@@ -11,8 +11,7 @@ interface EditModalProps {
 }
 
 export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
-    const updateCourse = useMutation(api.courses.updateCourse)
-    const careers = useQuery((api as any).careers.listCareers)
+    const { data: careers } = useSupabaseQuery(() => DocumentsAPI.listCareers(), [], { skip: !isOpen })
     const [formData, setFormData] = useState({ name: '', code: '', description: '', career_id: '' })
     const [loading, setLoading] = useState(false)
 
@@ -23,12 +22,11 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
     const handleSave = async () => {
         setLoading(true)
         try {
-            await updateCourse({
-                course_id: data._id,
+            await CoursesAPI.updateCourse(data.id, {
                 name: formData.name,
                 code: formData.code,
                 description: formData.description,
-                career_id: formData.career_id ? (formData.career_id as any) : undefined,
+                career_id: formData.career_id || undefined,
             })
             toast.success('Ramo actualizado con éxito')
             onClose()
@@ -73,7 +71,7 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
                         <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-accent/50 outline-none transition-all" title="Carrera asociada">
                             <option value="">Sin carrera asociada</option>
                             {(careers || []).map((c: any) => (
-                                <option key={c._id} value={c._id}>{c.name}</option>
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                     </div>
@@ -94,7 +92,6 @@ export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
 }
 
 export function EditMissionModal({ isOpen, onClose, data }: EditModalProps) {
-    const updateMission = useMutation(api.missions.updateMission)
     const [formData, setFormData] = useState({ title: '', description: '', points: 0 })
     const [loading, setLoading] = useState(false)
 
@@ -105,8 +102,7 @@ export function EditMissionModal({ isOpen, onClose, data }: EditModalProps) {
     const handleSave = async () => {
         setLoading(true)
         try {
-            await updateMission({
-                mission_id: data._id,
+            await MissionsAPI.updateMission(data.id, {
                 title: formData.title,
                 description: formData.description,
                 points: Number(formData.points)
@@ -166,7 +162,6 @@ export function EditMissionModal({ isOpen, onClose, data }: EditModalProps) {
 }
 
 export function EditRewardModal({ isOpen, onClose, data }: EditModalProps) {
-    const updateReward = useMutation(api.rewards.updateReward)
     const [formData, setFormData] = useState({ name: '', description: '', cost: 0, stock: 0 })
     const [loading, setLoading] = useState(false)
 
@@ -177,8 +172,7 @@ export function EditRewardModal({ isOpen, onClose, data }: EditModalProps) {
     const handleSave = async () => {
         setLoading(true)
         try {
-            await updateReward({
-                reward_id: data._id,
+            await RewardsAPI.updateReward(data.id, {
                 name: formData.name,
                 description: formData.description,
                 cost: Number(formData.cost),

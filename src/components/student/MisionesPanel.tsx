@@ -18,8 +18,8 @@ export default function MisionesPanel({ courses, onSelectCourse }: MisionesPanel
             <div className="flex flex-wrap gap-4 justify-center">
                 {(courses || []).map(c => (
                     <button
-                        key={c._id}
-                        onClick={() => onSelectCourse(c._id)}
+                        key={c.id}
+                        onClick={() => onSelectCourse(c.id)}
                         className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-primary/50 text-white font-bold transition-all"
                     >
                         {c.name}

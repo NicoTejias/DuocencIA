@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Users, Loader2, CheckCircle, X, Sparkles } from 'lucide-react'
+import { CoursesAPI, GroupsAPI, AiFeedbackAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { useUser } from '@clerk/clerk-react'
 
 export default function GruposPanel() {
-    const courses = useQuery(api.courses.getMyCourses)
-    const generateGroups = useMutation(api.groups.generateGroups)
+    const { user } = useUser()
+    const { data: courses } = useSupabaseQuery(() => CoursesAPI.getMyCourses(user?.id || '', user?.publicMetadata?.role as string || 'student'), [user])
     const [selectedCourse, setSelectedCourse] = useState('')
     const [groupSize, setGroupSize] = useState(3)
     const [generating, setGenerating] = useState(false)
@@ -14,12 +15,11 @@ export default function GruposPanel() {
     const [aiFeedback, setAiFeedback] = useState('')
     const [gettingFeedback, setGettingFeedback] = useState(false)
 
-    const getAiFeedback = useAction(api.ai_feedback.getGroupFeedback)
-
     // Obtener grupos existentes del ramo seleccionado
-    const existingGroups = useQuery(
-        api.groups.getGroups,
-        selectedCourse ? { course_id: selectedCourse as any } : "skip"
+    const { data: existingGroups } = useSupabaseQuery(
+        () => GroupsAPI.getGroups(selectedCourse),
+        [selectedCourse],
+        { skip: !selectedCourse }
     )
 
     const handleGenerate = async () => {
@@ -31,10 +31,7 @@ export default function GruposPanel() {
         setError('')
         setResult(null)
         try {
-            const res = await generateGroups({
-                course_id: selectedCourse as any,
-                group_size: groupSize,
-            })
+            const res = await GroupsAPI.generateGroups(selectedCourse, groupSize, user?.id || '')
             setResult(res)
         } catch (err: any) {
             setError(err.message || 'Error al generar grupos')
@@ -80,7 +77,7 @@ export default function GruposPanel() {
         setGettingFeedback(true)
         setAiFeedback('')
         try {
-            const feedback = await getAiFeedback({ groupsData: displayGroups })
+            const feedback = await AiFeedbackAPI.getGroupFeedback(displayGroups)
             setAiFeedback(feedback)
         } catch (err: any) {
             setError('Error al obtener feedback de IA: ' + err.message)
@@ -177,7 +174,7 @@ export default function GruposPanel() {
                         >
                             <option value="">Selecciona un ramo</option>
                             {(courses || []).map((c: any) => (
-                                <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                                <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
                             ))}
                         </select>
                     </div>

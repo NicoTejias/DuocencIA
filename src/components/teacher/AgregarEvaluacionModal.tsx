@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Plus, Calendar, Clock, FileText, PenSquare, X } from 'lucide-react'
 import { toast } from "sonner"
+import { EvaluationsAPI } from "../../lib/api"
 
 interface AgregarEvaluacionModalProps {
     courseId: string
@@ -12,8 +11,6 @@ interface AgregarEvaluacionModalProps {
 }
 
 export default function AgregarEvaluacionModal({ courseId, courseName, sections, onClose }: AgregarEvaluacionModalProps) {
-    const createEvaluacion = useMutation(api.evaluaciones.createEvaluacion)
-
     const [titulo, setTitulo] = useState("")
     const [tipo, setTipo] = useState<"prueba" | "trabajo" | "informe">("prueba")
     const [descripcion, setDescripcion] = useState("")
@@ -44,8 +41,8 @@ export default function AgregarEvaluacionModal({ courseId, courseName, sections,
             
         setLoading(true)
         try {
-            await createEvaluacion({
-                course_id: courseId as any,
+            await EvaluationsAPI.createEvaluacion({
+                course_id: courseId,
                 titulo: titulo.trim(),
                 tipo,
                 descripcion: descripcion.trim() || undefined,

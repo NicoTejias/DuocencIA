@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { Trophy, Users, Compass, Sword, Loader2, Star, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { useUser } from '@clerk/clerk-react'
+import { ProfilesAPI } from '../../lib/api'
 
 interface BartleTestProps {
     onComplete: (profile: string) => void;
@@ -53,10 +53,10 @@ const QUESTIONS = [
 ]
 
 export default function BartleTest({ onComplete }: BartleTestProps) {
+    const { user } = useUser()
     const [currentStep, setCurrentStep] = useState(0)
     const [scores, setScores] = useState({ achiever: 0, socializer: 0, explorer: 0, competidor: 0 })
     const [loading, setLoading] = useState(false)
-    const saveProfile = useMutation(api.users.saveBartleProfile)
 
     const handleOptionSelect = async (score: any) => {
         const newScores = {
@@ -71,9 +71,9 @@ export default function BartleTest({ onComplete }: BartleTestProps) {
             setCurrentStep(currentStep + 1)
         } else {
             setLoading(true)
-            const profile = Object.entries(newScores).reduce((a, b) => a[1] > b[1] ? a : b)[0]
+            const profile = Object.entries(newScores).reduce((a: any, b: any) => a[1] > b[1] ? a : b)[0]
             try {
-                await saveProfile({ profile: profile as any })
+                await ProfilesAPI.saveBartleProfile(user?.id || '', { profile: profile as any })
                 toast.success('¡Perfil de jugador detectado!')
                 onComplete(profile)
             } catch (err) {

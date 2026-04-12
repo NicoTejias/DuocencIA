@@ -1,9 +1,9 @@
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Calendar, Clock, FileText, PenSquare, Trash2, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from "sonner"
 import ConfirmModal from '../ConfirmModal'
 import { useState } from "react"
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { EvaluationsAPI, supabase } from '../../lib/api'
 
 interface EvaluacionesPorCursoProps {
     courseId: string
@@ -11,22 +11,26 @@ interface EvaluacionesPorCursoProps {
 
 export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoProps) {
     const [now] = useState(() => Date.now())
-    const evaluaciones = useQuery(api.evaluaciones.getEvaluacionesPorCurso, { course_id: courseId as any })
-    const deleteEvaluacion = useMutation(api.evaluaciones.deleteEvaluacion)
+    const { data: evaluaciones, isLoading, refetch } = useSupabaseQuery(
+        () => EvaluationsAPI.getEvaluationsByCourse(courseId),
+        [courseId]
+    )
     const [deleteTarget, setDeleteTarget] = useState<any>(null)
 
     const handleDelete = async () => {
         if (!deleteTarget) return
         try {
-            await deleteEvaluacion({ evaluacion_id: deleteTarget._id })
+            const { error } = await supabase.from('evaluations').delete().eq('id', deleteTarget.id)
+            if (error) throw error
             toast.success("Evaluación eliminada")
             setDeleteTarget(null)
+            refetch()
         } catch (err: any) {
             toast.error(err.message || "Error al eliminar")
         }
     }
 
-    if (!evaluaciones) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
                 <Loader2 className="w-6 h-6 animate-spin text-accent" />
@@ -63,7 +67,7 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
                 </h4>
                 <div className="space-y-2">
                     {pruebas.map((ev: any) => (
-                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
+                        <EvaluacionItem key={ev.id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
                     ))}
                 </div>
             </div>
@@ -75,7 +79,7 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
                 </h4>
                 <div className="space-y-2">
                     {trabajos.map((ev: any) => (
-                        <EvaluacionItem key={ev._id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
+                        <EvaluacionItem key={ev.id} evaluacion={ev} onDelete={() => setDeleteTarget(ev)} formatDate={formatDate} now={now} />
                     ))}
                 </div>
             </div>

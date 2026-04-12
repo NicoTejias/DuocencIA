@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Smartphone, ShieldCheck, Loader2, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { AttendanceAPI } from '../../lib/api'
+import { useUser } from '@clerk/clerk-react'
 
 export default function AttendanceCard({ courseId }: { courseId: any }) {
-    const activeSession = useQuery(api.attendance.getActiveSession, { course_id: courseId })
-    const checkIn = useMutation(api.attendance.checkIn)
+    const { user } = useUser()
+    const { data: activeSession } = useSupabaseQuery(() => AttendanceAPI.getActiveSession(courseId), [courseId])
     
     const [code, setCode] = useState('')
     const [marking, setMarking] = useState(false)
@@ -21,7 +22,7 @@ export default function AttendanceCard({ courseId }: { courseId: any }) {
         setMarking(true);
         
         const mark = (lat?: number, lng?: number) => {
-            checkIn({ course_id: courseId, code, lat, lng })
+            AttendanceAPI.markAttendance(activeSession.id, user?.id || '', code)
                 .then(() => {
                     setSuccess(true);
                     toast.success("¡Asistencia registrada con éxito! +2 puntos");

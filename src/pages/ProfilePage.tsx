@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import ConfirmModal from '../components/ConfirmModal'
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../convex/_generated/api"
+import { useUser } from '@clerk/clerk-react'
+import { ProfilesAPI } from '../lib/api'
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
@@ -9,10 +10,8 @@ import { Camera, BadgeCheck, User, RefreshCw, Upload, Mail, Shield, Key, Save, L
 import { useTheme } from '../context/ThemeContext'
 
 export default function ProfilePage() {
-    const user = useQuery(api.users.getProfile)
-    const updateProfile = useMutation(api.users.updateProfile)
-    const updateAvatar = useMutation(api.users.updateAvatar)
-    const resetBartle = useMutation(api.users.resetBartleTest)
+    const { user: clerkUser } = useUser()
+    const { data: user } = useSupabaseQuery(() => ProfilesAPI.getProfile(clerkUser?.id || ''), [clerkUser])
     const navigate = useNavigate()
     const { theme, fontSize, setTheme, setFontSize } = useTheme()
 
@@ -57,7 +56,7 @@ export default function ProfilePage() {
     const handleSave = async () => {
         setSaving(true)
         try {
-            await updateProfile({ name, student_id: studentId })
+            await ProfilesAPI.updateProfile(clerkUser?.id || '', { name, student_id: studentId })
             toast.success('Perfil actualizado correctamente')
             setEditing(false)
         } catch (err: any) {
@@ -117,7 +116,7 @@ export default function ProfilePage() {
                     
                     // Comprimir a JPEG calidad media
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
-                    await updateAvatar({ avatarUrl: dataUrl })
+                    await ProfilesAPI.updateAvatar(clerkUser?.id || '', dataUrl)
                     toast.success('Avatar actualizado con éxito')
                     setUploading(false)
                 }
@@ -131,7 +130,7 @@ export default function ProfilePage() {
     const setDefaultAvatar = async () => {
         setUploading(true)
         try {
-            await updateAvatar({ avatarUrl: "" })
+            await ProfilesAPI.updateAvatar(clerkUser?.id || '', "")
             toast.success('Avatar restablecido al valor por defecto')
         } catch (err) {
             toast.error('Error al cambiar avatar')
@@ -260,7 +259,7 @@ export default function ProfilePage() {
                                     isOpen={confirmResetBartle}
                                     onClose={() => setConfirmResetBartle(false)}
                                     onConfirm={async () => {
-                                        await resetBartle()
+                                        await ProfilesAPI.resetBartleTest(clerkUser?.id || '')
                                         toast.success('Perfil de jugador reseteado')
                                         setConfirmResetBartle(false)
                                         navigate('/alumno')

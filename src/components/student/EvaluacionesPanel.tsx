@@ -1,10 +1,16 @@
-import { useQuery } from "convex/react"
 import { useState } from "react"
-import { api } from "../../../convex/_generated/api"
+import { useUser } from '@clerk/clerk-react'
+import { EvaluacionesAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 import { FileText, PenSquare, Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react'
+
 export default function EvaluacionesPanel() {
+    const { user } = useUser()
     const [now] = useState(() => Date.now())
-    const evaluaciones = useQuery(api.evaluaciones.getEvaluacionesEstudiante)
+    const { data: evaluaciones } = useSupabaseQuery(
+        () => EvaluacionesAPI.getEvaluacionesEstudiante(user?.id || ''),
+        [user]
+    )
 
     if (!evaluaciones) {
         return (
@@ -44,7 +50,7 @@ export default function EvaluacionesPanel() {
 
         return (
             <div 
-                key={evaluacion._id}
+                key={evaluacion.id}
                 className={`p-3 rounded-xl border transition-all ${
                     isPassed 
                         ? 'bg-slate-800/30 border-slate-700/30 opacity-50' 

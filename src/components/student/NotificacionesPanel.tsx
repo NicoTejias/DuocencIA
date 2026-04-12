@@ -1,15 +1,22 @@
-import { usePaginatedQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Bell, BellOff, Loader2, ArrowRightLeft, Target, Info } from 'lucide-react'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { NotificationsAPI } from '../../lib/api'
+import { useUser } from '@clerk/clerk-react'
 
 export default function NotificacionesPanel() {
-    const { results: notifications, status, loadMore } = usePaginatedQuery(
-        api.notifications.getNotifications,
-        {},
-        { initialNumItems: 10 }
+    const { user } = useUser()
+    const { data: notifications, isLoading } = useSupabaseQuery(
+        () => NotificationsAPI.getNotifications(user?.id || ''),
+        [user]
     )
-    const markAsRead = useMutation(api.notifications.markAsRead)
-    const markAllAsRead = useMutation(api.notifications.markAllAsRead)
+
+    const handleMarkAsRead = (id: string) => {
+        NotificationsAPI.markAsRead(id).catch(console.error)
+    }
+
+    const handleMarkAllAsRead = () => {
+        NotificationsAPI.markAllAsRead(user?.id || '').catch(console.error)
+    }
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -23,7 +30,7 @@ export default function NotificacionesPanel() {
                 </div>
                 {notifications && notifications.length > 0 && (
                     <button
-                        onClick={() => markAllAsRead()}
+                        onClick={() => handleMarkAllAsRead()}
                         className="text-xs font-black text-primary hover:text-primary-light transition-colors uppercase tracking-widest"
                     >
                         Marcar todas como leídas
@@ -32,7 +39,7 @@ export default function NotificacionesPanel() {
             </div>
 
             <div className="space-y-4">
-                {status === 'LoadingFirstPage' ? (
+                {isLoading ? (
                     <div className="flex flex-col items-center py-20">
                         <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
                         <p className="text-slate-500">Buscando novedades...</p>
@@ -49,8 +56,8 @@ export default function NotificacionesPanel() {
                     <>
                         {notifications?.map((n: any) => (
                             <div
-                                key={n._id}
-                                onMouseEnter={() => !n.read && markAsRead({ notification_id: n._id })}
+                                key={n.id}
+                                onMouseEnter={() => !n.read && handleMarkAsRead(n.id)}
                                 className={`group p-6 rounded-3xl border transition-all duration-300 relative overflow-hidden ${n.read ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/20 shadow-lg shadow-primary/5'}`}
                             >
                                 {!n.read && <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary"></div>}
@@ -75,14 +82,7 @@ export default function NotificacionesPanel() {
                                 </div>
                             </div>
                         ))}
-                        {status === 'CanLoadMore' && (
-                            <button
-                                onClick={() => loadMore(10)}
-                                className="w-full py-4 border border-white/5 rounded-2xl text-slate-500 font-bold hover:bg-white/5 transition-all outline-none"
-                            >
-                                Cargar más notificaciones
-                            </button>
-                        )}
+                        {/* loadMore removed for simplicity in Supabase migration */}
                     </>
                 )}
             </div>

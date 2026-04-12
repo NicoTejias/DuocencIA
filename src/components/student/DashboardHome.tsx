@@ -117,8 +117,8 @@ export default function DashboardHome({
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {courses.map((course: any) => (
                             <div
-                                key={course._id}
-                                onClick={() => onSelectCourse(course._id)}
+                                key={course.id}
+                                onClick={() => onSelectCourse(course.id)}
                                 className="group bg-surface-light border border-white/5 rounded-3xl p-6 hover:bg-white/5 hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-20 transition-opacity">

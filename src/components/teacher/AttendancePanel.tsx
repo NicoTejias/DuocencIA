@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { 
     MapPin, 
     Clock, 
@@ -13,10 +11,14 @@ import {
     Smartphone
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AttendanceAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 
-export default function AttendancePanel({ courseId }: { courseId: any }) {
-    const activeSession = useQuery(api.attendance.getActiveSession, { course_id: courseId })
-    const createSession = useMutation(api.attendance.createSession)
+export default function AttendancePanel({ courseId }: { courseId: string }) {
+    const { data: activeSession } = useSupabaseQuery(
+        () => AttendanceAPI.getActiveSession(courseId),
+        [courseId]
+    )
     
     const [starting, setStarting] = useState(false)
     const [viewingLogs, setViewingLogs] = useState(false)
@@ -50,7 +52,7 @@ export default function AttendancePanel({ courseId }: { courseId: any }) {
         if (!navigator.geolocation) {
             toast.error("Tu navegador no soporta geolocalización. La asistencia no tendrá validación GPS.");
             try {
-                await createSession({ course_id: courseId, duration_minutes: 10 });
+                await AttendanceAPI.createSession({ course_id: courseId, duration_minutes: 10 });
                 toast.success("Sesión iniciada (Sin GPS)");
             } catch (err: any) {
                 toast.error(err.message);
@@ -63,7 +65,7 @@ export default function AttendancePanel({ courseId }: { courseId: any }) {
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 try {
-                    await createSession({ 
+                    await AttendanceAPI.createSession({ 
                         course_id: courseId, 
                         lat: pos.coords.latitude, 
                         lng: pos.coords.longitude,
@@ -81,7 +83,7 @@ export default function AttendancePanel({ courseId }: { courseId: any }) {
                 console.error(err);
                 toast.warning("No se pudo obtener tu ubicación exacta. Se iniciará sin GPS.");
                 try {
-                    await createSession({ course_id: courseId, duration_minutes: 10 });
+                    await AttendanceAPI.createSession({ course_id: courseId, duration_minutes: 10 });
                     toast.success("Sesión iniciada.");
                 } catch (err: any) {
                     toast.error(err.message);
@@ -137,7 +139,7 @@ export default function AttendancePanel({ courseId }: { courseId: any }) {
 
                 {viewingLogs && (
                     <AttendanceLogsModal 
-                        sessionId={activeSession._id} 
+                        sessionId={activeSession.id} 
                         onClose={() => setViewingLogs(false)} 
                     />
                 )}
@@ -171,8 +173,8 @@ export default function AttendancePanel({ courseId }: { courseId: any }) {
     );
 }
 
-function AttendanceLogsModal({ sessionId, onClose }: { sessionId: any, onClose: () => void }) {
-    const logs = useQuery(api.attendance.getSessionLogs, { session_id: sessionId })
+function AttendanceLogsModal({ sessionId, onClose }: { sessionId: string, onClose: () => void }) {
+    const { data: logs } = useSupabaseQuery(() => AttendanceAPI.getSessionLogs(sessionId), [sessionId])
 
     return (
         <div className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
@@ -199,7 +201,7 @@ function AttendanceLogsModal({ sessionId, onClose }: { sessionId: any, onClose: 
                         </div>
                     ) : (
                         logs.map((log: any) => (
-                            <div key={log._id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
+                            <div key={log.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-black">
                                         {log.student_name[0].toUpperCase()}

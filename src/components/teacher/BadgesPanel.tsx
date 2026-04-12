@@ -1,9 +1,8 @@
-import { useState } from 'react'
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { Award, Plus, Trash2, UserPlus, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
+import { BadgesAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 
 const CRITERIA_LABELS: Record<string, string> = {
     attendance: 'Asistencia',
@@ -27,11 +26,10 @@ interface BadgesPanelProps {
 }
 
 export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
-    const badges = useQuery(api.badges.getBadgesByCourse, { course_id: courseId })
-    const createBadge = useMutation(api.badges.createBadge)
-    const deleteBadge = useMutation(api.badges.deleteBadge)
-    const awardBadge = useMutation(api.badges.awardBadge)
-    const revokeBadge = useMutation(api.badges.revokeBadge)
+    const { data: badges, isLoading, refetch: refetchBadges } = useSupabaseQuery(
+        () => BadgesAPI.getBadgesByCourse(courseId),
+        [courseId]
+    )
 
     const [showForm, setShowForm] = useState(false)
     const [expandedBadge, setExpandedBadge] = useState<string | null>(null)
@@ -50,10 +48,11 @@ export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
         if (!form.name.trim()) return toast.error('El nombre es obligatorio')
         setSubmitting(true)
         try {
-            await createBadge({ course_id: courseId, ...form })
+            await BadgesAPI.createBadge({ course_id: courseId, ...form })
             toast.success(`Insignia "${form.name}" creada`)
             setForm({ name: '', icon: '🏅', description: '', criteria_type: 'mastery' })
             setShowForm(false)
+            refetchBadges()
         } catch (err: any) {
             toast.error(err.message || 'Error al crear la insignia')
         } finally {
@@ -65,9 +64,10 @@ export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
         if (!confirmDelete) return
         setProcessingDelete(true)
         try {
-            await deleteBadge({ badge_id: confirmDelete.badgeId })
+            await BadgesAPI.deleteBadge(confirmDelete.badgeId)
             toast.success('Insignia eliminada')
             setExpandedBadge(null)
+            refetchBadges()
         } catch (err: any) {
             toast.error(err.message || 'Error al eliminar')
         } finally {
@@ -166,18 +166,18 @@ export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {badges.map((badge: any) => (
+                    {badges?.map((badge: any) => (
                         <BadgeRow
-                            key={badge._id}
+                            key={badge.id}
                             badge={badge}
-                            expanded={expandedBadge === badge._id}
-                            onToggle={() => setExpandedBadge(expandedBadge === badge._id ? null : badge._id)}
-                            onDelete={() => setConfirmDelete({ badgeId: badge._id, name: badge.name })}
+                            expanded={expandedBadge === badge.id}
+                            onToggle={() => setExpandedBadge(expandedBadge === badge.id ? null : badge.id)}
+                            onDelete={() => setConfirmDelete({ badgeId: badge.id, name: badge.name })}
                             registeredStudents={registeredStudents}
                             onAward={async (studentId) => {
-                                setAwardingBadge(badge._id)
+                                setAwardingBadge(badge.id)
                                 try {
-                                    await awardBadge({ badge_id: badge._id, student_id: studentId, course_id: courseId })
+                                    await BadgesAPI.awardBadge(badge.id, studentId, courseId)
                                     toast.success('Insignia otorgada')
                                 } catch (err: any) {
                                     toast.error(err.message || 'Error al otorgar insignia')
@@ -187,13 +187,13 @@ export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
                             }}
                             onRevoke={async (userBadgeId) => {
                                 try {
-                                    await revokeBadge({ user_badge_id: userBadgeId })
+                                    await BadgesAPI.revokeBadge(userBadgeId)
                                     toast.success('Insignia revocada')
                                 } catch (err: any) {
                                     toast.error(err.message || 'Error al revocar')
                                 }
                             }}
-                            awardingThis={awardingBadge === badge._id}
+                            awardingThis={awardingBadge === badge.id}
                             criteriaLabel={CRITERIA_LABELS[badge.criteria_type] ?? badge.criteria_type}
                             criteriaColor={CRITERIA_COLORS[badge.criteria_type] ?? CRITERIA_COLORS.custom}
                         />
@@ -238,16 +238,26 @@ function BadgeRow({
     criteriaLabel: string
     criteriaColor: string
 }) {
-    const holders = useQuery(api.badges.getBadgeHolders, expanded ? { badge_id: badge._id } : 'skip')
+    const { data: holders, refetch: refetchHolders } = useSupabaseQuery(
+        () => BadgesAPI.getBadgeHolders(badge.id),
+        [badge.id, expanded],
+        { skip: !expanded }
+    )
     const [selectedStudent, setSelectedStudent] = useState('')
 
-    const holderIds = new Set(holders?.map((h: any) => h.user_id.toString()) ?? [])
-    const availableStudents = registeredStudents.filter((s) => !holderIds.has(s._id.toString()))
+    const holderIds = useMemo(() => new Set(holders?.map((h: any) => h.user_id.toString()) ?? []), [holders])
+    const availableStudents = registeredStudents.filter((s) => !holderIds.has(s.id.toString()))
 
     const handleAward = async () => {
         if (!selectedStudent) return
         await onAward(selectedStudent as any)
         setSelectedStudent('')
+        refetchHolders()
+    }
+
+    const handleRevoke = async (userBadgeId: string) => {
+        await onRevoke(userBadgeId)
+        refetchHolders()
     }
 
     return (
@@ -328,10 +338,10 @@ function BadgeRow({
                         ) : (
                             <ul className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                                 {holders.map((h: any) => (
-                                    <li key={h._id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-1.5">
+                                    <li key={h.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-1.5">
                                         <span className="text-xs text-white truncate">{h.userName}</span>
                                         <button
-                                            onClick={() => onRevoke(h._id)}
+                                            onClick={() => handleRevoke(h.id)}
                                             className="text-slate-600 hover:text-red-400 transition-colors ml-2 shrink-0"
                                             title="Revocar"
                                         >

@@ -1,18 +1,24 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { useNavigate } from 'react-router-dom'
 import { Plus, Loader2, ChevronRight, CheckCircle, Edit3, Trash2, Search, User } from 'lucide-react'
 import CourseDetail from './CourseDetail'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
 import { EditCourseModal } from './EditModals'
+import { useProfile } from '../../hooks/useProfile'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { CoursesAPI, supabase } from '../../lib/api'
 
 export default function RamosPanel({ courses, selectedCourse, setSelectedCourse }: { courses: any[], selectedCourse: any, setSelectedCourse: (c: any) => void }) {
+    const { user } = useProfile()
     const navigate = useNavigate()
-    const createCourse = useMutation(api.courses.createCourse)
-    const deleteCourse = useMutation(api.courses.deleteCourse)
-    const careers = useQuery((api as any).careers.listCareers)
+    
+    // Careers query
+    const { data: careers } = useSupabaseQuery(
+        () => supabase.from('careers').select('*').then(r => r.data || []),
+        []
+    )
+
     const [showCreate, setShowCreate] = useState(false)
     const [formData, setFormData] = useState({ name: '', code: '', description: '', career_id: '' })
     const [creating, setCreating] = useState(false)
@@ -30,18 +36,20 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
     )
 
     const handleCreate = async () => {
-        if (!formData.name || !formData.code) return
+        if (!formData.name || !formData.code || !user) return
         setCreating(true)
         try {
-            await createCourse({
+            await CoursesAPI.createCourse(user.clerk_id, {
                 name: formData.name,
                 code: formData.code,
                 description: formData.description,
-                career_id: formData.career_id ? (formData.career_id as any) : undefined,
+                career_id: formData.career_id || undefined,
             })
             setSuccess(`Ramo "${formData.name}" creado exitosamente.`)
             setFormData({ name: '', code: '', description: '', career_id: '' })
             setShowCreate(false)
+            // Note: The parent component (TeacherDashboard) should refetch courses.
+            // For now, we rely on the next refresh or a custom refetch prop if needed.
             setTimeout(() => setSuccess(''), 4000)
         } catch (err: any) {
             toast.error(err.message || 'Error al crear el ramo')
@@ -51,10 +59,11 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
     }
 
     const handleDelete = async () => {
-        if (!courseToDelete) return
+        if (!courseToDelete || !user) return
         setDeleting(true)
         try {
-            await deleteCourse({ course_id: courseToDelete._id })
+            const { error } = await supabase.from('courses').delete().eq('id', courseToDelete.id)
+            if (error) throw error
             toast.success('Ramo eliminado correctamente')
             setCourseToDelete(null)
         } catch (err: any) {
@@ -125,10 +134,10 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                     <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Nombre del ramo (ej. Electrotecnia I)" className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent" title="Nombre del ramo" />
                     <input value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="Código (ej. ELT-101)" className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent" title="Código del ramo" />
                     <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción del ramo..." className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-accent h-24 resize-none" title="Descripción" />
-                    <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" title="Carrera asociada">
+                        <select value={formData.career_id} onChange={e => setFormData({ ...formData, career_id: e.target.value })} className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" title="Carrera asociada">
                         <option value="">Sin carrera asociada</option>
                         {(careers || []).map((c: any) => (
-                            <option key={c._id} value={c._id}>{c.name}</option>
+                            <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
                     <button onClick={handleCreate} disabled={creating || !formData.name || !formData.code} className="bg-accent text-white font-bold px-6 py-3 rounded-xl hover:bg-accent-light transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" title="Confirmar creación de ramo">
@@ -147,7 +156,7 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredCourses.map((c: any) => (
-                        <div key={c._id} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-accent/30 transition-all group relative cursor-pointer" onClick={() => setSelectedCourse(c)}>
+                        <div key={c.id} className="bg-surface-light border border-white/5 rounded-2xl p-6 hover:border-accent/30 transition-all group relative cursor-pointer" onClick={() => setSelectedCourse(c)}>
                             <div className="flex justify-between items-start">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-lg font-bold text-white group-hover:text-accent-light transition-colors truncate pr-8">{c.name}</h3>
@@ -171,7 +180,7 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
                                     <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-accent-light ml-1" />
                                 </div>
                             </div>
-                            {c.career_id && <p className="text-xs text-accent-light/70 mt-1 font-medium">{(careers || []).find((cr: any) => cr._id === c.career_id)?.name || ''}</p>}
+                            {c.career_id && <p className="text-xs text-accent-light/70 mt-1 font-medium">{(careers || []).find((cr: any) => cr.id === c.career_id)?.name || ''}</p>}
                             {c.description && <p className="text-slate-400 text-sm mt-3 line-clamp-2">{c.description}</p>}
                         </div>
                     ))}

@@ -1,6 +1,4 @@
-import { useState } from 'react'
-import { useQuery, useMutation, usePaginatedQuery, useConvex } from "convex/react"
-import { api } from "../../../convex/_generated/api"
+import { useState, useMemo } from 'react'
 import {
     ChevronRight, BookOpen, FileText, Gift,
     Trash2, Target, Flame, Sparkles, Loader2, RefreshCw,
@@ -17,23 +15,35 @@ import EvaluadorIAPanel from './EvaluadorIAPanel'
 import AgregarEvaluacionModal from './AgregarEvaluacionModal'
 import EvaluacionesPorCurso from './EvaluacionesPorCurso'
 import BadgesPanel from './BadgesPanel'
+import { useProfile } from '../../hooks/useProfile'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { MissionsAPI, RewardsAPI, QuizzesAPI, CoursesAPI, DocumentsAPI, supabase } from '../../lib/api'
 
 export default function CourseDetail({ course, onBack }: { course: any, onBack: () => void }) {
+    const { user } = useProfile()
     const [courseSubTab, setCourseSubTab] = useState<'evaluaciones' | 'evaluacion'>('evaluaciones')
     const [desafiosTab, setDesafiosTab] = useState<'todos' | 'manuales' | 'ia'>('todos')
-    const fixCourseEnrollments = useMutation(api.users.fixCourseEnrollments)
-    const documents = useQuery(api.documents.getDocumentsByCourse, { course_id: course._id })
-    const { results: rewards } = usePaginatedQuery(
-        api.rewards.getRewardsByCourse,
-        { course_id: course._id },
-        { initialNumItems: 10 }
+    
+    // Data queries using Supabase
+    const { data: documents } = useSupabaseQuery(
+        () => DocumentsAPI.getDocumentsByCourse(course.id),
+        [course.id]
     )
-    const missions = useQuery(api.missions.getMissions, { course_id: course._id })
-    const quizzes = useQuery(api.quizzes.getQuizzesByCourse, { course_id: course._id })
-    const { results: students } = usePaginatedQuery(
-        api.courses.getCourseStudents,
-        { course_id: course._id },
-        { initialNumItems: 500 }
+    const { data: rewards, refetch: refetchRewards } = useSupabaseQuery(
+        () => RewardsAPI.getRewardsByCourse(course.id),
+        [course.id]
+    )
+    const { data: missions, refetch: refetchMissions } = useSupabaseQuery(
+        () => MissionsAPI.getMissionsByCourse(course.id),
+        [course.id]
+    )
+    const { data: quizzes, refetch: refetchQuizzes } = useSupabaseQuery(
+        () => QuizzesAPI.getQuizzesByCourse(course.id),
+        [course.id]
+    )
+    const { data: students, refetch: refetchStudents } = useSupabaseQuery(
+        () => CoursesAPI.getCourseStudents(course.id),
+        [course.id]
     )
 
     const [expandedMission, setExpandedMission] = useState<string | null>(null)
@@ -46,25 +56,20 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const [showImportarAlumnos, setShowImportarAlumnos] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState<{ type: 'reward' | 'mission' | 'quiz' | 'cleanup' | 'reset_points', id: any } | null>(null)
 
-    const deleteReward = useMutation(api.rewards.deleteReward)
-    const deleteMission = useMutation(api.missions.deleteMission)
-    const deleteQuiz = useMutation(api.quizzes.deleteQuiz)
-    const cleanUpWhitelist = useMutation(api.courses.cleanUpWhitelist)
-    const resetCoursePoints = useMutation(api.courses.resetCoursePoints)
-    const giveParticipationPoints = useMutation((api as any).courses.giveParticipationPoints)
-
     // Estado para dar puntos de participación
     const [givingPoints, setGivingPoints] = useState<{ enrollmentId: string; studentName: string } | null>(null)
     const [participationPts, setParticipationPts] = useState('10')
     const [participationReason, setParticipationReason] = useState('')
     const [givingPtsLoading, setGivingPtsLoading] = useState(false)
 
+    const [processing, setProcessing] = useState(false)
+    const [exporting, setExporting] = useState<string | null>(null)
+
     const handleGivePoints = async () => {
-        if (!givingPoints) return
+        if (!givingPoints || !user) return
         setGivingPtsLoading(true)
         try {
-            await giveParticipationPoints({
-                enrollment_id: givingPoints.enrollmentId as any,
+            await CoursesAPI.giveParticipationPoints(givingPoints.enrollmentId, user.clerk_id, {
                 points: parseInt(participationPts) || 10,
                 reason: participationReason || undefined,
             })
@@ -72,6 +77,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
             setGivingPoints(null)
             setParticipationPts('10')
             setParticipationReason('')
+            refetchStudents()
         } catch (err: any) {
             toast.error(err.message || 'Error al dar puntos')
         } finally {
@@ -79,14 +85,11 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
         }
     }
 
-    const [processing, setProcessing] = useState(false)
-    const convex = useConvex()
-    const [exporting, setExporting] = useState<string | null>(null)
-
     const handleExportQuizzes = async () => {
         setExporting('quizzes')
         try {
-            const data = await convex.query(api.analytics.exportQuizHistory, { course_id: course._id })
+            const { data, error } = await supabase.rpc('export_quiz_history', { p_course_id: course.id })
+            if (error) throw error
             if (!data || data.length === 0) { toast.error('No hay historial de quizzes para exportar'); return }
             await exportToExcel(data, `Quizzes_${course.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`, 'Historial Quizzes')
             toast.success('Excel de quizzes generado')
@@ -100,7 +103,8 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     const handleExportAttendance = async () => {
         setExporting('attendance')
         try {
-            const data = await convex.query(api.analytics.exportAttendance, { course_id: course._id })
+            const { data, error } = await supabase.rpc('export_attendance', { p_course_id: course.id })
+            if (error) throw error
             if (!data || data.length === 0) { toast.error('No hay registros de asistencia para exportar'); return }
             await exportToExcel(data, `Asistencia_${course.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}`, 'Asistencia')
             toast.success('Excel de asistencia generado')
@@ -112,24 +116,33 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
     }
 
     const handleConfirmAction = async () => {
-        if (!confirmDelete) return
+        if (!confirmDelete || !user) return
         setProcessing(true)
         try {
             if (confirmDelete.type === 'reward') {
-                await deleteReward({ reward_id: confirmDelete.id })
+                await RewardsAPI.deleteReward(confirmDelete.id, user.clerk_id)
                 toast.success('Recompensa eliminada')
+                refetchRewards()
             } else if (confirmDelete.type === 'mission') {
-                await deleteMission({ mission_id: confirmDelete.id })
+                await MissionsAPI.deleteMission(confirmDelete.id, user.clerk_id)
                 toast.success('Misión eliminada')
+                refetchMissions()
             } else if (confirmDelete.type === 'quiz') {
-                await deleteQuiz({ quiz_id: confirmDelete.id })
+                await QuizzesAPI.deleteQuiz(confirmDelete.id, user.clerk_id)
                 toast.success('Quiz eliminado')
+                refetchQuizzes()
             } else if (confirmDelete.type === 'cleanup') {
-                const res = await cleanUpWhitelist({ course_id: course._id })
+                const { data: res, error } = await supabase.rpc('cleanup_whitelist', { p_course_id: course.id })
+                if (error) throw error
                 toast.success(`Limpieza completada: ${res.deleted} registros corregidos y ${res.fixed} RUTs formateados.`)
+                refetchStudents()
             } else if (confirmDelete.type === 'reset_points') {
-                const res = await resetCoursePoints({ course_id: course._id })
+                const { data: res, error } = await supabase.rpc('reset_course_points', { p_course_id: course.id })
+                if (error) throw error
                 toast.success(`Puntos reiniciados para ${res.studentsReset} alumnos. (${res.missionsReset} misiones y ${res.quizzesReset} quizzes borrados).`)
+                refetchStudents()
+                refetchMissions()
+                refetchQuizzes()
             }
         } catch (err: any) {
             toast.error(err.message || 'Error en la operación')
@@ -201,7 +214,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                     </h3>
                     {documents === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : documents.length === 0 ? <p className="text-slate-500 text-sm">No se han subido archivos</p> : (
                         <ul className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {documents.map((d: any) => <li key={d._id} className="text-slate-300 text-sm flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg"><div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></div><span className="truncate flex-1">{d.file_name}</span></li>)}
+                            {documents.map((d: any) => <li key={d.id} className="text-slate-300 text-sm flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg"><div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></div><span className="truncate flex-1">{d.file_name}</span></li>)}
                         </ul>
                     )}
                 </div>
@@ -213,7 +226,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                     {rewards === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : rewards.length === 0 ? <p className="text-slate-500 text-sm">No hay recompensas</p> : (
                         <ul className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                             {rewards.map((r: any) => (
-                                <li key={r._id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg group">
+                                <li key={r.id} className="text-slate-300 text-sm flex items-center justify-between p-2 hover:bg-white/5 rounded-lg group">
                                     <span className="flex items-center gap-3 truncate">
                                         <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0"></div>
                                         <span className="truncate">{r.name}</span>
@@ -221,7 +234,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                     <div className="flex items-center gap-1 shrink-0 ml-2">
                                         <span className="text-gold font-mono text-xs bg-gold/10 px-2 py-0.5 rounded-md mr-1">{r.cost} pts</span>
                                         <button onClick={(e) => { e.stopPropagation(); setEditingReward(r) }} className="p-1.5 text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-md transition-all" title="Editar"><Edit3 className="w-3.5 h-3.5" /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'reward', id: r._id }) }} className="p-1.5 text-slate-500 hover:text-red-400 bg-white/5 hover:bg-red-400/10 rounded-md transition-all" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'reward', id: r.id }) }} className="p-1.5 text-slate-500 hover:text-red-400 bg-white/5 hover:bg-red-400/10 rounded-md transition-all" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
                                     </div>
                                 </li>
                             ))}
@@ -255,7 +268,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         {desafiosTab !== 'ia' && missions !== undefined && (
                             <ul className="space-y-3 mb-3">
                                 {missions.map((m: any) => (
-                                    <li key={m._id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedMission(expandedMission === m._id ? null : m._id)}>
+                                    <li key={m.id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedMission(expandedMission === m.id ? null : m.id)}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex flex-col truncate pr-2">
                                                 <div className="flex items-center gap-2">
@@ -268,10 +281,10 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                             </div>
                                             <div className="flex items-center gap-1 shrink-0">
                                                 <button onClick={(e) => { e.stopPropagation(); setEditingMission(m) }} className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Editar"><Edit3 className="w-4 h-4" /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'mission', id: m._id }) }} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'mission', id: m.id }) }} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
                                             </div>
                                         </div>
-                                        {expandedMission === m._id && (
+                                        {expandedMission === m.id && (
                                             <div className="mt-4 pt-3 border-t border-white/5 text-sm text-slate-400">
                                                 <p className="leading-relaxed">{m.description}</p>
                                             </div>
@@ -288,7 +301,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                 {quizzes === undefined ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : quizzes.length === 0 && desafiosTab === 'ia' ? <p className="text-slate-500 text-sm italic">Los desafíos aparecerán automáticamente cuando subas material al curso.</p> : (
                                     <ul className="space-y-3">
                                         {quizzes?.map((q: any) => (
-                                            <li key={q._id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedQuiz(expandedQuiz === q._id ? null : q._id)}>
+                                            <li key={q.id} className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onClick={() => setExpandedQuiz(expandedQuiz === q.id ? null : q.id)}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex flex-col truncate pr-2">
                                                         <span className="font-medium text-white text-sm truncate">{q.title}</span>
@@ -299,10 +312,10 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                                     </div>
                                                     <div className="flex items-center gap-1 shrink-0">
                                                         <span className="text-accent-light font-mono text-xs shrink-0 bg-accent/10 px-2 py-0.5 rounded-md mr-1">{q.num_questions} preg.</span>
-                                                        <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'quiz', id: q._id }) }} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: 'quiz', id: q.id }) }} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
                                                     </div>
                                                 </div>
-                                                {expandedQuiz === q._id && (
+                                                {expandedQuiz === q.id && (
                                                     <div className="mt-3 pt-3 border-t border-white/5 text-sm space-y-4">
                                                         <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                                                             <div className="flex gap-4">
@@ -314,7 +327,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                                             </span>
                                                         </div>
                                                         <div className="flex gap-2 mb-4">
-                                                            <button onClick={(e) => { e.stopPropagation(); setViewingQuizResults(q._id) }} className="flex-1 bg-accent/20 text-accent-light hover:bg-accent/30 text-xs font-bold py-2 rounded-lg border border-accent/20 transition-all flex items-center justify-center gap-2" title="Ver resultados del quiz">
+                                                            <button onClick={(e) => { e.stopPropagation(); setViewingQuizResults(q.id) }} className="flex-1 bg-accent/20 text-accent-light hover:bg-accent/30 text-xs font-bold py-2 rounded-lg border border-accent/20 transition-all flex items-center justify-center gap-2" title="Ver resultados del quiz">
                                                                 <Users className="w-4 h-4" /> VER RESULTADOS
                                                             </button>
                                                         </div>
@@ -419,10 +432,13 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                         <div className="w-px h-8 bg-white/5 mx-2 hidden md:block"></div>
 
                         <button onClick={async () => { 
+                            if (!user) return;
                             setProcessing(true); 
                             try { 
-                                const res = await fixCourseEnrollments({ course_id: course._id }); 
-                                toast.success(`Sincronización: ${res.enrolled} nuevos alumnos vinculados`); 
+                                const { data: enrolled, error } = await supabase.rpc('fix_course_enrollments', { p_course_id: course.id, p_teacher_id: user.clerk_id }); 
+                                if (error) throw error;
+                                toast.success(`Sincronización: ${enrolled} nuevos alumnos vinculados`); 
+                                refetchStudents();
                             } catch (e: any) { 
                                 toast.error("Error al sincronizar"); 
                             } finally { 
@@ -492,7 +508,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                         </h3>
                                         <ul className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                             {sectionStudents.map((s: any) => (
-                                                <li key={s._id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                                                <li key={s.id} className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between group hover:bg-white/10 transition-all">
                                                     <div className="flex items-center gap-3 truncate">
                                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${s.status === 'registered' ? 'bg-gradient-to-br from-accent to-accent-light text-white' : 'bg-slate-700/50 text-slate-400'}`}>
                                                             {s.name ? s.name[0].toUpperCase() : (s.identifier || s.student_id || '?')[0].toUpperCase()}
@@ -509,7 +525,7 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4 shrink-0 ml-2">
-                                                        {s.status === 'registered' && (
+                                                        {(s.status === 'registered' && s.enrollment_id) && (
                                                             <button
                                                                 onClick={(e) => { 
                                                                     e.stopPropagation();
@@ -620,7 +636,10 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
 }
 
 function QuizResultsModal({ quizId, onClose }: { quizId: any, onClose: () => void }) {
-    const submissions = useQuery(api.quizzes.getQuizSubmissions, { quiz_id: quizId })
+    const { data: submissions, isLoading } = useSupabaseQuery(
+        () => QuizzesAPI.getQuizSubmissions(quizId),
+        [quizId]
+    )
 
     return (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -634,16 +653,16 @@ function QuizResultsModal({ quizId, onClose }: { quizId: any, onClose: () => voi
                     <button onClick={onClose} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
                 </div>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {submissions === undefined ? (
+                    {isLoading ? (
                         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
-                    ) : submissions.length === 0 ? (
+                    ) : !submissions || submissions.length === 0 ? (
                         <div className="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
                             <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                             <p className="text-slate-400">Nadie ha completado este quiz aún.</p>
                         </div>
                     ) : (
                         submissions.map((s: any) => (
-                            <div key={s._id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                            <div key={s.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-accent-light font-bold">{s.student_name[0].toUpperCase()}</div>
                                     <div className="truncate">

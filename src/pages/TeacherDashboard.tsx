@@ -1,8 +1,6 @@
-import { useState } from 'react'
-import { useMutation, useQuery } from "convex/react"
+import { useState, useMemo } from 'react'
 import { useClerk } from "@clerk/clerk-react"
 import { useNavigate } from 'react-router-dom'
-import { api } from "../../convex/_generated/api"
 import { BookOpen, Target, Trophy, Gift, BarChart3, LogOut, Menu, X, Settings, Sparkles, Loader2, FileText, User, Mail, ShieldCheck, HelpCircle, ArrowRightLeft } from 'lucide-react'
 import FAQSection from '../components/FAQSection'
 import { toast } from 'sonner'
@@ -18,6 +16,9 @@ import AdminPanel from '../components/teacher/AdminPanel'
 import TeacherTour from '../components/teacher/TeacherTour'
 import ContactWidget from '../components/ContactWidget'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
+import { useProfile } from '../hooks/useProfile'
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery'
+import { CoursesAPI } from '../lib/api'
 
 function getGreeting(): string {
     const h = new Date().getHours()
@@ -36,8 +37,13 @@ import { getTodayEphemeris } from '../data/efemerides'
 export default function TeacherDashboard() {
     const { signOut } = useClerk()
     const navigate = useNavigate()
-    const user = useQuery(api.users.getProfile)
-    const courses = useQuery(api.courses.getMyCourses)
+    
+    const { user, isLoading: profileLoading } = useProfile()
+    const { data: courses, isLoading: coursesLoading } = useSupabaseQuery(
+        () => user ? CoursesAPI.getMyCourses(user.clerk_id, user.role) : Promise.resolve([]),
+        [user]
+    )
+
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('inicio')
     const [selectedCourse, setSelectedCourse] = useState<any>(null)

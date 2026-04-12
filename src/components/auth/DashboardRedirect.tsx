@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useConvexAuth, useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { Loader2, ShieldAlert } from 'lucide-react'
+import { useProfile } from '../../hooks/useProfile'
 
 function LoadingScreen() {
     return (
@@ -16,26 +15,25 @@ function LoadingScreen() {
 }
 
 export default function DashboardRedirect() {
-    const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth()
-    const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : 'skip')
+    const { user, isLoading, isAuthenticated } = useProfile()
     const [isStuck, setIsStuck] = useState(false)
     const [hasRetried, setHasRetried] = useState(false)
     const [waitCount, setWaitCount] = useState(0)
 
     useEffect(() => {
-        if (!isAuthenticated && !isAuthLoading && !hasRetried && waitCount < 3) {
+        if (!isAuthenticated && !isLoading && !hasRetried && waitCount < 3) {
             const timer = setTimeout(() => setWaitCount((c) => c + 1), 2000)
             return () => clearTimeout(timer)
         }
-    }, [isAuthLoading, isAuthenticated, hasRetried, waitCount])
+    }, [isLoading, isAuthenticated, hasRetried, waitCount])
 
     useEffect(() => {
-        if (isAuthLoading) return
+        if (isLoading) return
         const timer = setTimeout(() => {
-            if (user === undefined && !hasRetried) setIsStuck(true)
+            if (user === null && isAuthenticated && !hasRetried) setIsStuck(true)
         }, 8000)
         return () => clearTimeout(timer)
-    }, [isAuthLoading, isAuthenticated, user, hasRetried])
+    }, [isLoading, isAuthenticated, user, hasRetried])
 
     const handleRetry = () => {
         setIsStuck(false)
@@ -43,11 +41,11 @@ export default function DashboardRedirect() {
         window.location.reload()
     }
 
-    if (isAuthLoading) return <LoadingScreen />
+    if (isLoading) return <LoadingScreen />
     if (!isAuthenticated && waitCount < 3) return <LoadingScreen />
     if (!isAuthenticated) return <Navigate to="/login" replace />
 
-    if (user === undefined) {
+    if (user === null) {
         if (isStuck) {
             return (
                 <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
@@ -82,16 +80,8 @@ export default function DashboardRedirect() {
         return <LoadingScreen />
     }
 
-    if (user === null) {
-        return (
-            <Navigate
-                to="/auth-error?error=Perfil no encontrado. Usa tu correo institucional (@duoc.cl, @duocuc.cl, etc.)"
-                replace
-            />
-        )
-    }
-
-    const userRole = (user as any)?.role || 'student'
-    const target = userRole === 'teacher' || userRole === 'admin' ? '/docente' : '/alumno'
+    const userRole = user.role || 'student'
+    const isTeacherRole = userRole === 'teacher' || userRole === 'admin' || userRole === 'demo_teacher'
+    const target = isTeacherRole ? '/docente' : '/alumno'
     return <Navigate to={target} replace />
 }

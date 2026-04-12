@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { useQuery, usePaginatedQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Trophy, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { CoursesAPI } from '../../lib/api'
+import { useUser } from '@clerk/clerk-react'
 
 export default function RankingDocentePanel() {
-    const courses = useQuery(api.courses.getMyCourses)
+    const { user } = useUser()
+    const { data: courses } = useSupabaseQuery(() => CoursesAPI.getMyCourses(user?.id || '', user?.publicMetadata?.role as string || 'student'), [user])
     const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
     const [selectedCourseView, setSelectedCourseView] = useState<Record<string, { isGlobal: boolean }>>({})
 
@@ -34,16 +36,16 @@ export default function RankingDocentePanel() {
             ) : (
                 <div className="space-y-4">
                     {courses.map((course: any) => {
-                        const isCollapsed = collapsedCourses.has(course._id)
-                        const view = selectedCourseView[course._id] || { isGlobal: false }
+                        const isCollapsed = collapsedCourses.has(course.id)
+                        const view = selectedCourseView[course.id] || { isGlobal: false }
                         return (
                             <RankingCourseBox
-                                key={course._id}
+                                key={course.id}
                                 course={course}
                                 isCollapsed={isCollapsed}
                                 isGlobal={view.isGlobal}
-                                onToggle={() => toggleCourse(course._id)}
-                                onSetGlobal={(g) => setGlobal(course._id, g)}
+                                onToggle={() => toggleCourse(course.id)}
+                                onSetGlobal={(g) => setGlobal(course.id, g)}
                             />
                         )
                     })}
@@ -56,20 +58,21 @@ export default function RankingDocentePanel() {
 function RankingCourseBox({ course, isCollapsed, isGlobal, onToggle, onSetGlobal }: {
     course: any, isCollapsed: boolean, isGlobal: boolean, onToggle: () => void, onSetGlobal: (g: boolean) => void
 }) {
-    const { results: localStudents } = usePaginatedQuery(
-        api.courses.getCourseStudents,
-        (!isCollapsed && !isGlobal) ? { course_id: course._id } : "skip",
-        { initialNumItems: 500 }
+    const { data: localStudents } = useSupabaseQuery(
+        () => CoursesAPI.getCourseStudents(course.id),
+        [course.id],
+        { skip: isCollapsed || isGlobal }
     )
-    const globalStudents = useQuery(
-        api.courses.getGlobalRanking,
-        (!isCollapsed && isGlobal) ? { course_id: course._id } : "skip"
+    const { data: globalStudents } = useSupabaseQuery(
+        () => CoursesAPI.getGlobalRanking(course.id),
+        [course.id],
+        { skip: isCollapsed || !isGlobal }
     )
 
     const students = isGlobal ? globalStudents : localStudents
     const sorted = isGlobal
         ? ((students as any[]) || [])
-        : [...((localStudents as any[]) || [])].sort((a: any, b: any) => (b.total_points || 0) - (a.total_points || 0))
+        : [...((localStudents as any[]) || [])].sort((a: any, b: any) => (b.ranking_points || b.total_points || 0) - (a.ranking_points || a.total_points || 0))
     const medals = ['🥇', '🥈', '🥉']
 
     return (
@@ -142,7 +145,7 @@ function RankingCourseBox({ course, isCollapsed, isGlobal, onToggle, onSetGlobal
                             </div>
                             <div className="divide-y divide-white/5">
                                 {(sorted as any[]).map((s: any, i: number) => (
-                                    <div key={s._id} className={`flex items-center px-4 py-3 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
+                                    <div key={s.id} className={`flex items-center px-4 py-3 hover:bg-white/5 transition-colors ${i < 3 ? 'bg-white/[0.02]' : ''}`}>
                                         <span className="w-10 text-center text-lg">{medals[i] || <span className="text-slate-500 text-xs">{i + 1}</span>}</span>
                                         <div className="flex-1">
                                             <p className="text-white text-sm font-medium">{s.name}</p>
@@ -167,3 +170,4 @@ function RankingCourseBox({ course, isCollapsed, isGlobal, onToggle, onSetGlobal
         </div>
     )
 }
+

@@ -1,18 +1,17 @@
-import { useQuery, useConvex, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { BarChart3, Loader2, Sparkles, Download, Trash2 } from 'lucide-react'
 import { useState } from "react"
 import { exportToExcel } from "../../utils/ExportData"
 import { toast } from "sonner"
+import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
+import { AnalyticsAPI, AdminAPI, CoursesAPI } from "../../lib/api"
+import { useUser } from "@clerk/clerk-react"
 
 export default function AnaliticasPanel() {
-    const stats = useQuery(api.analytics.getTeacherStats, {})
-    const convex = useConvex()
+    const { user } = useUser()
+    const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user?.id || '', user?.publicMetadata?.role as string || 'student'), [user])
     const [exporting, setExporting] = useState<string | null>(null)
     const [unifying, setUnifying] = useState(false)
-    const unifyUsers = useMutation(api.admin_fix.unifyUsersByRut)
     const [cleaning, setCleaning] = useState(false)
-    const cleanAllWhitelists = useMutation(api.courses.cleanAllMyWhitelists)
 
     if (!stats) {
         return (
@@ -25,7 +24,7 @@ export default function AnaliticasPanel() {
     const handleExport = async (courseName: string) => {
         setExporting(courseName)
         try {
-            const data = await convex.query(api.analytics.exportCourseData, { courseName })
+            const data = await AnalyticsAPI.exportCourseData(courseName, user?.id || '', user?.publicMetadata?.role as string || 'student')
             if (!data || data.length === 0) {
                 toast.error("No hay alumnos inscritos en este ramo para exportar.")
                 return
@@ -54,7 +53,7 @@ export default function AnaliticasPanel() {
         if (!confirm("Esto buscará alumnos duplicados por RUT y unificará sus puntos. ¿Continuar?")) return
         setUnifying(true)
         try {
-            const res = await unifyUsers()
+            const res = await AdminAPI.unifyUsersByRut()
             toast.success(`Se han unificado ${res.unifiedCount} registros.`)
         } catch (err: any) {
             toast.error("Error al unificar: " + err.message)

@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import ConfirmModal from '../ConfirmModal'
-import { useQuery, useMutation, useAction } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { 
     ClipboardCheck, 
     Plus, 
@@ -18,13 +16,19 @@ import {
     ArrowLeft
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { EvaluatorAPI } from '../../lib/api'
 
 export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
     const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
     const [selectedRubricId, setSelectedRubricId] = useState<string | null>(null)
     const [showCreateRubric, setShowCreateRubric] = useState(false)
 
-    const rubrics = useQuery(api.evaluator.getRubrics, selectedCourseId ? { course_id: selectedCourseId as any } : "skip")
+    const { data: rubrics, refetch: refetchRubrics } = useSupabaseQuery(
+        () => EvaluatorAPI.getRubrics(selectedCourseId!),
+        [selectedCourseId],
+        { skip: !selectedCourseId }
+    )
 
     if (!selectedCourseId) {
         return (
@@ -37,8 +41,8 @@ export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {courses.map((c) => (
                         <button
-                            key={c._id}
-                            onClick={() => setSelectedCourseId(c._id)}
+                            key={c.id}
+                            onClick={() => setSelectedCourseId(c.id)}
                             className="bg-surface-light border border-white/5 p-6 rounded-3xl hover:border-primary/40 transition-all text-left group"
                         >
                             <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -53,7 +57,7 @@ export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
         )
     }
 
-    const currentCourse = courses.find(c => c._id === selectedCourseId);
+    const currentCourse = courses.find(c => c.id === selectedCourseId);
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -99,7 +103,7 @@ export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {rubrics?.map((r: any) => (
-                        <div key={r._id} className="bg-surface-light border border-white/5 rounded-3xl p-6 hover:border-accent/40 transition-all flex flex-col group h-full">
+                        <div key={r.id} className="bg-surface-light border border-white/5 rounded-3xl p-6 hover:border-accent/40 transition-all flex flex-col group h-full">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
                                     <FileText className="w-5 h-5" />
@@ -114,12 +118,12 @@ export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
                             </p>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => setSelectedRubricId(r._id)}
+                                    onClick={() => setSelectedRubricId(r.id)}
                                     className="flex-1 bg-white/5 hover:bg-accent/20 text-white font-bold py-3 rounded-xl border border-white/5 hover:border-accent/40 transition-all flex items-center justify-center gap-2 text-xs"
                                 >
                                     EVALUAR TRABAJOS <ChevronRight className="w-4 h-4" />
                                 </button>
-                                <DeleteRubricButton rubricId={r._id} />
+                                <DeleteRubricButton rubricId={r.id} onDeleteSuccess={refetchRubrics} />
                             </div>
                         </div>
                     ))}
@@ -140,7 +144,6 @@ function CreateRubricForm({ courseId, onCancel, onSuccess }: { courseId: string,
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [saving, setSaving] = useState(false)
-    const create = useMutation(api.evaluator.createRubric)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -148,8 +151,8 @@ function CreateRubricForm({ courseId, onCancel, onSuccess }: { courseId: string,
 
         setSaving(true)
         try {
-            const id = await create({ 
-                course_id: courseId as any, 
+            const id = await EvaluatorAPI.createRubric({ 
+                course_id: courseId, 
                 title: title.trim(), 
                 content_text: content.trim() 
             })
@@ -228,9 +231,14 @@ function CreateRubricForm({ courseId, onCancel, onSuccess }: { courseId: string,
 }
 
 function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () => void }) {
-    const rubric = useQuery(api.evaluator.getRubricInternal, { id: rubricId as any })
-    const results = useQuery(api.evaluator.getGradingResults, { rubric_id: rubricId as any })
-    const evaluate = useAction(api.evaluator.evaluateSubmission)
+    const { data: rubric } = useSupabaseQuery(
+        () => EvaluatorAPI.getRubric(rubricId),
+        [rubricId]
+    )
+    const { data: results, refetch: refetchResults } = useSupabaseQuery(
+        () => EvaluatorAPI.getGradingResults(rubricId),
+        [rubricId]
+    )
 
     const [studentName, setStudentName] = useState('')
     const [submissionText, setSubmissionText] = useState('')
@@ -262,8 +270,8 @@ function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () =
         setIsEvaluating(true);
         const toastId = toast.loading("La IA está evaluando el trabajo...");
         try {
-            await evaluate({
-                rubric_id: rubricId as any,
+            await EvaluatorAPI.evaluateSubmission({
+                rubric_id: rubricId,
                 student_name: studentName.trim(),
                 file_name: fileName || "Texto pegado",
                 submission_text: submissionText.trim()
@@ -272,6 +280,7 @@ function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () =
             setStudentName('');
             setSubmissionText('');
             setFileName('');
+            refetchResults();
             setActiveTab('historial');
         } catch (e: any) {
             toast.error("Error al evaluar: " + e.message, { id: toastId });
@@ -400,7 +409,7 @@ function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () =
                         </div>
                     ) : (
                         results.map((res: any) => (
-                            <div key={res._id} className="bg-surface-light border border-white/5 rounded-[2rem] p-6 lg:p-8 hover:bg-white/5 transition-all group border-l-4 border-l-primary/40">
+                            <div key={res.id} className="bg-surface-light border border-white/5 rounded-[2rem] p-6 lg:p-8 hover:bg-white/5 transition-all group border-l-4 border-l-primary/40">
                                 <div className="flex flex-col md:flex-row items-start justify-between gap-6">
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg">
@@ -451,16 +460,16 @@ function RubricDetailView({ rubricId, onBack }: { rubricId: string, onBack: () =
     )
 }
 
-function DeleteRubricButton({ rubricId }: { rubricId: string }) {
-    const del = useMutation(api.evaluator.deleteRubric)
+function DeleteRubricButton({ rubricId, onDeleteSuccess }: { rubricId: string, onDeleteSuccess: () => void }) {
     const [deleting, setDeleting] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
 
     const handleConfirm = async () => {
         setDeleting(true)
         try {
-            await del({ rubric_id: rubricId as any })
+            await EvaluatorAPI.deleteRubric(rubricId)
             toast.success("Pauta eliminada")
+            onDeleteSuccess()
         } catch (e: any) {
             toast.error(e.message)
         } finally {

@@ -1,18 +1,19 @@
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { ArrowRightLeft, CheckCircle, X, User, Book, MapPin, Loader2, Clock, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
+import { PointTransfersAPI } from '../../lib/api'
+import { useUser } from '@clerk/clerk-react'
 
 export default function TraspasosPanel() {
-    const transferRequests = useQuery(api.point_transfers.getPendingForTeacher);
-    const processTransfer = useMutation(api.point_transfers.processTransfer);
+    const { user } = useUser()
+    const { data: transferRequests } = useSupabaseQuery(() => PointTransfersAPI.getPendingForTeacher(user?.id || ''), [user]);
     const [submitting, setSubmitting] = useState<string | null>(null);
 
     const handleProcess = async (id: any, approve: boolean) => {
         setSubmitting(id + (approve ? '-ap' : '-rj'));
         try {
-            await processTransfer({ request_id: id, approve });
+            await PointTransfersAPI.processTransfer(id, approve, user?.id || '');
             toast.success(approve ? "Traspaso aprobado" : "Traspaso rechazado");
         } catch (err: any) {
             toast.error(err.message || "Error al procesar traspaso");
@@ -28,7 +29,7 @@ export default function TraspasosPanel() {
         </div>
     );
 
-    if (transferRequests.length === 0) return (
+    if (!transferRequests || transferRequests.length === 0) return (
         <div className="flex flex-col items-center justify-center py-20 bg-surface-light border border-white/5 rounded-[2rem]">
             <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
                 <ArrowRightLeft className="w-8 h-8 text-slate-600" />
@@ -59,7 +60,7 @@ export default function TraspasosPanel() {
                     const isTargetDoc = req.isTargetTeacher;
 
                     return (
-                        <div key={req._id} className="group bg-surface-light border border-white/5 hover:border-accent/30 rounded-3xl p-6 transition-all duration-300 shadow-lg hover:shadow-accent/5">
+                        <div key={req.id} className="group bg-surface-light border border-white/5 hover:border-accent/30 rounded-3xl p-6 transition-all duration-300 shadow-lg hover:shadow-accent/5">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                 <div className="flex-1 space-y-4">
                                     <div className="flex items-center gap-4">
@@ -119,19 +120,19 @@ export default function TraspasosPanel() {
                                 <div className="flex flex-row lg:flex-col gap-3 min-w-[160px]">
                                     <button
                                         disabled={!!submitting}
-                                        onClick={() => handleProcess(req._id, true)}
+                                        onClick={() => handleProcess(req.id, true)}
                                         className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50"
                                         title="Aprobar traspaso"
                                     >
-                                        {submitting === `${req._id}-ap` ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><CheckCircle className="w-4 h-4" /> APROBAR</>}
+                                        {submitting === `${req.id}-ap` ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><CheckCircle className="w-4 h-4" /> APROBAR</>}
                                     </button>
                                     <button
                                         disabled={!!submitting}
-                                        onClick={() => handleProcess(req._id, false)}
+                                        onClick={() => handleProcess(req.id, false)}
                                         className="flex-1 px-6 py-3 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                                         title="Rechazar traspaso"
                                     >
-                                        {submitting === `${req._id}-rj` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><X className="w-4 h-4" /> RECHAZAR</>}
+                                        {submitting === `${req.id}-rj` ? <Loader2 className="w-4 h-4 animate-spin" /> : <><X className="w-4 h-4" /> RECHAZAR</>}
                                     </button>
                                 </div>
                             </div>

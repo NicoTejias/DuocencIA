@@ -1,19 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 import { SignIn, useUser } from "@clerk/clerk-react"
-import { useConvexAuth } from "convex/react"
 import { useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 
 export default function LoginPage() {
     const navigate = useNavigate()
     const { isSignedIn } = useUser()
-    const { isAuthenticated, isLoading } = useConvexAuth()
-
     useEffect(() => {
-        if (isSignedIn && isAuthenticated && !isLoading) {
+        if (isSignedIn) {
             navigate('/dashboard', { replace: true })
         }
-    }, [isSignedIn, isAuthenticated, isLoading, navigate])
+    }, [isSignedIn, navigate])
 
     return (
         <div className="min-h-screen bg-surface flex pt-safe pb-safe">

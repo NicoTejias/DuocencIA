@@ -1,39 +1,36 @@
 import { useState } from 'react'
-import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Gift, Loader2, Trash2, Sparkles, CheckCircle, Bell, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
+import { RewardsAPI } from '../../lib/api'
+import { useSupabaseQuery } from '../../hooks/useSupabaseQuery'
 
 export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
-    const createReward = useMutation(api.rewards.createReward)
-    const deleteReward = useMutation(api.rewards.deleteReward)
     const [formData, setFormData] = useState({ course_id: '', name: '', description: '', cost: '', stock: '' })
     const [creating, setCreating] = useState(false)
     const [success, setSuccess] = useState('')
     const [subTab, setSubTab] = useState<'recomendadas' | 'manual'>('recomendadas')
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; rewardId: any }>({ open: false, rewardId: null })
 
-    // Obtener recompensas existentes para el ramo seleccionado (PAGINADO)
-    const { results: existingRewards, status: rewardsStatus } = usePaginatedQuery(
-        api.rewards.getRewardsByCourse,
-        formData.course_id ? { course_id: formData.course_id as any } : "skip",
-        { initialNumItems: 50 }
+    // Obtener recompensas existentes para el ramo seleccionado
+    const { data: existingRewards, isLoading: loadingRewards } = useSupabaseQuery(
+        () => RewardsAPI.getRewardsByCourse(formData.course_id),
+        [formData.course_id],
+        { skip: !formData.course_id }
     )
 
-    const updateReward = useMutation(api.rewards.updateReward)
-    const markDelivered = useMutation((api as any).rewards.markRedemptionDelivered)
     const [editingStock, setEditingStock] = useState<string | null>(null)
     const [newStock, setNewStock] = useState('')
 
-    const pendingRedemptions = useQuery(
-        (api as any).rewards.getPendingRedemptions,
-        formData.course_id ? { course_id: formData.course_id as any } : "skip"
+    const { data: pendingRedemptions } = useSupabaseQuery(
+        () => RewardsAPI.getPendingRedemptions(formData.course_id),
+        [formData.course_id],
+        { skip: !formData.course_id }
     )
 
-    const handleMarkDelivered = async (redemptionId: any, rewardName: string) => {
+    const handleMarkDelivered = async (redemptionId: string, rewardName: string) => {
         try {
-            await markDelivered({ redemption_id: redemptionId })
+            await RewardsAPI.markRedemptionDelivered(redemptionId)
             toast.success(`Canje de "${rewardName}" marcado como entregado`)
         } catch (err: any) {
             toast.error(err.message || 'Error al marcar entrega')
@@ -42,8 +39,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
 
     const handleUpdateStock = async (reward: any) => {
         try {
-            await updateReward({
-                reward_id: reward._id,
+            await RewardsAPI.updateReward(reward.id, {
                 name: reward.name,
                 description: reward.description,
                 cost: reward.cost,
@@ -64,7 +60,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
 
     const handleConfirmDelete = async () => {
         try {
-            await deleteReward({ reward_id: confirmDelete.rewardId })
+            await RewardsAPI.deleteReward(confirmDelete.rewardId)
             toast.success('Recompensa eliminada')
         } catch (err: any) {
             toast.error('Fallo al eliminar: ' + (err.message || String(err)))
@@ -126,12 +122,12 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
         }
         setCreating(true)
         try {
-            await createReward({
-                course_id: formData.course_id as any,
+            await RewardsAPI.createReward({
+                course_id: formData.course_id,
                 name: template.name,
                 description: template.description,
                 cost: template.cost,
-                // stock omitted -> defaults to 1 per student
+                stock: 50 // Default for templates
             })
             setSuccess(`✅ "${template.name}" agregada (Stock inicial: 1 por alumno).`)
             setTimeout(() => setSuccess(''), 3000)
@@ -146,12 +142,12 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
         if (!formData.course_id || !formData.name || !formData.cost) return
         setCreating(true)
         try {
-            await createReward({
-                course_id: formData.course_id as any,
+            await RewardsAPI.createReward({
+                course_id: formData.course_id,
                 name: formData.name,
                 description: formData.description,
                 cost: parseInt(formData.cost),
-                stock: formData.stock ? parseInt(formData.stock) : undefined, // Puede ser opcional ahora
+                stock: formData.stock ? parseInt(formData.stock) : 50, // Default 50
             })
             setSuccess(`✅ Recompensa "${formData.name}" creada.`)
             setFormData({ course_id: formData.course_id, name: '', description: '', cost: '', stock: '' })
@@ -194,7 +190,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                 >
                     <option value="">Selecciona un ramo</option>
                     {courses.map((c: any) => (
-                        <option key={c._id} value={c._id}>{c.name} ({c.code})</option>
+                        <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
                     ))}
                 </select>
 
@@ -202,7 +198,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                 {formData.course_id && (
                     <div className="mt-6 pt-6 border-t border-white/5">
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Recompensas actuales en este ramo</h4>
-                        {rewardsStatus === "LoadingFirstPage" ? (
+                        {loadingRewards ? (
                             <div className="flex items-center gap-2 text-slate-500 text-sm">
                                 <Loader2 className="w-4 h-4 animate-spin" /> Cargando premios...
                             </div>
@@ -211,12 +207,12 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {existingRewards.map((r: any) => (
-                                    <div key={r._id} className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between group gap-4">
+                                    <div key={r.id} className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between group gap-4">
                                         <div className="min-w-0 flex-1">
                                             <p className="text-white text-sm font-bold truncate">{r.name}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="text-accent-light text-[10px] font-mono bg-accent/10 px-1.5 py-0.5 rounded">{r.cost} pts</span>
-                                                {editingStock === r._id ? (
+                                                {editingStock === r.id ? (
                                                     <div className="flex items-center gap-1">
                                                         <input
                                                             autoFocus
@@ -232,7 +228,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        onClick={() => { setEditingStock(r._id); setNewStock(r.stock.toString()) }}
+                                                        onClick={() => { setEditingStock(r.id); setNewStock(r.stock.toString()) }}
                                                         className="text-[10px] text-slate-400 hover:text-accent-light flex items-center gap-1 group/stock"
                                                         title="Editar stock"
                                                     >
@@ -243,7 +239,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                                             </div>
                                         </div>
                                         <button
-                                            onClick={(e) => handleDelete(e, r._id)}
+                                            onClick={(e) => handleDelete(e, r.id)}
                                             className="p-2.5 text-slate-500 hover:text-red-400 bg-white/5 hover:bg-red-400/10 rounded-xl transition-all"
                                             title="Borrar recompensa"
                                             type="button"
@@ -274,9 +270,9 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                     ) : pendingRedemptions.length === 0 ? (
                         <p className="text-slate-500 text-sm italic">No hay canjes pendientes. ✅</p>
                     ) : (
-                        <div className="space-y-3">
+                    <div className="space-y-3">
                             {pendingRedemptions.map((r: any) => (
-                                <div key={r._id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3 gap-4">
+                                <div key={r.id} className="flex items-center justify-between bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3 gap-4">
                                     <div className="min-w-0 flex-1">
                                         <p className="text-white font-bold text-sm truncate">{r.student_name}</p>
                                         <p className="text-slate-400 text-xs truncate">{r.student_email}</p>
@@ -292,7 +288,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
                                             {new Date(r.timestamp).toLocaleDateString('es-CL')}
                                         </span>
                                         <button
-                                            onClick={() => handleMarkDelivered(r._id, r.reward_name)}
+                                            onClick={() => handleMarkDelivered(r.id, r.reward_name)}
                                             className="bg-green-500/20 hover:bg-green-500/40 text-green-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1"
                                             title="Marcar como entregado"
                                         >

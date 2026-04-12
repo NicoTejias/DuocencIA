@@ -1,10 +1,9 @@
 import { useState, useRef } from 'react'
-import { useMutation, useAction } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Upload, CheckCircle, X, Loader2, Cloud, FileSpreadsheet, Link2, Unlink, RefreshCw } from 'lucide-react'
 import { useGooglePicker } from '../../hooks/useGooglePicker'
 import Papa from 'papaparse'
 import { toast } from "sonner"
+import { CoursesAPI } from '../../lib/api'
 
 interface ImportarAlumnosModalProps {
     course: any
@@ -14,10 +13,6 @@ interface ImportarAlumnosModalProps {
 type UploadMode = 'add' | 'sync' | 'clear'
 
 export default function ImportarAlumnosModal({ course, onClose }: ImportarAlumnosModalProps) {
-    const uploadWhitelist = useMutation(api.courses.batchUploadWhitelist)
-    const linkSheets = useMutation(api.courses.linkGoogleSheets)
-    const unlinkSheets = useMutation(api.courses.unlinkGoogleSheets)
-    const syncFromSheets = useAction(api.sheets_sync.syncCourseFromSheets)
     const fileRef = useRef<HTMLInputElement>(null)
     const [parsedData, setParsedData] = useState<{ id: string, name: string, section?: string }[]>([])
     const [fileName, setFileName] = useState('')
@@ -164,12 +159,12 @@ export default function ImportarAlumnosModal({ course, onClose }: ImportarAlumno
                 section: e.section || undefined
             }))
 
-            const result = await uploadWhitelist({
-                course_id: course._id as any,
-                students: finalData,
-                clear_existing: uploadMode === 'clear',
-                sync_mode: uploadMode === 'sync',
-            })
+            const result = await CoursesAPI.batchUploadWhitelist(
+                course.id,
+                '', // teacherId is not used in the new API
+                finalData,
+                uploadMode === 'clear'
+            )
 
             const parts = [`${result.added} nuevos`]
             if (result.updated > 0) parts.push(`${result.updated} actualizados`)
@@ -187,7 +182,7 @@ export default function ImportarAlumnosModal({ course, onClose }: ImportarAlumno
         setSyncing(true)
         setError('')
         try {
-            const result = await syncFromSheets({ course_id: course._id })
+            const result = await CoursesAPI.syncCourseFromSheets(course.id)
             const parts = [`${result.added} nuevos`]
             if (result.updated > 0) parts.push(`${result.updated} actualizados`)
             if (result.removed > 0) parts.push(`${result.removed} eliminados`)
@@ -205,11 +200,11 @@ export default function ImportarAlumnosModal({ course, onClose }: ImportarAlumno
             const file = files[0]
             if (!file) return
             try {
-                await linkSheets({
-                    course_id: course._id as any,
-                    sheets_id: file.id,
-                    sheets_name: file.name,
-                })
+                await CoursesAPI.linkGoogleSheets(
+                    course.id,
+                    file.id,
+                    file.name
+                )
                 toast.success(`Google Sheets "${file.name}" vinculado. Se sincronizará automáticamente cada día a las 7:00 AM.`)
             } catch (err: any) {
                 toast.error(err.message || 'Error vinculando Sheets')
@@ -219,7 +214,7 @@ export default function ImportarAlumnosModal({ course, onClose }: ImportarAlumno
 
     const handleUnlinkSheets = async () => {
         try {
-            await unlinkSheets({ course_id: course._id as any })
+            await CoursesAPI.unlinkGoogleSheets(course.id)
             toast.success('Google Sheets desvinculado')
         } catch (err: any) {
             toast.error(err.message || 'Error desvinculando')

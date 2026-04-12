@@ -1,7 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { useConvexAuth, useQuery, useMutation } from 'convex/react'
-import { api } from "../convex/_generated/api"
 import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
 import LandingPage from './pages/LandingPage'
@@ -17,6 +15,8 @@ import PublicOnlyRoute from './components/auth/PublicOnlyRoute'
 import DashboardRedirect from './components/auth/DashboardRedirect'
 import ErrorBoundary from './components/ErrorBoundary'
 import ConsentModal from './components/ConsentModal'
+import { useProfile } from './hooks/useProfile'
+import { ProfilesAPI } from './lib/api'
 
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'))
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'))
@@ -27,12 +27,9 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 
 function App() {
-  const { isAuthenticated } = useConvexAuth()
-  const user = useQuery(api.users.getProfile, isAuthenticated ? undefined : "skip")
+  const { user, isLoading, isAuthenticated, refetch } = useProfile()
   const isTeacher = user && (user.role === 'teacher' || user.role === 'admin' || user.role === 'demo_teacher')
   const isSimulating = localStorage.getItem('questia_simulate_student') === 'true'
-  const setDemoMode = useMutation(api.users.setDemoMode)
-  const setupDemoData = useMutation(api.demo.setupDemoData)
   const demoDataInitialized = useRef(false)
 
   // Maneja el intent de modo demo al autenticarse
@@ -50,7 +47,7 @@ function App() {
 
     if (demoIntent === 'student' && isTeacherRole) {
       // Docente/demo_teacher quiere simular vista de alumno
-      setupDemoData().catch(() => {})
+      ProfilesAPI.setupDemoData(user.clerk_id).catch(() => {})
       localStorage.setItem('questia_simulate_student', 'true')
       window.location.href = '/alumno'
       return
@@ -58,14 +55,14 @@ function App() {
 
     if (demoIntent === 'teacher' && isTeacherRole) {
       // Ya es docente, crear datos demo y redirigir
-      setupDemoData().catch(() => {})
+      ProfilesAPI.setupDemoData(user.clerk_id).catch(() => {})
       window.location.href = '/docente'
       return
     }
 
     if (user.is_demo) {
       // Ya está en modo demo, asegurar datos y redirigir
-      setupDemoData().catch(() => {})
+      ProfilesAPI.setupDemoData(user.clerk_id).catch(() => {})
       window.location.href = demoIntent === 'teacher' ? '/docente' : '/alumno'
       return
     }
@@ -80,13 +77,13 @@ function App() {
     }
 
     // Solo aplica modo demo a usuarios sin cuenta real previa
-    const newRole = demoIntent === 'teacher' ? ('demo_teacher' as const) : undefined
-    setDemoMode({ role: newRole })
-      .then(() => setupDemoData())
+    const newRole = demoIntent === 'teacher' ? 'demo_teacher' : undefined
+    ProfilesAPI.setDemoMode(user.clerk_id, newRole)
+      .then(() => ProfilesAPI.setupDemoData(user.clerk_id))
       .then(() => {
         window.location.href = demoIntent === 'teacher' ? '/docente' : '/alumno'
       }).catch(() => {})
-  }, [isAuthenticated, user, setDemoMode, setupDemoData]);
+  }, [isAuthenticated, user]);
 
   // Para usuarios demo ya existentes: crear datos de prueba si aún no los tienen
   useEffect(() => {
@@ -94,8 +91,8 @@ function App() {
     if (demoDataInitialized.current) return
     if (!user.is_demo && user.role !== 'demo_teacher') return
     demoDataInitialized.current = true
-    setupDemoData().catch(() => {})
-  }, [isAuthenticated, user, setupDemoData]);
+    ProfilesAPI.setupDemoData(user.clerk_id).catch(() => {})
+  }, [isAuthenticated, user]);
 
   // Mostrar consentimiento si el usuario está autenticado y no ha aceptado TyC
   const needsConsent = isAuthenticated && user && !user.terms_accepted_at

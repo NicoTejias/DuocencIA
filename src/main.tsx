@@ -1,8 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ConvexReactClient } from "convex/react"
-import { ConvexProviderWithClerk } from "convex/react-clerk"
-import { ClerkProvider, useAuth } from "@clerk/clerk-react"
+import { ClerkProvider } from "@clerk/clerk-react"
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
@@ -11,7 +9,6 @@ import { ThemeProvider } from './components/ThemeProvider'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/react"
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
 // Pantalla de carga inicial mientras React carga
@@ -60,16 +57,14 @@ window.onunhandledrejection = (event) => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ClerkProvider publishableKey={clerkPublishableKey}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <BrowserRouter>
-          <UserSync />
-          <Analytics />
-          <SpeedInsights />
-          <ThemeProvider>
-            <App />
-          </ThemeProvider>
-        </BrowserRouter>
-      </ConvexProviderWithClerk>
+      <BrowserRouter>
+        <UserSync />
+        <Analytics />
+        <SpeedInsights />
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </BrowserRouter>
     </ClerkProvider>
   </StrictMode>,
 )

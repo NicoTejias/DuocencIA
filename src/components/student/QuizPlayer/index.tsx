@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useMutation } from "convex/react"
-import { api } from "../../../../convex/_generated/api"
 import { X, AlertCircle, Star, Coins, Sparkles, Loader2, Eye, RotateCcw } from 'lucide-react'
 import { toast } from "sonner"
+import { useUser } from '@clerk/clerk-react'
+import { QuizzesAPI } from '../../../lib/api'
 import HonorCodeModal from '../../HonorCodeModal'
 import { GAME_TYPE_COLORS, GAME_TYPE_ICONS, generateGrid } from './constants'
 import MultipleChoice from './MultipleChoice'
@@ -20,9 +20,7 @@ interface QuizPlayerProps {
 }
 
 export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
-    const getOrCreateAttempt = useMutation(api.quizzes.getOrCreateAttempt)
-    const updateAttemptProgress = useMutation(api.quizzes.updateAttemptProgress)
-    const submitQuiz = useMutation(api.quizzes.submitQuiz)
+    const { user } = useUser()
 
     const [attemptId, setAttemptId] = useState<any>(null)
     const [currentIdx, setCurrentIdx] = useState(0)
@@ -97,7 +95,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
     }
 
     const updateState = (idx: number, opts: any[]) => {
-        updateAttemptProgress({ attempt_id: attemptId, current_question_index: idx, selected_options: opts })
+        QuizzesAPI.updateAttemptProgress({ attempt_id: attemptId, current_question_index: idx, selected_options: opts })
             .catch(console.error)
     }
 
@@ -106,9 +104,9 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         async function initAttempt() {
             setLoadingAttempt(true)
             try {
-                const attempt: any = await getOrCreateAttempt({ quiz_id: quiz._id })
+                const attempt: any = await QuizzesAPI.getOrCreateAttempt({ quiz_id: quiz.id }, user?.id || '')
                 if (attempt) {
-                    setAttemptId(attempt._id)
+                    setAttemptId(attempt.id)
                     setCurrentIdx(attempt.current_question_index ?? 0)
                     const opts = attempt.selected_options ?? []
                     setSelectedOptions(opts)
@@ -136,7 +134,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         }
         initAttempt()
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
-    }, [quiz._id, retryCount, honorAccepted]) // eslint-disable-line
+    }, [quiz.id, retryCount, honorAccepted]) // eslint-disable-line
 
     useEffect(() => {
         const q = questions[currentIdx]
@@ -246,7 +244,7 @@ export default function QuizPlayer({ quiz, onClose }: QuizPlayerProps) {
         try {
             const penalty = (quizType === 'word_search' || quizType === 'memory') ? Math.max(0, 100 - gameScore) : 0
             const answers = finalAnswers ?? selectedOptions
-            const res: any = await submitQuiz({ quiz_id: quiz._id, time_penalty: penalty, final_answers: answers as any })
+            const res: any = await QuizzesAPI.submitQuiz({ quiz_id: quiz.id, time_penalty: penalty, final_answers: answers as any }, user?.id || '')
             setQuizResult(res)
         } catch (err: any) {
             toast.error(err.message || "Error al guardar resultado")

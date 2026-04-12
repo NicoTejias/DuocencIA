@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { useQuery, useMutation } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { Loader2, X, PlayCircle, Target, Star, Flame, History, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from "sonner"
 import AttendanceCard from "./AttendanceCard"
+import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
+import { CoursesAPI, QuizzesAPI, MissionsAPI } from "../../lib/api"
+import { useUser } from "@clerk/clerk-react"
 
 interface CourseDetailViewProps {
     courseId: any;
@@ -17,22 +18,22 @@ const GAME_TYPE_ICONS: Record<string, string> = {
 };
 
 export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: CourseDetailViewProps) {
-    const course = useQuery(api.courses.getCourseById, { courseId })
-    const quizzes = useQuery(api.quizzes.getQuizzesByCourse, { course_id: courseId })
-    const missions = useQuery(api.missions.getMissions, { course_id: courseId })
-    const completeMission = useMutation(api.missions.completeMission)
+    const { user } = useUser()
+    const { data: course } = useSupabaseQuery(() => CoursesAPI.getCourseById(courseId), [courseId])
+    const { data: quizzes } = useSupabaseQuery(() => QuizzesAPI.getQuizzesByCourse(courseId, user?.id), [courseId, user])
+    const { data: missions } = useSupabaseQuery(() => MissionsAPI.getMissions(courseId, user?.id), [courseId, user])
 
     const [completing, setCompleting] = useState<string | null>(null)
     const [showHistory, setShowHistory] = useState(false)
-    const quizHistory = useQuery(
-        api.quizzes.getMyQuizHistory,
-        showHistory ? { course_id: courseId } : "skip"
+    const { data: quizHistory } = useSupabaseQuery(
+        () => showHistory ? QuizzesAPI.getMyQuizHistory(courseId, user?.id || '') : Promise.resolve([]),
+        [courseId, user, showHistory]
     )
 
     const handleCompleteMission = async (missionId: string) => {
         setCompleting(missionId)
         try {
-            await completeMission({ mission_id: missionId as any })
+            await MissionsAPI.completeMission(missionId, user?.id || '')
             toast.success("¡Misión completada! Puntos obtenidos.")
         } catch (err: any) {
             toast.error(err.message)
@@ -86,7 +87,7 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
 
                     <div className="space-y-4">
                         {quizzes?.map((q: any) => (
-                            <div key={q._id} className="group bg-surface-light border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 hover:bg-white/5 hover:border-accent/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div key={q.id} className="group bg-surface-light border border-white/5 rounded-2xl md:rounded-3xl p-4 md:p-5 hover:bg-white/5 hover:border-accent/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0 flex items-center gap-4 md:gap-5">
                                     <div className="w-12 h-12 md:w-14 md:h-14 bg-accent/10 rounded-xl md:rounded-2xl flex items-center justify-center text-accent-light group-hover:bg-accent/20 transition-colors shrink-0">
                                         <PlayCircle className="w-6 h-6 md:w-7 md:h-7" />
@@ -168,7 +169,7 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
 
                     <div className="space-y-4">
                         {missions?.map((m: any) => (
-                            <div key={m._id} className="group bg-surface-light border border-white/5 rounded-3xl p-5 hover:bg-white/5 hover:border-primary/40 transition-all">
+                            <div key={m.id} className="group bg-surface-light border border-white/5 rounded-3xl p-5 hover:bg-white/5 hover:border-primary/40 transition-all">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary-light">
@@ -188,8 +189,8 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => handleCompleteMission(m._id)}
-                                    disabled={completing === m._id || m.completed}
+                                    onClick={() => handleCompleteMission(m.id)}
+                                    disabled={completing === m.id || m.completed}
                                     className={`w-full font-bold text-xs py-2 rounded-xl border transition-all uppercase tracking-widest
                                         ${m.completed
                                             ? 'bg-green-500/10 text-green-400 border-green-500/20'
@@ -234,7 +235,7 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
                         ) : (
                             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                                 {quizHistory.map((s) => (
-                                    <div key={s._id} className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl px-4 py-3">
+                                    <div key={s.id} className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl px-4 py-3">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-white text-sm font-semibold truncate">{s.quizTitle}</p>
                                             <p className="text-slate-500 text-xs mt-0.5">
