@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 export default function GestionCanjesPanel() {
     const [filter, setFilter] = useState<'pending' | 'completed'>('pending')
+    const [selectedSection, setSelectedSection] = useState<string>('all')
     const [searchTerm, setSearchTerm] = useState('')
     const redemptions = useQuery(api.rewards.getTeacherRedemptions, { status: filter })
     const markAsDelivered = useMutation(api.rewards.markRedemptionDelivered)
@@ -23,11 +24,19 @@ export default function GestionCanjesPanel() {
         }
     }
 
-    const filtered = (redemptions || []).filter(r => 
-        r.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.reward_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.course_name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    // Obtener secciones únicas para el filtro
+    const sections = ['all', ...new Set((redemptions || []).map(r => r.section || 'Sin Sección'))]
+
+    const filtered = (redemptions || []).filter(r => {
+        const matchesSearch = 
+            r.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.reward_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.course_name.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesSection = selectedSection === 'all' || r.section === selectedSection;
+        
+        return matchesSearch && matchesSection;
+    })
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -59,6 +68,25 @@ export default function GestionCanjesPanel() {
                 </div>
             </div>
 
+            {/* Filtro de Secciones */}
+            {sections.length > 2 && (
+                <div className="flex flex-wrap gap-2 p-1 bg-white/5 border border-white/5 rounded-2xl overflow-x-auto no-scrollbar">
+                    {sections.map(section => (
+                        <button
+                            key={section}
+                            onClick={() => setSelectedSection(section)}
+                            className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all whitespace-nowrap border
+                                ${selectedSection === section 
+                                    ? 'bg-primary/20 text-primary border-primary/30 shadow-sm shadow-primary/10' 
+                                    : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'
+                                }`}
+                        >
+                            {section === 'all' ? 'TODAS LAS SECCIONES' : section}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {!redemptions ? (
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-10 h-10 text-accent animate-spin" />
@@ -82,6 +110,7 @@ export default function GestionCanjesPanel() {
                                     <th className="px-6 py-5">Alumno</th>
                                     <th className="px-6 py-5">Recompensa</th>
                                     <th className="px-6 py-5">Ramo</th>
+                                    <th className="px-6 py-5 text-center">Sección</th>
                                     <th className="px-6 py-5">Fecha</th>
                                     <th className="px-6 py-5 text-right uppercase">Estado / Acción</th>
                                 </tr>
@@ -111,6 +140,11 @@ export default function GestionCanjesPanel() {
                                                 <BookOpen className="w-3 h-3 text-slate-600" />
                                                 <span className="text-xs text-slate-400 font-bold">{r.course_name}</span>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="inline-flex px-2 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                {r.section || "---"}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-slate-500">

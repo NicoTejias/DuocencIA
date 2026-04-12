@@ -207,7 +207,10 @@ export const getPendingRedemptions = query({
             
             const whitelistMap = new Map();
             whitelist.forEach(w => {
-                whitelistMap.set(w.student_identifier.toLowerCase().trim(), w.student_name);
+                whitelistMap.set(w.student_identifier.toLowerCase().trim(), {
+                    name: w.student_name,
+                    section: w.section
+                });
             });
 
             // Enriquecer con datos del alumno y la recompensa
@@ -216,10 +219,15 @@ export const getPendingRedemptions = query({
                 const reward = rewardMap.get(r.reward_id);
 
                 let officialName = null;
+                let section = null;
                 if (student) {
                     const iden = (student.student_id || "").toLowerCase().trim();
                     const email = (student.email || "").toLowerCase().trim();
-                    officialName = whitelistMap.get(iden) || whitelistMap.get(email);
+                    const whitelistEntry = whitelistMap.get(iden) || whitelistMap.get(email);
+                    if (whitelistEntry) {
+                        officialName = whitelistEntry.name;
+                        section = whitelistEntry.section;
+                    }
                 }
 
                 return {
@@ -230,6 +238,7 @@ export const getPendingRedemptions = query({
                     student_email: student?.email || "",
                     reward_name: reward?.name || "Recompensa",
                     reward_cost: reward?.cost || 0,
+                    section: section || "Sin Sección",
                 };
             }));
         } catch {
@@ -385,7 +394,10 @@ export const getTeacherRedemptions = query({
             );
             const whitelistMap = new Map();
             whitelistsByCourse.flat().forEach(w => {
-                whitelistMap.set(`${w.course_id}_${w.student_identifier.toLowerCase().trim()}`, w.student_name);
+                whitelistMap.set(`${w.course_id}_${w.student_identifier.toLowerCase().trim()}`, {
+                    name: w.student_name,
+                    section: w.section
+                });
             });
 
             // 7. Enriquecer datos
@@ -395,10 +407,15 @@ export const getTeacherRedemptions = query({
                 const course = reward ? courseMap.get(reward.course_id) : null;
                 
                 let officialName = null;
+                let section = null;
                 if (student && course) {
                     const iden = (student.student_id || "").toLowerCase().trim();
                     const email = (student.email || "").toLowerCase().trim();
-                    officialName = whitelistMap.get(`${course._id}_${iden}`) || whitelistMap.get(`${course._id}_${email}`);
+                    const whitelistEntry = whitelistMap.get(`${course._id}_${iden}`) || whitelistMap.get(`${course._id}_${email}`);
+                    if (whitelistEntry) {
+                        officialName = whitelistEntry.name;
+                        section = whitelistEntry.section;
+                    }
                 }
 
                 return {
@@ -410,7 +427,8 @@ export const getTeacherRedemptions = query({
                     reward_name: reward?.name || "Recompensa",
                     reward_cost: reward?.cost || 0,
                     course_name: course?.name || "Ramo desconocido",
-                    course_id: course?._id
+                    course_id: course?._id,
+                    section: section || "Sin Sección"
                 };
             });
         } catch (err) {
