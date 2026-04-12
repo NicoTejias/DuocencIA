@@ -207,26 +207,47 @@ export const getPendingRedemptions = query({
             
             const whitelistMap = new Map();
             whitelist.forEach(w => {
-                whitelistMap.set(w.student_identifier.toLowerCase().trim(), {
+                const iden = w.student_identifier.toLowerCase().trim();
+                const clean = iden.replace(/[^\dkK]/g, '').toUpperCase();
+                
+                const entry = {
                     name: w.student_name,
                     section: w.section
-                });
+                };
+                
+                whitelistMap.set(iden, entry);
+                if (clean) whitelistMap.set(clean, entry);
             });
 
             // Enriquecer con datos del alumno y la recompensa
             return await Promise.all(allRedemptions.map(async (r) => {
                 const student = await ctx.db.get(r.user_id) as any;
                 const reward = rewardMap.get(r.reward_id);
+                
+                // Intentar obtener sección directamente de la inscripción (fuente más fiable)
+                const enrollment = await ctx.db
+                    .query("enrollments")
+                    .withIndex("by_user", q => q.eq("user_id", r.user_id))
+                    .filter(q => q.eq(q.field("course_id"), args.course_id))
+                    .unique();
 
                 let officialName = null;
-                let section = null;
+                let section = enrollment?.section || null;
+
                 if (student) {
                     const iden = (student.student_id || "").toLowerCase().trim();
                     const email = (student.email || "").toLowerCase().trim();
-                    const whitelistEntry = whitelistMap.get(iden) || whitelistMap.get(email);
+                    
+                    // Normalización para Match robusto con Whitelist
+                    const idenClean = iden.replace(/[^\dkK]/g, '').toUpperCase();
+                    
+                    const whitelistEntry = whitelistMap.get(iden) || 
+                                         whitelistMap.get(email) || 
+                                         (idenClean ? whitelistMap.get(idenClean) : null);
+
                     if (whitelistEntry) {
                         officialName = whitelistEntry.name;
-                        section = whitelistEntry.section;
+                        if (!section) section = whitelistEntry.section;
                     }
                 }
 
@@ -394,27 +415,58 @@ export const getTeacherRedemptions = query({
             );
             const whitelistMap = new Map();
             whitelistsByCourse.flat().forEach(w => {
-                whitelistMap.set(`${w.course_id}_${w.student_identifier.toLowerCase().trim()}`, {
+                const iden = w.student_identifier.toLowerCase().trim();
+                const clean = iden.replace(/[^\dkK]/g, '').toUpperCase();
+                
+                const entry = {
                     name: w.student_name,
                     section: w.section
-                });
+                };
+                
+                whitelistMap.set(`${w.course_id}_${iden}`, entry);
+                if (clean) whitelistMap.set(`${w.course_id}_${clean}`, entry);
             });
 
             // 7. Enriquecer datos
+            // 7. Cruzar datos (Cargar enrollments para obtener secciones)
+            const enrollmentMap = new Map();
+            await Promise.all(uniqueStudentIds.map(async (uId) => {
+                const studentEnrollments = await ctx.db
+                    .query("enrollments")
+                    .withIndex("by_user", q => q.eq("user_id", uId as any))
+                    .collect();
+                studentEnrollments.forEach(en => {
+                    enrollmentMap.set(`${en.course_id}_${en.user_id}`, en);
+                });
+            }));
+
             return sorted.map((r) => {
                 const student = studentMap.get(r.user_id) as any;
                 const reward = rewardMap.get(r.reward_id);
                 const course = reward ? courseMap.get(reward.course_id) : null;
+                const enrollment = (student && course) ? enrollmentMap.get(`${course._id}_${student._id}`) : null;
                 
                 let officialName = null;
-                let section = null;
+                let section = enrollment?.section || null;
+
                 if (student && course) {
                     const iden = (student.student_id || "").toLowerCase().trim();
                     const email = (student.email || "").toLowerCase().trim();
-                    const whitelistEntry = whitelistMap.get(`${course._id}_${iden}`) || whitelistMap.get(`${course._id}_${email}`);
+                    
+                    // Normalización de RUT para el Match
+                    const idenClean = iden.replace(/[^\dkK]/g, '').toUpperCase();
+
+                    const idKey = `${course._id}_${iden}`;
+                    const emailKey = `${course._id}_${email}`;
+                    const cleanKey = idenClean ? `${course._id}_${idenClean}` : null;
+
+                    const whitelistEntry = whitelistMap.get(idKey) || 
+                                         whitelistMap.get(emailKey) || 
+                                         (cleanKey ? whitelistMap.get(cleanKey) : null);
+
                     if (whitelistEntry) {
                         officialName = whitelistEntry.name;
-                        section = whitelistEntry.section;
+                        if (!section) section = whitelistEntry.section;
                     }
                 }
 
@@ -428,7 +480,7 @@ export const getTeacherRedemptions = query({
                     reward_cost: reward?.cost || 0,
                     course_name: course?.name || "Ramo desconocido",
                     course_id: course?._id,
-                    section: section || "Sin Sección"
+                    section: String(section || "S/S").trim() || "S/S"
                 };
             });
         } catch (err) {
