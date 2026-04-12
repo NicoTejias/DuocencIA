@@ -137,7 +137,6 @@ export const internalCreateNotifications = internalMutation({
             : allEnrollments;
 
         const typeText = args.tipo === "prueba" ? "nueva prueba" : "nuevo trabajo/informe";
-        const now = Date.now();
         
         const evaluacion = await ctx.db.get(args.evaluacionId);
         if (!evaluacion) return [];
@@ -255,7 +254,7 @@ export const updateEvaluacion = mutation({
             throw new Error("No tienes permiso para modificar esta evaluación");
         }
 
-        const { evaluacion_id, ...updates } = args;
+        const { evaluacion_id: _, ...updates } = args;
         await ctx.db.patch(args.evaluacion_id, updates);
     },
 });
