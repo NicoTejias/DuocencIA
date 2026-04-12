@@ -14,8 +14,11 @@ export default function RamosPanel({ courses, selectedCourse, setSelectedCourse 
     const navigate = useNavigate()
     
     // Careers query
-    const { data: careers } = useSupabaseQuery(
-        () => supabase.from('careers').select('*').then(r => r.data || []),
+    const { data: careers } = useSupabaseQuery<any[]>(
+        async () => {
+            const { data } = await supabase.from('careers').select('*')
+            return data || []
+        },
         []
     )
 

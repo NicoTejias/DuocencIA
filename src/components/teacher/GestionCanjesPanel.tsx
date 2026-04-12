@@ -22,7 +22,7 @@ export default function GestionCanjesPanel() {
         if (!user) return
         setProcessingId(id)
         try {
-            await RewardsAPI.markRedemptionDelivered(id, user.clerk_id)
+            await RewardsAPI.markRedemptionDelivered(id)
             toast.success("Recompensa marcada como entregada")
             refetch()
         } catch (err: any) {

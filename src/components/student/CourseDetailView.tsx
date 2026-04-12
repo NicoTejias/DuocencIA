@@ -21,7 +21,7 @@ export default function CourseDetailView({ courseId, onBack, onPlayQuiz }: Cours
     const { user } = useUser()
     const { data: course } = useSupabaseQuery(() => CoursesAPI.getCourseById(courseId), [courseId])
     const { data: quizzes } = useSupabaseQuery(() => QuizzesAPI.getQuizzesByCourse(courseId, user?.id), [courseId, user])
-    const { data: missions } = useSupabaseQuery(() => MissionsAPI.getMissions(courseId, user?.id), [courseId, user])
+    const { data: missions } = useSupabaseQuery<any[]>(() => MissionsAPI.getEvaluacionesEstudiante(courseId, user?.id), [courseId, user])
 
     const [completing, setCompleting] = useState<string | null>(null)
     const [showHistory, setShowHistory] = useState(false)

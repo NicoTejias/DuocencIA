@@ -27,7 +27,7 @@ export default function EvaluadorIAPanel({ courses }: { courses: any[] }) {
     const { data: rubrics, refetch: refetchRubrics } = useSupabaseQuery(
         () => EvaluatorAPI.getRubrics(selectedCourseId!),
         [selectedCourseId],
-        { skip: !selectedCourseId }
+        { enabled: !!selectedCourseId }
     )
 
     if (!selectedCourseId) {

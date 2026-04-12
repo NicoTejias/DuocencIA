@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import { Award, Plus, Trash2, UserPlus, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import ConfirmModal from '../ConfirmModal'
@@ -26,7 +27,7 @@ interface BadgesPanelProps {
 }
 
 export default function BadgesPanel({ courseId, students }: BadgesPanelProps) {
-    const { data: badges, isLoading, refetch: refetchBadges } = useSupabaseQuery(
+    const { data: badges, refetch: refetchBadges } = useSupabaseQuery(
         () => BadgesAPI.getBadgesByCourse(courseId),
         [courseId]
     )
@@ -241,7 +242,7 @@ function BadgeRow({
     const { data: holders, refetch: refetchHolders } = useSupabaseQuery(
         () => BadgesAPI.getBadgeHolders(badge.id),
         [badge.id, expanded],
-        { skip: !expanded }
+        { enabled: expanded }
     )
     const [selectedStudent, setSelectedStudent] = useState('')
 

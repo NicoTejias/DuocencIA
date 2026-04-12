@@ -3,7 +3,7 @@ import { useState } from "react"
 import { exportToExcel } from "../../utils/ExportData"
 import { toast } from "sonner"
 import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
-import { AnalyticsAPI, AdminAPI, CoursesAPI } from "../../lib/api"
+import { AnalyticsAPI, AdminAPI } from "../../lib/api"
 import { useUser } from "@clerk/clerk-react"
 
 export default function AnaliticasPanel() {
@@ -83,7 +83,7 @@ export default function AnaliticasPanel() {
                             if (!confirm("Esto eliminará duplicados y normalizará los RUTs en TODAS tus listas de alumnos. ¿Continuar?")) return
                             setCleaning(true)
                             try {
-                                const res = await cleanAllWhitelists()
+                                const res = await AdminAPI.cleanAllWhitelists()
                                 toast.success(`Limpieza lista: ${res.totalDeleted} duplicados eliminados en ${res.coursesCount} ramos.`)
                             } catch (err: any) {
                                 toast.error("Error al limpiar: " + err.message)

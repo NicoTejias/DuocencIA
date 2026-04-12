@@ -46,10 +46,11 @@ export default function EvaluacionesPorCurso({ courseId }: EvaluacionesPorCursoP
         })
     }
 
-    const pruebas = evaluaciones.filter((e: any) => e.tipo === 'prueba')
-    const trabajos = evaluaciones.filter((e: any) => e.tipo === 'trabajo' || e.tipo === 'informe')
+    const evals = evaluaciones || []
+    const pruebas = evals.filter((e: any) => e.tipo === 'prueba')
+    const trabajos = evals.filter((e: any) => e.tipo === 'trabajo' || e.tipo === 'informe')
 
-    if (evaluaciones.length === 0) {
+    if (evals.length === 0) {
         return (
             <div className="text-center py-10">
                 <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { X, ArrowRightLeft, Coins, AlertCircle, Loader2 } from 'lucide-react'
+import { X, ArrowRightLeft, Coins, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
 import { useSupabaseQuery } from "../../hooks/useSupabaseQuery"
 import { PointTransfersAPI } from "../../lib/api"
@@ -12,7 +12,7 @@ interface TransferModalProps {
 
 export default function TransferModal({ onClose, courses }: TransferModalProps) {
     const { user } = useUser()
-    const { data: transferHistory, isLoading: historyLoading } = useSupabaseQuery(
+    const { data: transferHistory } = useSupabaseQuery(
         () => PointTransfersAPI.getStudentTransfers(user?.id || ''),
         [user]
     )

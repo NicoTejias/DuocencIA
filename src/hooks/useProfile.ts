@@ -2,7 +2,7 @@
  * Hook central para el perfil del usuario autenticado con Clerk + Supabase.
  * Reemplaza useConvexAuth + useQuery(api.users.getProfile)
  */
-import { useUser, useAuth } from '@clerk/clerk-react'
+import { useUser } from '@clerk/clerk-react'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -34,7 +34,6 @@ type UseProfileResult = {
 
 export function useProfile(): UseProfileResult {
   const { isLoaded, isSignedIn, user: clerkUser } = useUser()
-  const { getToken } = useAuth()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 

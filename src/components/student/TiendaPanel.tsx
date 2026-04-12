@@ -92,10 +92,6 @@ export default function TiendaPanel({ courses }: TiendaPanelProps) {
                     </>
                 )}
             </div>
-                        {/* loadMore removed for simplicity in Supabase migration */}
-                    </>
-                )}
-            </div>
         </div>
     )
 }

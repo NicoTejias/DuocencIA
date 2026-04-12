@@ -61,12 +61,12 @@ function RankingCourseBox({ course, isCollapsed, isGlobal, onToggle, onSetGlobal
     const { data: localStudents } = useSupabaseQuery(
         () => CoursesAPI.getCourseStudents(course.id),
         [course.id],
-        { skip: isCollapsed || isGlobal }
+        { enabled: !isCollapsed && !isGlobal }
     )
     const { data: globalStudents } = useSupabaseQuery(
         () => CoursesAPI.getGlobalRanking(course.id),
         [course.id],
-        { skip: isCollapsed || !isGlobal }
+        { enabled: !isCollapsed && isGlobal }
     )
 
     const students = isGlobal ? globalStudents : localStudents

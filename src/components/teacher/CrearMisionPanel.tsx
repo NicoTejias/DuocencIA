@@ -25,12 +25,12 @@ export default function CrearMisionPanel({ courses }: { courses: any[] }) {
     const { data: documents } = useSupabaseQuery(
         () => DocumentsAPI.getDocumentsByCourse(quizCourse),
         [quizCourse],
-        { skip: !quizCourse }
+        { enabled: !!quizCourse }
     )
     const { data: masterDocs } = useSupabaseQuery(
         () => DocumentsAPI.getMasterDocuments(quizCourse),
         [quizCourse],
-        { skip: !quizCourse }
+        { enabled: !!quizCourse }
     )
     const [selectedDoc, setSelectedDoc] = useState('')
     const [numQuestions, setNumQuestions] = useState(5)

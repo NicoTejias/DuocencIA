@@ -27,7 +27,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 
 function App() {
-  const { user, isLoading, isAuthenticated, refetch } = useProfile()
+  const { user, isAuthenticated } = useProfile()
   const isTeacher = user && (user.role === 'teacher' || user.role === 'admin' || user.role === 'demo_teacher')
   const isSimulating = localStorage.getItem('questia_simulate_student') === 'true'
   const demoDataInitialized = useRef(false)

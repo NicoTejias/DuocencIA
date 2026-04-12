@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DUOC_CAREERS, DUOC_SCHOOLS, getCareersBySchool } from '../../data/duocCareers'
 import {
     Users,
@@ -207,8 +207,8 @@ function AdminDetailView({ view, onBack }: { view: 'students' | 'teachers' | 'li
     const [search, setSearch] = useState('')
     
     // Fetch data based on view
-    const { data: students } = useSupabaseQuery(() => AdminAPI.listStudents(), [], { skip: view !== 'students' })
-    const { data: teachers } = useSupabaseQuery(() => AdminAPI.listTeachers(), [], { skip: view !== 'teachers' })
+    const { data: students } = useSupabaseQuery(() => AdminAPI.listStudents(), [], { enabled: view === 'students' })
+    const { data: teachers } = useSupabaseQuery(() => AdminAPI.listTeachers(), [], { enabled: view === 'teachers' })
     const linked: any[] = [] // Simplified for now
 
     const isLoading = (view === 'students' && !students) || 

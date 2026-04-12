@@ -16,10 +16,10 @@ export default function GruposPanel() {
     const [gettingFeedback, setGettingFeedback] = useState(false)
 
     // Obtener grupos existentes del ramo seleccionado
-    const { data: existingGroups } = useSupabaseQuery(
+    const { data: existingGroups } = useSupabaseQuery<any[]>(
         () => GroupsAPI.getGroups(selectedCourse),
         [selectedCourse],
-        { skip: !selectedCourse }
+        { enabled: !!selectedCourse }
     )
 
     const handleGenerate = async () => {

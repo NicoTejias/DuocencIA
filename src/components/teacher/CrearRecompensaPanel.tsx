@@ -16,7 +16,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     const { data: existingRewards, isLoading: loadingRewards } = useSupabaseQuery(
         () => RewardsAPI.getRewardsByCourse(formData.course_id),
         [formData.course_id],
-        { skip: !formData.course_id }
+        { enabled: !!formData.course_id }
     )
 
     const [editingStock, setEditingStock] = useState<string | null>(null)
@@ -25,7 +25,7 @@ export default function CrearRecompensaPanel({ courses }: { courses: any[] }) {
     const { data: pendingRedemptions } = useSupabaseQuery(
         () => RewardsAPI.getPendingRedemptions(formData.course_id),
         [formData.course_id],
-        { skip: !formData.course_id }
+        { enabled: !!formData.course_id }
     )
 
     const handleMarkDelivered = async (redemptionId: string, rewardName: string) => {

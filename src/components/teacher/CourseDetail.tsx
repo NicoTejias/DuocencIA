@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import {
     ChevronRight, BookOpen, FileText, Gift,
     Trash2, Target, Flame, Sparkles, Loader2, RefreshCw,
@@ -120,15 +120,15 @@ export default function CourseDetail({ course, onBack }: { course: any, onBack: 
         setProcessing(true)
         try {
             if (confirmDelete.type === 'reward') {
-                await RewardsAPI.deleteReward(confirmDelete.id, user.clerk_id)
+                await RewardsAPI.deleteReward(confirmDelete.id)
                 toast.success('Recompensa eliminada')
                 refetchRewards()
             } else if (confirmDelete.type === 'mission') {
-                await MissionsAPI.deleteMission(confirmDelete.id, user.clerk_id)
+                await MissionsAPI.deleteMission(confirmDelete.id)
                 toast.success('Misión eliminada')
                 refetchMissions()
             } else if (confirmDelete.type === 'quiz') {
-                await QuizzesAPI.deleteQuiz(confirmDelete.id, user.clerk_id)
+                await QuizzesAPI.deleteQuiz(confirmDelete.id)
                 toast.success('Quiz eliminado')
                 refetchQuizzes()
             } else if (confirmDelete.type === 'cleanup') {

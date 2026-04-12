@@ -11,7 +11,7 @@ interface EditModalProps {
 }
 
 export function EditCourseModal({ isOpen, onClose, data }: EditModalProps) {
-    const { data: careers } = useSupabaseQuery(() => DocumentsAPI.listCareers(), [], { skip: !isOpen })
+    const { data: careers } = useSupabaseQuery(() => DocumentsAPI.listCareers(), [], { enabled: isOpen })
     const [formData, setFormData] = useState({ name: '', code: '', description: '', career_id: '' })
     const [loading, setLoading] = useState(false)
 

@@ -22,7 +22,7 @@ export default function AttendanceCard({ courseId }: { courseId: any }) {
         setMarking(true);
         
         const mark = (lat?: number, lng?: number) => {
-            AttendanceAPI.markAttendance(activeSession.id, user?.id || '', code)
+            AttendanceAPI.markAttendance({ session_id: activeSession.id, user_id: user?.id || '', code, lat, lng })
                 .then(() => {
                     setSuccess(true);
                     toast.success("¡Asistencia registrada con éxito! +2 puntos");
