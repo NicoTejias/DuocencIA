@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anomalyco/opencode/main/packages/opencode-config/schema.json",
+  "skills": {
+    "loadPath": ".agents/skills",
+    "enabled": [
+      "using-superpowers",
+      "brainstorming",
+      "systematic-debugging",
+      "verification-before-completion",
+      "requesting-code-review",
+      "receiving-code-review",
+      "executing-plans",
+      "writing-plans",
+      "test-driven-development",
+      "subagent-driven-development",
+      "finishing-a-development-branch",
+      "using-git-worktrees",
+      "dispatching-parallel-agents"
+    ]
+  },
+  "instructions": {
+    "priority": [
+      { "file": ".agents/CLAUDE.md", "when": "always" },
+      { "file": ".agents/AGENTS.md", "when": "always" }
+    ]
+  }
+}

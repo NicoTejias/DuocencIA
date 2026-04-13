@@ -31,7 +31,7 @@ function loadEnv() {
       val = val.trim()
       if (!(key in process.env)) process.env[key] = val
     }
-  } catch {}
+  } catch { /* intentionally empty - env file may not exist */ }
 }
 loadEnv()
 
@@ -446,7 +446,7 @@ async function migrateCourseDocuments() {
     const courseId = remap(maps.courses, d.course_id)
     const teacherId = remap(maps.users, d.teacher_id)
     if (!courseId || !teacherId) { dropped++; continue }
-    const safeName = (d.file_name || 'file').replace(/[^\w.\-]/g, '_')
+    const safeName = (d.file_name || 'file').replace(/[^\w.-]/g, '_')
     const filePath = `${d.course_id}/${d._id}-${safeName}`
     sourceIds.push(d._id)
     rows.push({
