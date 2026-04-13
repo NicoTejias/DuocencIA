@@ -1658,15 +1658,19 @@ export const QuizzesAPI = {
     // In production, this should happen on the server/Edge Function for security.
     let correctCount = 0
     const questions = quiz.questions || []
+    const quizType = quiz.quiz_type || quiz.quizType
+    
     args.final_answers.forEach((ans, i) => {
         const q = questions[i]
         if (!q) return
-        if (q.type === 'multiple_choice' || q.type === 'trivia' || q.type === 'quiz_sprint') {
-            if (ans === q.correct_option) correctCount++
-        } else if (q.type === 'true_false') {
-            // preguntas de true_false tienen campo 'correct' (boolean)
+        
+        // Scoring based on quiz type OR question structure
+        if (quizType === 'true_false' || q.correct !== undefined) {
+            // true_false: preguntas tienen campo 'correct' (boolean)
             const correctAnswer = q.correct === true ? 1 : 0
             if (ans === correctAnswer) correctCount++
+        } else if (q.type === 'multiple_choice' || q.type === 'trivia' || q.type === 'quiz_sprint') {
+            if (ans === q.correct_option) correctCount++
         } else if (q.type === 'match') {
             // Match: ans es array de pares [idx1, idx2, ...]
             if (Array.isArray(ans) && q.pairs) {
@@ -1685,15 +1689,19 @@ export const QuizzesAPI = {
                 if (correct) correctCount++
             }
         } else {
-            // Placeholder for other types
+            // Fallback: check correct_option for other types
+            if (ans === q.correct_option) correctCount++
         }
     })
 
     const score = Math.round((correctCount / questions.length) * 100)
     const earned = Math.round((quiz.points_reward || 10) * (score / 100))
 
-    // Mark attempt as completed
-    await supabase.from('quiz_attempts').update({ completed_at: Date.now() }).eq('quiz_id', args.quiz_id).eq('user_id', profile.id).is('completed_at', null)
+    // Mark attempt as completed - filter by status instead of completed_at to avoid 406 errors
+    await supabase.from('quiz_attempts').update({ 
+        completed_at: Date.now(),
+        status: 'completed'
+    }).eq('quiz_id', args.quiz_id).eq('user_id', profile.id).eq('status', 'in_progress')
 
     const { data: submission, error } = await supabase
         .from('quiz_submissions')
