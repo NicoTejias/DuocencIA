@@ -26,6 +26,7 @@ import type * as documents from "../documents.js";
 import type * as email from "../email.js";
 import type * as evaluaciones from "../evaluaciones.js";
 import type * as evaluator from "../evaluator.js";
+import type * as export_queries from "../export_queries.js";
 import type * as faq from "../faq.js";
 import type * as fcm from "../fcm.js";
 import type * as feedback from "../feedback.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   email: typeof email;
   evaluaciones: typeof evaluaciones;
   evaluator: typeof evaluator;
+  export_queries: typeof export_queries;
   faq: typeof faq;
   fcm: typeof fcm;
   feedback: typeof feedback;

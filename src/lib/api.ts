@@ -519,14 +519,14 @@ export const MissionsAPI = {
 // ============================================================
 export const DocumentsAPI = {
   async getDocumentsByCourse(courseId: string) {
-    const { data, error } = await supabase.from('documents').select('*').eq('course_id', courseId)
+    const { data, error } = await supabase.from('course_documents').select('*').eq('course_id', courseId)
     if (error) throw error
     return data || []
   },
 
   async getMasterDocuments(courseId: string) {
     const { data, error } = await supabase
-      .from('documents')
+      .from('course_documents')
       .select('*')
       .eq('course_id', courseId)
       .in('document_type', ['PDA', 'PIA', 'PA'])
@@ -541,7 +541,7 @@ export const DocumentsAPI = {
   },
   async getMyDocuments() {
     const { data, error } = await supabase
-      .from('documents')
+      .from('course_documents')
       .select('*')
       .order('created_at', { ascending: false })
     if (error) throw error
@@ -558,29 +558,29 @@ export const DocumentsAPI = {
     is_master_doc: boolean;
     master_doc_type?: string;
   }) {
-    const { error } = await supabase.from('documents').insert({ ...data, created_at: Date.now() })
+    const { error } = await supabase.from('course_documents').insert({ ...data, created_at: Date.now() })
     if (error) throw error
   },
 
   async deleteDocument(docId: string) {
-    const { data: doc } = await supabase.from('documents').select('file_id').eq('id', docId).single()
+    const { data: doc } = await supabase.from('course_documents').select('file_id').eq('id', docId).single()
     if (doc?.file_id) {
-        await supabase.storage.from('documents').remove([doc.file_id])
+        await supabase.storage.from('course_documents').remove([doc.file_id])
     }
-    const { error } = await supabase.from('documents').delete().eq('id', docId)
+    const { error } = await supabase.from('course_documents').delete().eq('id', docId)
     if (error) throw error
   },
 
   async setAsMasterDoc(docId: string, type: string) {
     const { error } = await supabase
-      .from('documents')
+      .from('course_documents')
       .update({ is_master_doc: type !== 'none', master_doc_type: type === 'none' ? null : type })
       .eq('id', docId)
     if (error) throw error
   },
 
   async uploadFile(file: File, path: string) {
-    const { data, error } = await supabase.storage.from('documents').upload(path, file, {
+    const { data, error } = await supabase.storage.from('course_documents').upload(path, file, {
       upsert: true
     })
     if (error) throw error
@@ -1359,7 +1359,7 @@ export const AnalyticsAPI = {
     // 2. Get Enrollments & Whitelist & Quizzes & Missions
     const { data: enrollments } = await supabase.from('enrollments').select('*, profiles(*)').in('course_id', courseIds)
     const { data: whitelist } = await supabase.from('whitelists').select('*').in('course_id', courseIds)
-    const { data: documents } = await supabase.from('documents').select('*').in('course_id', courseIds)
+    const { data: course_documents } = await supabase.from('course_documents').select('*').in('course_id', courseIds)
     const { data: quizzes } = await supabase.from('quizzes').select('id, course_id').in('course_id', courseIds)
     const { data: quizSubmissions } = await supabase.from('quiz_submissions').select('id, score, quiz_id').in('quiz_id', quizzes?.map(q => q.id) || [])
     const { data: redemptions } = await supabase.from('redemptions').select('id').in('course_id', courseIds)
@@ -1379,7 +1379,7 @@ export const AnalyticsAPI = {
     const courseStats = courses.map(course => {
       const cEn = enrollments?.filter(e => e.course_id === course.id) || []
       const cWh = whitelist?.filter(w => w.course_id === course.id) || []
-      const cDocs = documents?.filter(d => d.course_id === course.id) || []
+      const cDocs = course_documents?.filter(d => d.course_id === course.id) || []
       const cQuizzes = quizzes?.filter(q => q.course_id === course.id) || []
       const cQuizIds = new Set(cQuizzes.map(q => q.id))
       const cSubmissions = quizSubmissions?.filter(s => cQuizIds.has(s.quiz_id)) || []
@@ -1392,7 +1392,7 @@ export const AnalyticsAPI = {
         registered: cEn.length,
         missions: cQuizzes.length,
         submissions: cSubmissions.length,
-        documents: cDocs.length,
+        course_documents: cDocs.length,
         totalPoints: cEn.reduce((sum, e) => sum + (e.ranking_points || 0), 0),
         dailyAvgQuizzes: 0, // Simplified
         dailyAvgPerStudent: 0 // Simplified
@@ -1408,8 +1408,8 @@ export const AnalyticsAPI = {
       totalCourses: courses.length,
       totalMissionsCreated: quizzes?.length || 0,
       totalMissionsCompleted: quizSubmissions?.length || 0,
-      totalDocuments: documents?.length || 0,
-      totalMasterDocs: documents?.filter(d => d.is_master_doc).length || 0,
+      totalDocuments: course_documents?.length || 0,
+      totalMasterDocs: course_documents?.filter(d => d.is_master_doc).length || 0,
       totalRedemptions: redemptions?.length || 0,
       totalQuizzesCompleted: quizSubmissions?.length || 0,
       avgQuizScore: quizSubmissions && quizSubmissions.length > 0 ? quizSubmissions.reduce((s, x) => s + x.score, 0) / quizSubmissions.length : 0,
