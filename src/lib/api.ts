@@ -1648,7 +1648,7 @@ export const QuizzesAPI = {
   },
 
   async submitQuiz(args: { quiz_id: string; time_penalty: number; final_answers: any[] }, clerkId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id, clerk_id').eq('clerk_id', clerkId).single()
+    const { data: profile } = await supabase.from('profiles').select('id, clerk_id, daily_streak, last_daily_bonus_at').eq('clerk_id', clerkId).single()
     if (!profile) throw new Error("Perfil no encontrado")
 
     const { data: quiz } = await supabase.from('quizzes').select('*').eq('id', args.quiz_id).single()
@@ -1695,7 +1695,56 @@ export const QuizzesAPI = {
     })
 
     const score = Math.round((correctCount / questions.length) * 100)
-    const earned = Math.round((quiz.points_reward || 10) * (score / 100))
+    
+    // Calculate points based on quiz type and difficulty
+    let basePoints = 10
+    const difficulty = quiz.difficulty || 'normal'
+    
+    // Base points by quiz type (using existing quizType variable)
+    switch (quizType) {
+        case 'multiple_choice':
+            basePoints = 10
+            break
+        case 'true_false':
+            basePoints = 8
+            break
+        case 'match':
+            basePoints = 15
+            break
+        case 'fill_blank':
+            basePoints = 12
+            break
+        case 'order_steps':
+            basePoints = 15
+            break
+        case 'word_search':
+        case 'memory':
+            basePoints = 20 // Longer games
+            break
+        case 'trivia':
+        case 'quiz_sprint':
+            basePoints = 10
+            break
+        default:
+            basePoints = 10
+    }
+    
+    // Difficulty multiplier
+    const difficultyMultiplier: Record<string, number> = {
+        'facil': 0.8,
+        'normal': 1.0,
+        'dificil': 1.5
+    }
+    const multiplier = difficultyMultiplier[difficulty] || 1.0
+    
+    const maxPoints = Math.round(basePoints * multiplier)
+    
+    // Apply time penalty for word_search and memory games
+    const penalty = args.time_penalty || 0
+    let earned = Math.round(maxPoints * (score / 100))
+    if (penalty > 0) {
+        earned = Math.max(0, earned - penalty)
+    }
 
     // Mark attempt as completed - filter by status instead of completed_at to avoid 406 errors
     await supabase.from('quiz_attempts').update({ 
@@ -1718,20 +1767,47 @@ export const QuizzesAPI = {
     
     if (error) throw error
 
-    // Update enrollment points
+    // Daily streak / racha bonus logic
+    let daily_bonus = 0
+    let daily_bonus_applied = false
+    let new_streak = profile.daily_streak || 0
+    
+    const now = Date.now()
+    const lastBonus = profile.last_daily_bonus_at || 0
+    const ONE_DAY = 24 * 60 * 60 * 1000
+    
+    // Check if user can get daily bonus (once per day)
+    if (now - lastBonus >= ONE_DAY) {
+        new_streak = (profile.daily_streak || 0) + 1
+        // Bonus: 5 puntos base + 5 puntos por cada día de racha (max 50)
+        daily_bonus = Math.min(5 + (new_streak - 1) * 5, 50)
+        daily_bonus_applied = true
+        
+        // Update profile with new streak
+        await supabase.from('profiles').update({
+            daily_streak: new_streak,
+            last_daily_bonus_at: now
+        }).eq('id', profile.id)
+    }
+
+    // Update enrollment points (including daily bonus if applied)
+    const totalEarned = earned + daily_bonus
     const { data: enrollment } = await supabase.from('enrollments').select('*').eq('user_id', profile.id).eq('course_id', quiz.course_id).single()
     if (enrollment) {
         await supabase.from('enrollments').update({
-            total_points: (enrollment.total_points || 0) + earned,
-            ranking_points: (enrollment.ranking_points || 0) + earned,
-            spendable_points: (enrollment.spendable_points || 0) + earned
+            total_points: (enrollment.total_points || 0) + totalEarned,
+            ranking_points: (enrollment.ranking_points || 0) + totalEarned,
+            spendable_points: (enrollment.spendable_points || 0) + totalEarned
         }).eq('id', enrollment.id)
     }
 
     return {
         ...submission,
         is_simulation: false,
-        earned,
+        earned: totalEarned,
+        daily_bonus_applied,
+        daily_bonus,
+        new_streak,
         remaining_attempts: 0 // Simplification
     }
   },
