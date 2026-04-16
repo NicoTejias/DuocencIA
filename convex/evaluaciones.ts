@@ -255,7 +255,7 @@ export const updateEvaluacion = mutation({
             throw new Error("No tienes permiso para modificar esta evaluación");
         }
 
-        const { evaluacion_id, ...updates } = args;
+        const { evaluacion_id: _, ...updates } = args;
         await ctx.db.patch(args.evaluacion_id, updates);
     },
 });
