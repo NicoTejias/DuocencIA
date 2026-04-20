@@ -126,7 +126,7 @@ export default function GestionCanjesPanel() {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {filtered.map((r: any) => (
-                                    <tr key={r._id} className="group hover:bg-white/[0.02] transition-colors">
+                                    <tr key={r.id} className="group hover:bg-white/[0.02] transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
@@ -166,11 +166,11 @@ export default function GestionCanjesPanel() {
                                         <td className="px-6 py-4 text-right">
                                             {r.status === 'pending' ? (
                                                 <button 
-                                                    onClick={() => handleDeliver(r._id)}
-                                                    disabled={processingId === r._id}
+                                                    onClick={() => handleDeliver(r.id)}
+                                                    disabled={processingId === r.id}
                                                     className="bg-accent hover:bg-accent-light disabled:opacity-50 text-white text-[10px] font-black px-4 py-2 rounded-xl transition-all shadow-lg shadow-accent/20 uppercase tracking-widest flex items-center gap-2 ml-auto"
                                                 >
-                                                    {processingId === r._id ? (
+                                                    {processingId === r.id ? (
                                                         <Loader2 className="w-3 h-3 animate-spin" />
                                                     ) : (
                                                         <CheckCircle className="w-3 h-3" />
