@@ -444,19 +444,24 @@ export const RewardsAPI = {
     const { data: redemptions } = await query
     if (!redemptions?.length) return []
     const courseMap = Object.fromEntries(myCourses.map(c => [c.id, c.name]))
-    // Fetch enrollments for section data
     const studentIds = [...new Set(redemptions.map((r: any) => r.user_id))]
     const { data: enrollments } = await supabase.from('enrollments').select('user_id, course_id, section').in('user_id', studentIds).in('course_id', courseIds)
-    const enrollmentMap = Object.fromEntries((enrollments || []).map((e: any) => [`${e.user_id}_${e.course_id}`, e.section]))
+    // Map by exact course match first; fallback map by user to any section they have in this teacher's courses
+    const exactMap = Object.fromEntries((enrollments || []).map((e: any) => [`${e.user_id}_${e.course_id}`, e.section]))
+    const fallbackMap: Record<string, string> = {}
+    for (const e of (enrollments || [])) {
+      if (e.section && !fallbackMap[e.user_id]) fallbackMap[e.user_id] = e.section
+    }
     return redemptions.map((r: any) => {
       const rewardCourseId = r.rewards?.course_id
+      const exactSection = rewardCourseId ? exactMap[`${r.user_id}_${rewardCourseId}`] : null
       return {
         ...r,
         student_name: r.profiles?.name || 'Alumno',
         student_email: r.profiles?.email || '',
         reward_name: r.rewards?.name || '',
         course_name: rewardCourseId ? (courseMap[rewardCourseId] || '') : '',
-        section: rewardCourseId ? (enrollmentMap[`${r.user_id}_${rewardCourseId}`] || '') : '',
+        section: exactSection || fallbackMap[r.user_id] || '',
       }
     })
   }
