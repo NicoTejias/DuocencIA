@@ -439,11 +439,26 @@ export const RewardsAPI = {
     const { data: myRewards } = await supabase.from('rewards').select('id, name, cost, course_id').in('course_id', courseIds)
     if (!myRewards?.length) return []
     const rewardIds = myRewards.map(r => r.id)
-    let query = supabase.from('redemptions').select('*, profiles(*)').in('reward_id', rewardIds).order('timestamp', { ascending: false })
+    let query = supabase.from('redemptions').select('*, profiles(*), rewards(name, course_id)').in('reward_id', rewardIds).order('timestamp', { ascending: false })
     if (status) query = query.eq('status', status)
     const { data: redemptions } = await query
     if (!redemptions?.length) return []
-    return redemptions.map((r: any) => ({ ...r, student_name: r.profiles?.name || 'Alumno' }))
+    const courseMap = Object.fromEntries(myCourses.map(c => [c.id, c.name]))
+    // Fetch enrollments for section data
+    const studentIds = [...new Set(redemptions.map((r: any) => r.user_id))]
+    const { data: enrollments } = await supabase.from('enrollments').select('user_id, course_id, section').in('user_id', studentIds).in('course_id', courseIds)
+    const enrollmentMap = Object.fromEntries((enrollments || []).map((e: any) => [`${e.user_id}_${e.course_id}`, e.section]))
+    return redemptions.map((r: any) => {
+      const rewardCourseId = r.rewards?.course_id
+      return {
+        ...r,
+        student_name: r.profiles?.name || 'Alumno',
+        student_email: r.profiles?.email || '',
+        reward_name: r.rewards?.name || '',
+        course_name: rewardCourseId ? (courseMap[rewardCourseId] || '') : '',
+        section: rewardCourseId ? (enrollmentMap[`${r.user_id}_${rewardCourseId}`] || '') : '',
+      }
+    })
   }
 }
 
