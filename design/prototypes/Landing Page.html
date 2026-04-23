@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuestIA – Plataforma Educativa Gamificada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #08080e;
+      --bg2:     #0f0f1a;
+      --bg3:     #151525;
+      --yellow:  #FFD633;
+      --yellow2: #FFE566;
+      --blue:    #0050FF;
+      --blue2:   #4488ff;
+      --text:    #f0f0f8;
+      --dim:     #7070a0;
+      --muted:   #3a3a5a;
+      --border:  rgba(255,255,255,0.06);
+      --font:    'Outfit', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 99px; }
+
+    /* ── Utilities ── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+    .container--narrow { max-width: 780px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── Fade-in animation ── */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-d1 { transition-delay: 0.1s; }
+    .reveal-d2 { transition-delay: 0.2s; }
+    .reveal-d3 { transition-delay: 0.3s; }
+    .reveal-d4 { transition-delay: 0.4s; }
+    .reveal-d5 { transition-delay: 0.5s; }
+    .reveal-d6 { transition-delay: 0.6s; }
+
+    /* ── Navbar ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(8,8,14,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px; max-width: 1160px; margin: 0 auto;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px; text-decoration: none;
+    }
+    .logo-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: rgba(255,214,51,0.14); border: 1px solid rgba(255,214,51,0.25);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 17px; height: 17px; }
+    .logo-text {
+      font-size: 18px; font-weight: 900; color: #fff;
+      letter-spacing: -0.5px; font-style: italic;
+    }
+    .logo-text span { color: var(--yellow); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a {
+      font-size: 14px; font-weight: 600; color: var(--dim);
+      text-decoration: none; padding: 8px 14px; border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--yellow); color: #0a0a0a; font-family: var(--font);
+      font-size: 14px; font-weight: 800; padding: 10px 22px; border-radius: 10px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: -0.2px;
+    }
+    .btn-primary:hover {
+      background: var(--yellow2);
+      box-shadow: 0 6px 24px rgba(255,214,51,0.25);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text); font-family: var(--font);
+      font-size: 15px; font-weight: 700; padding: 13px 28px; border-radius: 12px;
+      text-decoration: none; border: 1px solid var(--border); cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+
+    /* ── Hero ── */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 120px 0 80px; overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 600px;
+      background: radial-gradient(ellipse at center, rgba(255,214,51,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center top, rgba(0,0,0,0.4) 0%, transparent 70%);
+    }
+    .hero-content {
+      position: relative; z-index: 2; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,214,51,0.1); border: 1px solid rgba(255,214,51,0.22);
+      border-radius: 99px; padding: 6px 16px; margin-bottom: 28px;
+      font-size: 12px; font-weight: 800; color: var(--yellow);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .hero-badge svg { width: 12px; height: 12px; }
+    h1.hero-title {
+      font-size: clamp(40px, 6vw, 76px); font-weight: 900;
+      color: #fff; line-height: 1.12; letter-spacing: -3px;
+      text-wrap: pretty; margin-bottom: 48px; max-width: 820px;
+    }
+    h1.hero-title em { font-style: italic; color: var(--yellow); }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 19px); color: var(--dim); font-weight: 500;
+      max-width: 560px; line-height: 1.65; margin-bottom: 40px; text-wrap: pretty;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 56px; }
+    .btn-hero {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--yellow); color: #0a0a0a; font-family: var(--font);
+      font-size: 16px; font-weight: 800; padding: 16px 32px; border-radius: 14px;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: -0.3px;
+    }
+    .btn-hero:hover { background: var(--yellow2); box-shadow: 0 8px 32px rgba(255,214,51,0.3); transform: translateY(-2px); }
+    .btn-hero:active { transform: scale(0.97); }
+    .hero-note { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; }
+    .hero-note strong { color: var(--yellow); }
+    .hero-meta {
+      display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; align-items: center;
+    }
+    .hero-meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dim); font-weight: 600; }
+    .hero-meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); }
+
+    /* ── Section shared ── */
+    section { padding: 96px 0; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; color: var(--blue2);
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px;
+    }
+    .section-label::before { content: ''; width: 20px; height: 2px; background: var(--blue2); border-radius: 2px; }
+    h2.section-title {
+      font-size: clamp(28px, 4vw, 46px); font-weight: 900; color: #fff;
+      letter-spacing: -1.5px; line-height: 1.1; text-wrap: pretty; margin-bottom: 14px;
+    }
+    h2.section-title em { font-style: italic; color: var(--yellow); }
+    .section-sub { font-size: 17px; color: var(--dim); font-weight: 500; max-width: 520px; line-height: 1.65; text-wrap: pretty; }
+
+    /* ── Pillars ── */
+    #pillars { background: var(--bg2); }
+    .pillars-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+      background: var(--border); border-radius: 20px; overflow: hidden;
+      margin-top: 56px;
+    }
+    .pillar {
+      background: var(--bg2); padding: 36px 32px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .pillar-num {
+      font-size: 11px; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 2px;
+    }
+    .pillar-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,214,51,0.08); border: 1px solid rgba(255,214,51,0.14);
+    }
+    .pillar-icon.blue { background: rgba(0,80,255,0.1); border-color: rgba(0,80,255,0.18); }
+    .pillar-icon.green { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.18); }
+    .pillar h3 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .pillar p { font-size: 14px; color: var(--dim); line-height: 1.65; font-weight: 500; }
+
+    /* ── Features ── */
+    #features { background: var(--bg); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-top: 56px;
+    }
+    .feature-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 14px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .feature-card:hover {
+      border-color: rgba(255,214,51,0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(255,214,51,0.06);
+    }
+    .feature-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,214,51,0.08); border: 1px solid rgba(255,214,51,0.14);
+    }
+    .feature-icon svg { width: 22px; height: 22px; stroke: var(--yellow); }
+    .feature-card h3 { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .feature-card p { font-size: 14px; color: var(--dim); line-height: 1.65; font-weight: 500; }
+
+    /* ── Stats ── */
+    #stats { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 64px 0; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--border);
+    }
+    .stat-item {
+      background: var(--bg2); padding: 32px 24px; text-align: center;
+    }
+    .stat-value { font-size: 42px; font-weight: 900; color: var(--yellow); letter-spacing: -2px; line-height: 1; margin-bottom: 8px; }
+    .stat-label { font-size: 13px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── How it works ── */
+    #how { background: var(--bg); }
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 56px; }
+    .step {
+      display: grid; grid-template-columns: 64px 1fr; gap: 24px; align-items: flex-start;
+      padding: 28px 0; border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(255,214,51,0.08); border: 1px solid rgba(255,214,51,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: var(--yellow); letter-spacing: -1px;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .step-body h3 { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -0.3px; margin-bottom: 6px; }
+    .step-body p { font-size: 14px; color: var(--dim); line-height: 1.7; font-weight: 500; max-width: 560px; }
+
+    /* ── CTA ── */
+    #cta { background: var(--bg2); }
+    .cta-card {
+      background: var(--bg3); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 28px; padding: 64px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-card-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,214,51,0.07) 0%, transparent 60%);
+    }
+    .cta-card h2 {
+      font-size: clamp(28px, 4vw, 48px); font-weight: 900; color: #fff;
+      letter-spacing: -2px; line-height: 1.1; margin-bottom: 18px; text-wrap: pretty;
+      position: relative; z-index: 1;
+    }
+    .cta-card h2 em { font-style: italic; color: var(--yellow); }
+    .cta-card p {
+      font-size: 17px; color: var(--dim); max-width: 480px; margin: 0 auto 36px;
+      line-height: 1.65; font-weight: 500; position: relative; z-index: 1;
+    }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+
+    /* ── FAQ ── */
+    #faq { background: var(--bg); }
+    .faq-list { margin-top: 48px; display: flex; flex-direction: column; gap: 8px; }
+    .faq-item {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; transition: border-color 0.2s;
+    }
+    .faq-item.open { border-color: rgba(255,214,51,0.2); }
+    .faq-q {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; background: none; border: none; cursor: pointer;
+      font-family: var(--font); font-size: 16px; font-weight: 700;
+      color: var(--text); text-align: left; gap: 16px;
+    }
+    .faq-q:hover { color: #fff; }
+    .faq-q.open { color: var(--yellow2); }
+    .faq-chevron { flex-shrink: 0; width: 18px; height: 18px; transition: transform 0.3s; stroke: var(--muted); }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); stroke: var(--yellow); }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+      padding: 0 24px;
+    }
+    .faq-item.open .faq-a { max-height: 300px; padding: 0 24px 22px; }
+    .faq-a p { font-size: 14px; color: var(--dim); line-height: 1.75; font-weight: 500; }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+    }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; font-weight: 600; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--dim); }
+    .footer-copy { font-size: 12px; color: var(--muted); font-weight: 600; font-style: italic; }
+    .footer-copy span { color: var(--yellow); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .pillars-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .cta-card { padding: 40px 24px; }
+      .nav-links a:not(.btn-primary) { display: none; }
+    }
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      h1.hero-title { letter-spacing: -1.5px; }
+      .step { grid-template-columns: 48px 1fr; gap: 16px; }
+      .hero-meta { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#FFD633" stroke-width="2">
+          <path d="M12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/>
+        </svg>
+      </div>
+      <span class="logo-text">Quest<span>IA</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Funciones</a>
+      <a href="#how">Cómo funciona</a>
+      <a href="#faq">FAQ</a>
+      <a href="/login" style="color:var(--dim)">Iniciar sesión</a>
+      <a href="/registro" class="btn-primary" style="font-size:13px;padding:9px 18px;border-radius:9px;">Comenzar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-grid"></div>
+  <div class="container hero-content">
+    <div class="hero-badge reveal">
+      <svg viewBox="0 0 24 24" fill="#FFD633"><path d="M12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/></svg>
+      Plataforma Educativa con IA
+    </div>
+    <h1 class="hero-title reveal reveal-d1">
+      Motiva a tus alumnos.<br/>
+      <em>Simplifica tu docencia.</em>
+    </h1>
+    <p class="hero-sub reveal reveal-d2">
+      QuestIA transforma tus ramos en experiencias gamificadas. Misiones, rankings, recompensas y evaluación automática con inteligencia artificial, todo en un solo lugar.
+    </p>
+    <div class="hero-ctas reveal reveal-d3">
+      <a href="/registro" class="btn-hero">
+        Probar como Docente
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="#features" class="btn-outline">Ver funcionalidades</a>
+    </div>
+    <p class="hero-note reveal reveal-d3">
+      <strong>✨ Sin cuenta institucional.</strong> Prueba con tu Gmail personal. Datos demo eliminados tras 14 días.
+    </p>
+    <div class="hero-meta reveal reveal-d4" style="margin-top:48px;">
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Generación de quizzes con Gemini AI</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>Grupos Belbin automáticos</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div>App móvil incluida</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PILLARS ── -->
+<section id="pillars">
+  <div class="container">
+    <div class="reveal"><span class="section-label">Núcleo de la plataforma</span></div>
+    <h2 class="section-title reveal reveal-d1">Tres pilares que<br/><em>transforman tu sala de clases</em></h2>
+    <div class="pillars-grid">
+      <div class="pillar reveal reveal-d1">
+        <span class="pillar-num">01</span>
+        <div class="pillar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFD633" stroke-width="2" style="width:22px;height:22px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <h3>Gamificación real</h3>
+        <p>Misiones, puntos, rankings en tiempo real y una tienda de recompensas que los alumnos realmente quieren usar. Competencia sana, motivación sostenida.</p>
+      </div>
+      <div class="pillar reveal reveal-d2">
+        <span class="pillar-num">02</span>
+        <div class="pillar-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4488ff" stroke-width="2" style="width:22px;height:22px"><path d="M12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/></svg>
+        </div>
+        <h3>Inteligencia Artificial</h3>
+        <p>Sube tus materiales y Gemini genera quizzes al instante. Evalúa trabajos con rúbricas automáticas y recibe feedback personalizado para cada alumno.</p>
+      </div>
+      <div class="pillar reveal reveal-d3">
+        <span class="pillar-num">03</span>
+        <div class="pillar-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="width:22px;height:22px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Analíticas docentes</h3>
+        <p>Visualiza el rendimiento, participación y tendencias de tus cursos en tiempo real. Toma decisiones pedagógicas con datos, no suposiciones.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div class="container">
+    <div class="reveal"><span class="section-label">Funcionalidades</span></div>
+    <h2 class="section-title reveal reveal-d1">Todo lo que necesitas para<br/><em>enseñar mejor</em></h2>
+    <p class="section-sub reveal reveal-d2">Herramientas diseñadas por y para docentes que quieren transformar la experiencia de aprendizaje sin perder horas en gestión.</p>
+
+    <div class="features-grid">
+      <!-- 1 -->
+      <div class="feature-card reveal reveal-d1">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <h3>Misiones Gamificadas</h3>
+        <p>Transforma tareas en misiones épicas. Los alumnos ganan puntos al completar desafíos académicos y se mantienen motivados durante todo el semestre.</p>
+      </div>
+      <!-- 2 -->
+      <div class="feature-card reveal reveal-d2">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+        </div>
+        <h3>Ranking en Tiempo Real</h3>
+        <p>Leaderboard reactivo que se actualiza al instante. Fomenta la competencia sana y el compromiso continuo entre compañeros de curso.</p>
+      </div>
+      <!-- 3 -->
+      <div class="feature-card reveal reveal-d3">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        </div>
+        <h3>Tienda de Recompensas</h3>
+        <p>Los alumnos canjean puntos por beneficios reales: puntos extra, extensiones de plazo, ventajas en evaluaciones. Tú defines las reglas.</p>
+      </div>
+      <!-- 4 -->
+      <div class="feature-card reveal reveal-d1">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Grupos Inteligentes</h3>
+        <p>Algoritmo basado en perfiles Belbin que genera equipos equilibrados y complementarios automáticamente, ahorrando horas de planificación.</p>
+      </div>
+      <!-- 5 -->
+      <div class="feature-card reveal reveal-d2">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3>Analíticas del Curso</h3>
+        <p>Visualiza el progreso de tus alumnos con gráficos de rendimiento, participación y tendencias. Identifica quién necesita más apoyo a tiempo.</p>
+      </div>
+      <!-- 6 -->
+      <div class="feature-card reveal reveal-d3">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/></svg>
+        </div>
+        <h3>Evaluación con IA</h3>
+        <p>Sube un documento y Gemini genera un quiz listo para aplicar. Rúbricas automáticas y feedback instantáneo personalizado para cada estudiante.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<section id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal"><div class="stat-value">3×</div><div class="stat-label">más participación</div></div>
+      <div class="stat-item reveal reveal-d1"><div class="stat-value">56</div><div class="stat-label">preguntas Belbin</div></div>
+      <div class="stat-item reveal reveal-d2"><div class="stat-value">∞</div><div class="stat-label">quizzes con IA</div></div>
+      <div class="stat-item reveal reveal-d3"><div class="stat-value">0</div><div class="stat-label">horas extra corrigiendo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how">
+  <div class="container--narrow">
+    <div class="reveal"><span class="section-label">Proceso</span></div>
+    <h2 class="section-title reveal reveal-d1">Empieza en minutos,<br/><em>impacta todo el semestre</em></h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Crea tu ramo y carga tu lista de alumnos</h3>
+          <p>Registra tu asignatura, sube la nómina en CSV o ingresa los RUTs manualmente. QuestIA configura el acceso automáticamente para cada estudiante.</p>
+        </div>
+      </div>
+      <div class="step reveal reveal-d1">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Sube tu material y genera quizzes con IA</h3>
+          <p>Comparte PDF, DOCX o PPT. Gemini analiza el contenido y genera quizzes calibrados al nivel de tu curso en segundos. Tú revisas y publicas.</p>
+        </div>
+      </div>
+      <div class="step reveal reveal-d2">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>Activa misiones y define las recompensas</h3>
+          <p>Crea desafíos con fechas, puntos y condiciones. Diseña tu tienda de recompensas: los alumnos se auto-motivan para completar cada misión.</p>
+        </div>
+      </div>
+      <div class="step reveal reveal-d3">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <h3>Analiza, ajusta y celebra los logros</h3>
+          <p>Monitorea el avance en tiempo real. Identifica alumnos en riesgo, celebra los hitos del curso y ajusta la dificultad según los datos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-card reveal">
+      <div class="cta-card-glow"></div>
+      <div style="font-size:48px;margin-bottom:20px;position:relative;z-index:1;">✨</div>
+      <h2>¿Listo para transformar<br/><em>tu sala de clases?</em></h2>
+      <p>Cotiza con nosotros y lleva el compromiso de tus alumnos al siguiente nivel. Sin instalaciones, sin complicaciones.</p>
+      <div class="cta-actions">
+        <a href="mailto:nicolas.tejias@gmail.com" class="btn-hero">
+          Contáctanos ahora
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a href="/registro" class="btn-outline">Crear cuenta gratis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="container--narrow">
+    <div class="reveal"><span class="section-label">Preguntas frecuentes</span></div>
+    <h2 class="section-title reveal reveal-d1">Todo lo que<br/><em>necesitas saber</em></h2>
+
+    <div class="faq-list" id="faqList">
+      <!-- Items inserted by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon" style="width:28px;height:28px;border-radius:7px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFD633" stroke-width="2" style="width:13px;height:13px">
+            <path d="M12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/>
+          </svg>
+        </div>
+        <span class="footer-copy">Quest<span>IA</span> © 2026</span>
+      </a>
+      <div class="footer-links">
+        <a href="#">Privacidad</a>
+        <a href="#">Términos</a>
+        <a href="mailto:nicolas.tejias@gmail.com">Contacto</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── FAQ data ──────────────────────────────────────────────────────
+  const faqs = [
+    { q: "¿Necesito una cuenta institucional para usar QuestIA?", a: "No. Puedes registrarte con tu Gmail personal y probar la plataforma en modo demo. Los datos de prueba se eliminan automáticamente después de 14 días." },
+    { q: "¿Cómo se generan los quizzes con IA?", a: "Sube un PDF, DOCX o presentación a la sección de Material. QuestIA usa Google Gemini 2.5 Flash para analizar el contenido y generar preguntas calibradas al nivel de tu curso. Tú revisas y publicas con un clic." },
+    { q: "¿Qué es el perfil Belbin y para qué sirve?", a: "Belbin es una metodología de 9 roles de equipo. QuestIA aplica un test de 56 preguntas a tus alumnos y luego usa los resultados para generar grupos equilibrados automáticamente, asegurando diversidad de habilidades y roles." },
+    { q: "¿Los alumnos necesitan descargar algo?", a: "No es necesario. QuestIA funciona como PWA (Progressive Web App) desde el navegador. También ofrecemos un APK para Android si prefieres la experiencia de app nativa." },
+    { q: "¿Cómo funciona la tienda de recompensas?", a: "Tú defines los beneficios disponibles (décimas extra, extensiones de plazo, ventajas especiales) y su costo en puntos. Los alumnos usan los puntos que acumulan en misiones y quizzes para canjearlos." },
+    { q: "¿Qué tan segura es la plataforma?", a: "QuestIA usa Clerk para autenticación, Supabase con RLS (Row Level Security) para los datos, y verificación de credenciales por IA. Toda la información está cifrada en tránsito y en reposo." },
+  ];
+
+  const faqList = document.getElementById('faqList');
+  faqs.forEach((f, i) => {
+    const item = document.createElement('div');
+    item.className = 'faq-item reveal reveal-d' + Math.min(i + 1, 6);
+    item.innerHTML = `
+      <button class="faq-q">${f.q}
+        <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="faq-a"><p>${f.a}</p></div>
+    `;
+    item.querySelector('.faq-q').addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(el => { el.classList.remove('open'); el.querySelector('.faq-q').classList.remove('open'); });
+      if (!isOpen) { item.classList.add('open'); item.querySelector('.faq-q').classList.add('open'); }
+    });
+    faqList.appendChild(item);
+  });
+
+  // ── Scroll reveal ─────────────────────────────────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ── Navbar scroll ─────────────────────────────────────────────────
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').style.background =
+      window.scrollY > 40 ? 'rgba(8,8,14,0.97)' : 'rgba(8,8,14,0.85)';
+  });
+</script>
+</body>
+</html>
