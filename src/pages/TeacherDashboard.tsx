@@ -219,12 +219,7 @@ export default function TeacherDashboard() {
                             user={user}
                             firstName={firstName}
                             coursesCount={coursesCount}
-                            courses={courses || []}
                             onTabChange={setActiveTab}
-                            onSelectCourse={(c) => {
-                                setSelectedCourse(c)
-                                setActiveTab('ramos')
-                            }}
                         />
                     )}
                     {activeTab === 'ramos' && (
@@ -346,13 +341,11 @@ function QuickCard({ emoji, label, color, onClick }: { emoji: string; label: str
     )
 }
 
-function InicioDocente({ user, firstName, coursesCount, courses, onTabChange }: {
+function InicioDocente({ user, firstName, coursesCount, onTabChange }: {
     user: any
     firstName: string
     coursesCount: number
-    courses: any[]
     onTabChange: (tab: string) => void
-    onSelectCourse: (c: any) => void
 }) {
     const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user.clerk_id, user.role), [user])
     const quizzesCompleted = stats ? (stats as any).totalQuizzesCompleted ?? 0 : '...'
