@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuestIA – Student Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #06060c; font-family: 'Outfit', sans-serif; }
+    #root { width: 100%; height: 100%; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+    select option { background: #1a1a2e; color: #f0f0f8; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="questia-sidebar.jsx"></script>
+  <script type="text/babel" src="questia-home.jsx"></script>
+  <script type="text/babel" src="questia-mobile.jsx"></script>
+
+  <script type="text/babel">
+    const MOCK_USER = {
+      name: "Valentina Ramos",
+      student_id: "20234872",
+      ranking_points: 4750,
+      spendable_points: 1200,
+      streak: 7,
+      level: 14,
+      rank: 2,
+    };
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "colorPrimary": "#FFD633",
+      "darkMode": true,
+      "sidebarWidth": 220,
+      "showStreak": true
+    }/*EDITMODE-END*/;
+
+    // ── Desktop Dashboard ─────────────────────────────────────────────
+    function DesktopDashboard() {
+      const [activeTab, setActiveTab] = React.useState('inicio');
+      const [selectedCourse, setSelectedCourse] = React.useState(null);
+
+      const panelContent = () => {
+        if (activeTab === 'inicio') {
+          return <QuestiaDashboardHome user={MOCK_USER} onSelectCourse={setSelectedCourse} />;
+        }
+        const labels = {
+          misiones: { emoji: '🎯', title: 'Misiones' },
+          ranking:  { emoji: '🏆', title: 'Ranking' },
+          tienda:   { emoji: '🎁', title: 'Tienda' },
+          perfil:   { emoji: '👤', title: 'Mi Perfil' },
+        };
+        const l = labels[activeTab] || { emoji: '📄', title: activeTab };
+        return (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            height: '100%', gap: 16, opacity: 0.4,
+          }}>
+            <span style={{ fontSize: 64 }}>{l.emoji}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: '#7777aa', textTransform: 'uppercase', letterSpacing: '1px' }}>{l.title}</span>
+          </div>
+        );
+      };
+
+      return (
+        <div style={{
+          width: '100%', height: '100%', display: 'flex',
+          background: '#09090f', overflow: 'hidden', borderRadius: 16,
+        }}>
+          <QuestiaSidebar
+            activeTab={activeTab}
+            setActiveTab={(tab) => { setActiveTab(tab); setSelectedCourse(null); }}
+            user={MOCK_USER}
+            onLogout={() => {}}
+          />
+          <main style={{
+            flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
+            {/* Top bar */}
+            <div style={{
+              padding: '16px 28px', background: '#09090f',
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexShrink: 0,
+            }}>
+              <h1 style={{
+                fontFamily: 'Outfit, sans-serif', fontSize: 18, fontWeight: 800,
+                color: '#f0f0f8', textTransform: 'capitalize',
+              }}>
+                {activeTab === 'inicio' ? '👋 Dashboard' : activeTab === 'misiones' ? '🎯 Misiones' : activeTab === 'ranking' ? '🏆 Ranking' : activeTab === 'tienda' ? '🎁 Tienda' : '👤 Mi Perfil'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Points chip */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(0,80,255,0.1)', border: '1px solid rgba(0,80,255,0.2)',
+                  borderRadius: 20, padding: '6px 14px',
+                }}>
+                  <span style={{ fontSize: 14 }}>🪙</span>
+                  <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 800, color: '#6699ff' }}>
+                    {MOCK_USER.spendable_points.toLocaleString()}
+                  </span>
+                </div>
+                {/* Notification bell */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', position: 'relative',
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#7777aa" strokeWidth="2" style={{width:17,height:17}}>
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <div style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: '#ef4444', border: '1.5px solid #09090f' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Content scroll area */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px 28px' }}>
+              {panelContent()}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // ── Root App ──────────────────────────────────────────────────────
+    function App() {
+      return (
+        <DesignCanvas title="QuestIA · Student Dashboard">
+          <DCSection id="desktop" title="Desktop">
+            <DCArtboard id="desk" label="Desktop 1280×800" width={1280} height={800}>
+              <DesktopDashboard />
+            </DCArtboard>
+          </DCSection>
+          <DCSection id="mobile" title="Mobile">
+            <DCArtboard id="mob" label="iPhone 15 Pro" width={393} height={852}>
+              <IOSDevice>
+                <QuestiaMobileDashboard user={MOCK_USER} />
+              </IOSDevice>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

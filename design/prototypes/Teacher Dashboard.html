@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuestIA – Teacher Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #06060c; font-family: 'Outfit', sans-serif; }
+    #root { width: 100%; height: 100%; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+    input::placeholder, textarea::placeholder { color: #333355; }
+    select option { background: #111118; color: #f0f0f8; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="teacher-sidebar.jsx"></script>
+  <script type="text/babel" src="teacher-home.jsx"></script>
+  <script type="text/babel" src="teacher-mobile.jsx"></script>
+
+  <script type="text/babel">
+
+    const TAB_META = {
+      inicio:      { label: 'Inicio',          emoji: '📊' },
+      ramos:       { label: 'Mis Ramos',        emoji: '📚' },
+      material:    { label: 'Material',         emoji: '📄' },
+      desafios:    { label: 'Desafíos',         emoji: '🎯' },
+      ranking:     { label: 'Ranking',          emoji: '🏆' },
+      recompensas: { label: 'Recompensas',      emoji: '🎁' },
+      canjes:      { label: 'Gestión Canjes',   emoji: '🔄' },
+      perfil:      { label: 'Mi Perfil',        emoji: '👤' },
+    };
+
+    // ── Desktop ────────────────────────────────────────────────────────
+    function DesktopTeacher() {
+      const [activeTab, setActiveTab] = React.useState('inicio');
+
+      const renderPanel = () => {
+        if (activeTab === 'inicio') return <TeacherHome onTabChange={setActiveTab} />;
+        if (activeTab === 'ramos')  return <TeacherRamos onTabChange={setActiveTab} />;
+        const meta = TAB_META[activeTab] || { emoji: '📄', label: activeTab };
+        return <TeacherPlaceholder emoji={meta.emoji} label={meta.label} />;
+      };
+
+      const meta = TAB_META[activeTab] || {};
+
+      return (
+        <div style={{ width: '100%', height: '100%', display: 'flex', background: '#09090f', overflow: 'hidden', borderRadius: 16 }}>
+          <TeacherSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            user={window.TEACHER_MOCK}
+            onLogout={() => {}}
+          />
+
+          <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Top bar */}
+            <div style={{
+              padding: '15px 28px', background: '#09090f',
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexShrink: 0,
+            }}>
+              <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 17, fontWeight: 800, color: '#f0f0f8' }}>
+                {meta.emoji} {meta.label}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Beta badge */}
+                <div style={{
+                  background: 'rgba(0,80,255,0.1)', border: '1px solid rgba(0,80,255,0.2)',
+                  borderRadius: 20, padding: '4px 12px',
+                  fontFamily: 'Outfit, sans-serif', fontSize: 10, fontWeight: 800,
+                  color: '#5599ff', textTransform: 'uppercase', letterSpacing: '1px',
+                }}>Beta</div>
+                {/* Notification */}
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#5577aa" strokeWidth="2" style={{width:16,height:16}}>
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <div style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: '#ef4444', border: '1.5px solid #09090f' }} />
+                </div>
+                {/* Help */}
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#5577aa" strokeWidth="2" style={{width:16,height:16}}>
+                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll area */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '26px 28px' }}>
+              {renderPanel()}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // ── App ────────────────────────────────────────────────────────────
+    function App() {
+      return (
+        <DesignCanvas title="QuestIA · Teacher Dashboard">
+          <DCSection id="desktop" title="Desktop">
+            <DCArtboard id="desk" label="Desktop 1280×800" width={1280} height={800}>
+              <DesktopTeacher />
+            </DCArtboard>
+          </DCSection>
+          <DCSection id="mobile" title="Mobile">
+            <DCArtboard id="mob" label="iPhone 15 Pro" width={393} height={852}>
+              <IOSDevice>
+                <TeacherMobileDashboard user={window.TEACHER_MOCK} />
+              </IOSDevice>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
