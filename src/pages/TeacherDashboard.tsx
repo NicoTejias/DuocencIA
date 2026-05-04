@@ -347,7 +347,7 @@ function InicioDocente({ user, firstName, coursesCount, onTabChange }: {
     coursesCount: number
     onTabChange: (tab: string) => void
 }) {
-    const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user.clerk_id, user.role), [user])
+    const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user.clerk_id, 'teacher'), [user])
     const quizzesCompleted = stats ? (stats as any).totalQuizzesCompleted ?? 0 : '...'
     const avgScore = stats ? `${Math.round((stats as any).avgQuizScore ?? 0)}%` : '...'
     const participation = stats ? `${Math.round(((stats.totalRegisteredUniqueUsers ?? 0) / (stats.totalUniqueStudents || 1)) * 100)}%` : '...'

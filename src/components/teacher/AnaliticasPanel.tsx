@@ -8,7 +8,7 @@ import { useUser } from "@clerk/clerk-react"
 
 export default function AnaliticasPanel() {
     const { user } = useUser()
-    const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user?.id || '', user?.publicMetadata?.role as string || 'student'), [user])
+    const { data: stats } = useSupabaseQuery(() => AnalyticsAPI.getTeacherStats(user?.id || '', 'teacher'), [user])
     const [exporting, setExporting] = useState<string | null>(null)
     const [unifying, setUnifying] = useState(false)
     const [cleaning, setCleaning] = useState(false)
